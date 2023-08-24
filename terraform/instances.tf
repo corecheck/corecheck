@@ -54,7 +54,7 @@ resource "google_compute_instance" "core" {
   machine_type = "e2-micro"
 
   metadata = {
-    ssh-keys = "aureleoules:ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEM79mi/xHOtZw+bUfOH8soMjCyO5qOdpLls1tXnR2AD aurele@oules.com"
+    ssh-keys = "aureleoules:ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEM79mi/xHOtZw+bUfOH8soMjCyO5qOdpLls1tXnR2AD aurele@oules.com\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID10ieUzFSRpKXI1lR5BAMqe3rz7cyMBKBIaYIJyXGub bitcoin-coverage-ci"
   }
 
   name = "core"
