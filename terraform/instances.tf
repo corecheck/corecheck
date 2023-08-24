@@ -4,11 +4,11 @@ resource "google_service_account" "core-backend" {
 }
 
 resource "google_compute_disk" "core-data" {
-  name  = "core-data"
-  type  = "pd-ssd"
-  zone  = "europe-west1-b"
+  name                      = "core-data"
+  type                      = "pd-ssd"
+  zone                      = "europe-west1-b"
   physical_block_size_bytes = 4096
-  size = 10
+  size                      = 10
   lifecycle {
     prevent_destroy = false
   }
@@ -61,7 +61,7 @@ resource "google_compute_instance" "core" {
 
   network_interface {
     access_config {
-      nat_ip = google_compute_address.core.address
+      nat_ip       = google_compute_address.core.address
       network_tier = "PREMIUM"
     }
 
