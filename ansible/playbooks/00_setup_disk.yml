@@ -1,0 +1,15 @@
+---
+- name: Setup data disk
+  hosts: core
+  become: true
+  tasks:
+    - name: Ensure partition is formatted
+      filesystem:
+        fstype: ext4
+        dev: /dev/disk/by-id/google-data
+    - name: Ensure file systems is mounted
+      mount:
+        fstype: ext4
+        src: /dev/disk/by-id/google-data
+        path: /data
+        state: mounted

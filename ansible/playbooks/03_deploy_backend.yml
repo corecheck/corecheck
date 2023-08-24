@@ -1,0 +1,11 @@
+---
+- name: Setup bitcoin-coverage backend
+  hosts: core
+  become: yes
+  tasks:
+    - name: Setup backend
+      docker_container:
+        name: core
+        image: aureleoules/bitcoin-coverage-core:latest
+        restart_policy: always
+        restart: yes
