@@ -49,6 +49,7 @@ jobs:
 
   ansible:
     name: 'Ansible'
+    needs: terraform
     runs-on: ubuntu-latest
     environment: production
 
