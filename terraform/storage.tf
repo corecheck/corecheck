@@ -17,8 +17,8 @@ resource "google_storage_bucket" "bitcoin-coverage-data" {
   }
 }
 
-resource "google_storage_bucket_access_control" "public_rule" {
+resource "google_storage_bucket_iam_member" "bitcoin-coverage-data-public" {
   bucket = google_storage_bucket.bitcoin-coverage-data.name
-  role   = "READER"
-  entity = "allUsers"
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
 }
