@@ -8,16 +8,6 @@ resource "google_storage_bucket" "bitcoin-coverage-cache" {
   public_access_prevention = "enforced"
 }
 
-resource "google_storage_bucket" "bitcoin-coverage-ccache" {
-  name          = "bitcoin-coverage-ccache"
-  location      = "europe-west1"
-  force_destroy = true
-  versioning {
-    enabled = false
-  }
-  public_access_prevention = "enforced"
-}
-
 resource "google_storage_bucket" "bitcoin-coverage-data" {
   name          = "bitcoin-coverage-data"
   location      = "europe-west1"
