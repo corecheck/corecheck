@@ -12,6 +12,9 @@ jobs:
     name: 'Terraform'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      TF_VAR_aws_access_key_id: ${{ secrets.TF_VAR_aws_access_key_id }}
+      TF_VAR_aws_secret_access_key: ${{ secrets.TF_VAR_aws_secret_access_key }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
