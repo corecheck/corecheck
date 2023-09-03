@@ -17,20 +17,20 @@ resource "aws_s3_bucket_public_access_block" "bitcoin-coverage-data-public" {
   restrict_public_buckets = false
 }
 resource "aws_s3_bucket_acl" "bitcoin-coverage-data-public" {
-  depends_on = [ aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data ]
-  bucket = aws_s3_bucket.bitcoin-coverage-data.id
-  acl    = "public-read"
+  depends_on = [aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data]
+  bucket     = aws_s3_bucket.bitcoin-coverage-data.id
+  acl        = "public-read"
 }
 
 resource "aws_s3_bucket_policy" "bitcoin-coverage-data-public" {
-  depends_on = [ aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data ]
-  bucket = aws_s3_bucket.bitcoin-coverage-data.id
+  depends_on = [aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data]
+  bucket     = aws_s3_bucket.bitcoin-coverage-data.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "PublicReadGetObject"
-        Effect = "Allow"
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
         Principal = "*"
         Action = [
           "s3:GetObject"

@@ -96,15 +96,15 @@ resource "aws_batch_job_definition" "mutation_job" {
         value = aws_s3_bucket.bitcoin-coverage-ccache.id
       },
       {
-        name = "SCCACHE_REGION",
+        name  = "SCCACHE_REGION",
         value = "eu-west-1"
       },
       {
-        name = "AWS_ACCESS_KEY_ID",
+        name  = "AWS_ACCESS_KEY_ID",
         value = var.aws_access_key_id
       },
       {
-        name = "AWS_SECRET_ACCESS_KEY",
+        name  = "AWS_SECRET_ACCESS_KEY",
         value = var.aws_secret_access_key
       }
     ]
