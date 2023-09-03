@@ -1,34 +1,53 @@
-resource "google_storage_bucket" "bitcoin-coverage-cache" {
-  name          = "bitcoin-coverage-cache"
-  location      = "europe-west1"
-  force_destroy = true
-  versioning {
-    enabled = false
-  }
-  public_access_prevention = "enforced"
+resource "aws_s3_bucket" "bitcoin-coverage-data" {
+  bucket = "bitcoin-coverage-data"
 }
 
-resource "google_storage_bucket" "bitcoin-coverage-ccache" {
-  name          = "bitcoin-coverage-ccache"
-  location      = "europe-west1"
-  force_destroy = true
-  versioning {
-    enabled = false
-  }
-  public_access_prevention = "enforced"
-}
-
-resource "google_storage_bucket" "bitcoin-coverage-data" {
-  name          = "bitcoin-coverage-data"
-  location      = "europe-west1"
-  force_destroy = true
-  versioning {
-    enabled = false
+resource "aws_s3_bucket_ownership_controls" "bitcoin-coverage-data" {
+  bucket = aws_s3_bucket.bitcoin-coverage-data.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
   }
 }
+resource "aws_s3_bucket_public_access_block" "bitcoin-coverage-data-public" {
+  bucket = aws_s3_bucket.bitcoin-coverage-data.id
 
-resource "google_storage_bucket_iam_member" "bitcoin-coverage-data-public" {
-  bucket = google_storage_bucket.bitcoin-coverage-data.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
+resource "aws_s3_bucket_acl" "bitcoin-coverage-data-public" {
+  depends_on = [ aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data ]
+  bucket = aws_s3_bucket.bitcoin-coverage-data.id
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_policy" "bitcoin-coverage-data-public" {
+  depends_on = [ aws_s3_bucket_public_access_block.bitcoin-coverage-data-public, aws_s3_bucket_ownership_controls.bitcoin-coverage-data ]
+  bucket = aws_s3_bucket.bitcoin-coverage-data.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "PublicReadGetObject"
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.bitcoin-coverage-data.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket" "bitcoin-coverage-cache" {
+  bucket = "bitcoin-coverage-cache"
+}
+
+resource "aws_s3_bucket" "bitcoin-coverage-ccache" {
+  bucket = "bitcoin-coverage-ccache"
+}
+
