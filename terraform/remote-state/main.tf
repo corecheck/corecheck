@@ -1,10 +1,9 @@
 provider "aws" {
-  region = "eu-west-1"
+  region = "eu-west-3"
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "bitcoin-coverage-tfstate"
-     
+  bucket = "bitcoin-coverage-state"
   lifecycle {
     prevent_destroy = true
   }

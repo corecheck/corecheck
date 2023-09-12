@@ -1,3 +1,4 @@
 credentials.json
 terraform.tfstate
 .terraform
+terraform.tfstate.backup

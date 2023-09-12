@@ -2,7 +2,7 @@ resource "aws_batch_compute_environment" "jobs_compute" {
   compute_environment_name = "jobs_compute"
 
   compute_resources {
-    max_vcpus = 64
+    max_vcpus = 8
 
     security_group_ids = [data.aws_security_group.default.id]
 
@@ -13,9 +13,7 @@ resource "aws_batch_compute_environment" "jobs_compute" {
     type = "FARGATE_SPOT"
   }
 
-  service_role = aws_iam_role.aws_batch_service_role.arn
   type         = "MANAGED"
-  depends_on   = [aws_iam_role_policy_attachment.aws_batch_service_role]
 }
 
 
@@ -97,7 +95,7 @@ resource "aws_batch_job_definition" "mutation_job" {
       },
       {
         name  = "SCCACHE_REGION",
-        value = "eu-west-1"
+        value = "eu-west-3"
       },
       {
         name  = "AWS_ACCESS_KEY_ID",
@@ -117,6 +115,6 @@ resource "aws_batch_job_definition" "mutation_job" {
     jobRoleArn       = aws_iam_role.job_role.arn
   })
   timeout {
-    attempt_duration_seconds = 1800 # 30 minutes
+    attempt_duration_seconds = 3600
   }
 }

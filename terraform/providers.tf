@@ -8,13 +8,13 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "bitcoin-coverage-tfstate"
+    bucket = "bitcoin-coverage-state"
     key    = "terraform.tfstate"
-    region = "eu-west-1"
+    region = "eu-west-3"
   }
 }
 
 
 provider "aws" {
-  region = "eu-west-1"
+  region = "eu-west-3"
 }
