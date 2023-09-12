@@ -13,7 +13,7 @@ resource "aws_batch_compute_environment" "jobs_compute" {
     type = "FARGATE_SPOT"
   }
 
-  type         = "MANAGED"
+  type = "MANAGED"
 }
 
 
