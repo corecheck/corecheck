@@ -11,6 +11,8 @@
         restart: yes
         pull: true
         env:
-          POSTGRES_USER: "{{ postgres_user }}"
-          POSTGRES_PASSWORD: "{{ postgres_password }}"
-          POSTGRES_DB: "bitcoin-coverage"
+          DB_HOST: "postgres"
+          DB_USER: "{{ postgres_user }}"
+          DB_PASSWORD: "{{ postgres_password }}"
+          DB_NAME: "bitcoin-coverage"
+          DB_PORT: "5432"
