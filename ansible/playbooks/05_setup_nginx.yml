@@ -16,6 +16,12 @@
         dest: /etc/nginx/nginx.conf
       notify: 
         - restart nginx
+    - name: Certbot nginx
+      shell: certbot --nginx -d {{ domain_name }} --non-interactive --agree-tos --email {{ email }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domain_name }}
+      notify: 
+        - restart nginx
   handlers:
     - name: restart nginx
       service:
