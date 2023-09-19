@@ -11,7 +11,7 @@
         restart: yes
         pull: true
         env:
-          DB_HOST: "postgres"
+          DB_HOST: "127.0.0.1"
           DB_USER: "{{ postgres_user }}"
           DB_PASSWORD: "{{ postgres_password }}"
           DB_NAME: "bitcoin-coverage"
