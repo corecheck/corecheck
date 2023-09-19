@@ -9,6 +9,7 @@
         image: aureleoules/bitcoin-coverage-core:latest
         restart_policy: always
         restart: yes
+        pull: true
         env:
           POSTGRES_USER: "{{ postgres_user }}"
           POSTGRES_PASSWORD: "{{ postgres_password }}"
