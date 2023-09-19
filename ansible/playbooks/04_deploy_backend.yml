@@ -18,3 +18,14 @@
           DB_PORT: "5432"
           GITHUB_ACCESS_TOKEN: "{{ github_access_token }}"
         network_mode: host
+    - name: Prune docker system
+      docker_prune:
+        images: yes
+        containers: yes
+        volumes: yes
+        networks: yes
+        dangling_images: yes
+        dangling_containers: yes
+        dangling_volumes: yes
+        dangling_networks: yes
+        force: yes
