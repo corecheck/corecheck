@@ -18,6 +18,7 @@
           DB_PORT: "5432"
           GITHUB_ACCESS_TOKEN: "{{ github_access_token }}"
           SESSION_SECRET: "{{ session_secret }}"
+          GH_OAUTH_SECRET: "{{ gh_oauth_secret }}"
         network_mode: host
     - name: Prune docker system
       docker_prune:
