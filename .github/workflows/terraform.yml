@@ -15,9 +15,6 @@ jobs:
     env:
       TF_VAR_aws_access_key_id: ${{ secrets.TF_VAR_aws_access_key_id }}
       TF_VAR_aws_secret_access_key: ${{ secrets.TF_VAR_aws_secret_access_key }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -64,6 +61,11 @@ jobs:
       run:
         shell: bash
         working-directory: ./ansible
+
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
