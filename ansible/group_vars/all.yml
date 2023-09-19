@@ -1,5 +1,6 @@
 postgres_user: "{{ lookup('ansible.builtin.env', 'POSTGRES_USER') }}"
 postgres_password: "{{ lookup('ansible.builtin.env', 'POSTGRES_PASSWORD') }}"
 github_access_token: "{{ lookup('ansible.builtin.env', 'GITHUB_ACCESS_TOKEN') }}"
+session_secret: "{{ lookup('ansible.builtin.env', 'SESSION_SECRET') }}"
 domain_name: bitcoin-coverage-api.aureleoules.com
 email: bitcoin-coverage@aureleoules.com

@@ -67,6 +67,7 @@ jobs:
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       GITHUB_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
