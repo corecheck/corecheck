@@ -36,6 +36,10 @@ resource "aws_instance" "core" {
   availability_zone = "eu-west-3a"
   ami      = data.aws_ami.ecs-optimized.id
   key_name = aws_key_pair.ssh_key.key_name
+
+    root_block_device {
+        volume_size = 10
+    }
 }
 
 resource "aws_volume_attachment" "db" {
