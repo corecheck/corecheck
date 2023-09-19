@@ -13,7 +13,7 @@ http{
 
         server_name bitcoin-coverage-api.{{ domain }};
         location / {
-            proxy_pass http://core:8000;
+            proxy_pass http://localhost:8000;
             proxy_set_header Host $host;
         }
     }
