@@ -4,7 +4,7 @@ data "aws_ami" "ecs-optimized" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
+    values = ["amzn2-ami-ecs-hvm-*-arm64-ebs"]
   }
 
   owners = ["amazon"]
