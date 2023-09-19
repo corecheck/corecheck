@@ -1,6 +1,6 @@
 ---
 - name: Install and configure Nginx
-  hosts: nginx
+  hosts: core
   become: yes
   tasks:
     - name: Install nginx
