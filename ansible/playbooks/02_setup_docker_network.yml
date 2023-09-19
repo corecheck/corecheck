@@ -1,0 +1,8 @@
+---
+- name: Setup docker network
+  hosts: core
+  become: yes
+  tasks:
+    - name: Setup docker network
+      docker_network:
+        name: bitcoin-coverage

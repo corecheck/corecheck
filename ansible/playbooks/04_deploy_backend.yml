@@ -16,3 +16,5 @@
           DB_PASSWORD: "{{ postgres_password }}"
           DB_NAME: "bitcoin-coverage"
           DB_PORT: "5432"
+        networks:
+          - name: bitcoin-coverage
