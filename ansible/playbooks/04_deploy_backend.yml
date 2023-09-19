@@ -24,8 +24,4 @@
         containers: yes
         volumes: yes
         networks: yes
-        dangling_images: yes
-        dangling_containers: yes
-        dangling_volumes: yes
-        dangling_networks: yes
         force: yes
