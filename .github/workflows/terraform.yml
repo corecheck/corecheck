@@ -3,6 +3,7 @@ name: 'Terraform & Ansible'
 on:
   push:
     branches: [ "master" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
