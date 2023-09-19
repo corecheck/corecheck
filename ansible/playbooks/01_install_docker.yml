@@ -18,9 +18,9 @@
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
-    - name: Add Docker repository 
+    - name: Add Docker repository
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+        repo: deb [arch=arm64] https://download.docker.com/linux/ubuntu jammy stable
         state: present
     - name: Install Docker 
       apt:
