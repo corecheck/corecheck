@@ -24,4 +24,3 @@
         containers: yes
         volumes: yes
         networks: yes
-        force: yes
