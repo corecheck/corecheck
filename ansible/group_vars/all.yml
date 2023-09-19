@@ -1,2 +1,3 @@
 postgres_user: "{{ lookup('ansible.builtin.env', 'POSTGRES_USER') }}"
 postgres_password: "{{ lookup('ansible.builtin.env', 'POSTGRES_PASSWORD') }}"
+github_access_token: "{{ lookup('ansible.builtin.env', 'GITHUB_ACCESS_TOKEN') }}"

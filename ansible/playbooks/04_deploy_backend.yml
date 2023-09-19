@@ -16,5 +16,6 @@
           DB_PASSWORD: "{{ postgres_password }}"
           DB_NAME: "bitcoin-coverage"
           DB_PORT: "5432"
+          GITHUB_ACCESS_TOKEN: "{{ github_access_token }}"
         networks:
           - name: bitcoin-coverage
