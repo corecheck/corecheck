@@ -10,6 +10,17 @@ data "aws_ami" "ecs-optimized" {
   owners = ["amazon"]
 }
 
+data "aws_ami" "ubuntu_22_04" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
+    }
+
+    owners = ["099720109477"] # Canonical
+}
+
 resource "aws_key_pair" "ssh_key" {
   key_name   = "ci"
   public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGuel3J5BthPQnrAjrOqt8lY0X+mU+sx/rUgbB54FVw9 aureleoules@nuflap"
@@ -34,7 +45,7 @@ resource "aws_instance" "core" {
   instance_type = "t4g.nano"
 
   availability_zone = "eu-west-3a"
-  ami      = data.aws_ami.ecs-optimized.id
+  ami      = data.aws_ami.ubuntu_22_04.id
   key_name = aws_key_pair.ssh_key.key_name
 
     root_block_device {
