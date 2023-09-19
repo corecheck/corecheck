@@ -33,6 +33,7 @@ resource "aws_ebs_volume" "db" {
 resource "aws_instance" "core" {
   instance_type = "t4g.nano"
 
+  availability_zone = "eu-west-3a"
   ami      = data.aws_ami.ecs-optimized.id
   key_name = aws_key_pair.ssh_key.key_name
 }
