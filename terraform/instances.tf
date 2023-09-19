@@ -11,8 +11,8 @@ data "aws_ami" "ecs-optimized" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "aureleoules"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEM79mi/xHOtZw+bUfOH8soMjCyO5qOdpLls1tXnR2AD aurele@oules.com"
+  key_name   = "ci"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGuel3J5BthPQnrAjrOqt8lY0X+mU+sx/rUgbB54FVw9 aureleoules@nuflap"
 }
 
 resource "aws_eip" "lb" {
@@ -35,9 +35,10 @@ resource "aws_instance" "core" {
 
   ami      = data.aws_ami.ecs-optimized.id
   key_name = aws_key_pair.ssh_key.key_name
+}
 
-  ebs_block_device {
-    device_name = "/dev/sdf"
-    volume_id   = aws_ebs_volume.db.id
-  }
+resource "aws_volume_attachment" "db" {
+  device_name = "/dev/sdf"
+  volume_id   = aws_ebs_volume.db.id
+  instance_id = aws_instance.core.id
 }
