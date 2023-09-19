@@ -2,7 +2,7 @@ resource "aws_batch_compute_environment" "jobs_compute" {
   compute_environment_name = "jobs_compute"
 
   compute_resources {
-    max_vcpus = 64
+    max_vcpus = 128
 
     security_group_ids = [data.aws_security_group.default.id]
 
