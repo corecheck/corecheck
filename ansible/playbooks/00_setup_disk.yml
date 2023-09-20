@@ -21,5 +21,7 @@
       command: chmod 600 /tmp/swapfile
     - name: Set swap file
       command: mkswap /tmp/swapfile
+      ignore_errors: yes
     - name: Enable swap
       command: swapon /tmp/swapfile
+      ignore_errors: yes
