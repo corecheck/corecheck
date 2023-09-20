@@ -3,5 +3,6 @@ postgres_password: "{{ lookup('ansible.builtin.env', 'POSTGRES_PASSWORD') }}"
 github_access_token: "{{ lookup('ansible.builtin.env', 'GITHUB_ACCESS_TOKEN') }}"
 session_secret: "{{ lookup('ansible.builtin.env', 'SESSION_SECRET') }}"
 gh_oauth_secret: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_SECRET') }}"
+gh_oauth_redirect_url: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_REDIRECT_URL')}}"
 domain_name: bitcoin-coverage-api.aureleoules.com
 email: bitcoin-coverage@aureleoules.com
