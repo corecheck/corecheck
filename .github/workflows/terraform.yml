@@ -70,7 +70,7 @@ jobs:
       GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
       GH_OAUTH_CLIENT_ID: ${{ secrets.GH_OAUTH_CLIENT_ID }}
       GH_OAUTH_SECRET: ${{ secrets.GH_OAUTH_SECRET }}
-      GH_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_SECRET }}
+      GH_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_REDIRECT_URL }}
 
       API_SESSION_SECRET: ${{ secrets.API_SESSION_SECRET }}
       PYTHONUNBUFFERED: "1"
