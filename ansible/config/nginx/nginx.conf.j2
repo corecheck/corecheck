@@ -13,7 +13,8 @@ http{
 
         server_name {{ domain_name }};
 
-        location = /api {
+        location /api {
+            rewrite ^/api/(.*) /$1 break;
             proxy_pass http://localhost:8000;
             proxy_set_header Host $host;
         }
