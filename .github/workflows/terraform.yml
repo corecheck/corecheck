@@ -64,12 +64,15 @@ jobs:
         working-directory: ./ansible
 
     env:
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      GITHUB_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      DB_USER: ${{ secrets.POSTGRES_USER }}
+      DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
+      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+      GH_OAUTH_CLIENT_ID: ${{ secrets.GH_OAUTH_CLIENT_ID }}
       GH_OAUTH_SECRET: ${{ secrets.GH_OAUTH_SECRET }}
       GH_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_SECRET }}
+
+      API_SESSION_SECRET: ${{ secrets.API_SESSION_SECRET }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner

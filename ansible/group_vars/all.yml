@@ -1,8 +1,12 @@
-postgres_user: "{{ lookup('ansible.builtin.env', 'POSTGRES_USER') }}"
-postgres_password: "{{ lookup('ansible.builtin.env', 'POSTGRES_PASSWORD') }}"
-github_access_token: "{{ lookup('ansible.builtin.env', 'GITHUB_ACCESS_TOKEN') }}"
-session_secret: "{{ lookup('ansible.builtin.env', 'SESSION_SECRET') }}"
+api_session_secret: "{{ lookup('ansible.builtin.env', 'API_SESSION_SECRET') }}"
+
+db_user: "{{ lookup('ansible.builtin.env', 'DB_USER') }}"
+db_password: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
+
+gh_access_token: "{{ lookup('ansible.builtin.env', 'GH_ACCESS_TOKEN') }}"
+gh_oauth_client_id: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_CLIENT_ID') }}"
 gh_oauth_secret: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_SECRET') }}"
 gh_oauth_redirect_url: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_REDIRECT_URL')}}"
+
 domain_name: bitcoin-coverage-api.aureleoules.com
 email: bitcoin-coverage@aureleoules.com

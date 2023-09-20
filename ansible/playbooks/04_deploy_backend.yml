@@ -3,6 +3,10 @@
   hosts: core
   become: yes
   tasks:
+    - name: Create config file
+      template:
+        src: ../config/core/config.yml.j2
+        dest: /etc/core/config.yml
     - name: Setup backend
       docker_container:
         name: core
@@ -10,17 +14,9 @@
         restart_policy: always
         restart: yes
         pull: true
-        env:
-          DB_HOST: "127.0.0.1"
-          DB_USER: "{{ postgres_user }}"
-          DB_PASSWORD: "{{ postgres_password }}"
-          DB_NAME: "bitcoin-coverage"
-          DB_PORT: "5432"
-          GITHUB_ACCESS_TOKEN: "{{ github_access_token }}"
-          SESSION_SECRET: "{{ session_secret }}"
-          GH_OAUTH_SECRET: "{{ gh_oauth_secret }}"
-          GH_OAUTH_REDIRECT_URL: "{{ gh_oauth_redirect_url }}"
         network_mode: host
+        volumes:
+          - /etc/core/config.yml:/app/config.yml
     - name: Prune docker system
       docker_prune:
         images: yes
