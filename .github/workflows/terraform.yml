@@ -73,6 +73,7 @@ jobs:
       GH_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_SECRET }}
 
       API_SESSION_SECRET: ${{ secrets.API_SESSION_SECRET }}
+      PYTHONUNBUFFERED: "1"
 
     steps:
     # Checkout the repository to the GitHub Actions runner
