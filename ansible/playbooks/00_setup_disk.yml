@@ -13,3 +13,13 @@
         src: /dev/nvme1n1
         path: /data
         state: mounted
+    - name: Create 2GB swap
+      command: fallocate -l 2G /tmp/swapfile
+      args:
+        creates: /tmp/swapfile
+    - name: Set swap permissions
+      command: chmod 600 /tmp/swapfile
+    - name: Set swap file
+      command: mkswap /tmp/swapfile
+    - name: Enable swap
+      command: swapon /tmp/swapfile
