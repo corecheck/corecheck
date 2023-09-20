@@ -64,8 +64,8 @@ jobs:
         working-directory: ./ansible
 
     env:
-      DB_USER: ${{ secrets.POSTGRES_USER }}
-      DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
       GH_OAUTH_CLIENT_ID: ${{ secrets.GH_OAUTH_CLIENT_ID }}

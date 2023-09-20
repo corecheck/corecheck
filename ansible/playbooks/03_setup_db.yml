@@ -12,7 +12,7 @@
         restart_policy: always
         restart: yes
         env:
-          POSTGRES_USER: "{{ postgres_user }}"
-          POSTGRES_PASSWORD: "{{ postgres_password }}"
+          POSTGRES_USER: "{{ db_user }}"
+          POSTGRES_PASSWORD: "{{ db_password }}"
           POSTGRES_DB: "bitcoin-coverage"
         network_mode: host
