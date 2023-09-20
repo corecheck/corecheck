@@ -5,7 +5,7 @@
   tasks:
     - name: Setup frontend
       docker_container:
-        name: fronten
+        name: frontend
         image: aureleoules/bitcoin-coverage-ui:latest
         restart_policy: always
         restart: yes
