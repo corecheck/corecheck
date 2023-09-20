@@ -13,7 +13,7 @@
         network_mode: host
         env:
           PUBLIC_ENDPOINT: "/api"
-          PUBLIC_REDIRECT_URL: "{{ domain_name }}/callback"
+          PUBLIC_REDIRECT_URL: "https://{{ domain_name }}/callback"
           PUBLIC_CLIENT_ID: "{{ gh_oauth_client_id }}"
     - name: Prune docker system
       docker_prune:
