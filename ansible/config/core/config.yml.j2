@@ -2,6 +2,7 @@ dev: false
 api:
   port: 8000
   session_secret: {{ api_session_secret }}
+  cookie_secure: true
 db:
   port: 5432
   user: {{ db_user }}
