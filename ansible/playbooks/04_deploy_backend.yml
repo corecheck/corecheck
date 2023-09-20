@@ -21,9 +21,3 @@
         network_mode: host
         volumes:
           - /etc/core/config.yml:/app/config.yml
-    - name: Prune docker system
-      docker_prune:
-        images: yes
-        containers: yes
-        volumes: yes
-        networks: yes
