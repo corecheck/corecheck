@@ -8,5 +8,5 @@ gh_oauth_client_id: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_CLIENT_ID') }}"
 gh_oauth_secret: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_SECRET') }}"
 gh_oauth_redirect_url: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_REDIRECT_URL')}}"
 
-domain_name: bitcoin-coverage.aureleoules.com
+domain_name: btc-coverage.aureleoules.com
 email: bitcoin-coverage@aureleoules.com
