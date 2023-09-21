@@ -69,6 +69,10 @@ resource "aws_batch_job_definition" "coverage_job" {
       action = "RETRY"
       on_status_reason = "Your Spot Task was interrupted."
     }
+    evaluate_on_exit {
+      action = "EXIT"
+      on_exit_code = "1"
+    }
   }
 }
 
@@ -130,6 +134,10 @@ resource "aws_batch_job_definition" "mutation_job" {
     evaluate_on_exit {
       action = "RETRY"
       on_status_reason = "Your Spot Task was interrupted."
+    }
+    evaluate_on_exit {
+      action = "EXIT"
+      on_exit_code = "1"
     }
   }
 }
