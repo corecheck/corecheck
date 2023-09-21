@@ -11,5 +11,5 @@ gh_oauth_redirect_url: "{{ lookup('ansible.builtin.env', 'GH_OAUTH_REDIRECT_URL'
 aws_access_key_id: "{{ lookup('ansible.builtin.env', 'AWS_ACCESS_KEY_ID') }}"
 aws_secret_access_key: "{{ lookup('ansible.builtin.env', 'AWS_SECRET_ACCESS_KEY') }}"
 
-domain_name: btc-coverage.aureleoules.com
+domain_name: corecheck.dev
 email: bitcoin-coverage@aureleoules.com
