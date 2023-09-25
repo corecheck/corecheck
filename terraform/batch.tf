@@ -88,7 +88,7 @@ resource "aws_batch_job_definition" "coverage_job" {
     }
     evaluate_on_exit {
       action = "EXIT"
-      on_status_reason = "FAILED"
+      on_reason = "FAILED"
     }
   }
 }
@@ -154,7 +154,7 @@ resource "aws_batch_job_definition" "mutation_job" {
     }
     evaluate_on_exit {
       action = "EXIT"
-      on_status_reason = "FAILED"
+      on_reason = "FAILED"
     }
   }
 }
