@@ -79,18 +79,6 @@ resource "aws_batch_job_definition" "coverage_job" {
   timeout {
     attempt_duration_seconds = 3600
   }
-
-  retry_strategy {
-    attempts = 3
-    evaluate_on_exit {
-      action = "RETRY"
-      on_exit_code = "137"
-    }
-    evaluate_on_exit {
-      action = "EXIT"
-      on_exit_code = "*"
-    }
-  }
 }
 
 resource "aws_batch_job_definition" "mutation_job" {
@@ -145,16 +133,5 @@ resource "aws_batch_job_definition" "mutation_job" {
   })
   timeout {
     attempt_duration_seconds = 1800
-  }
-  retry_strategy {
-    attempts = 3
-    evaluate_on_exit {
-      action = "RETRY"
-      on_exit_code = "137"
-    }
-    evaluate_on_exit {
-      action = "EXIT"
-      on_exit_code = "*"
-    }
   }
 }
