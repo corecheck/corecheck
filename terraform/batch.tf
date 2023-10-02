@@ -66,6 +66,10 @@ resource "aws_batch_job_definition" "coverage_job" {
       {
         name  = "AWS_SECRET_ACCESS_KEY",
         value = var.aws_secret_access_key
+      },
+      {
+        name = "SONAR_TOKEN",
+        value = var.sonar_token
       }
     ]
 
