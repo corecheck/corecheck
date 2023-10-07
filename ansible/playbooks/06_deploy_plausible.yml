@@ -64,5 +64,6 @@
         env:
           BASE_URL: "https://plausible.{{ domain_name }}"
           SECRET_KEY_BASE: "{{ plausible_secret_key_base }}"
+          DATABASE_URL:	"postgres://postgres:{{ plausible_db_password }}@plausible_db:5432/plausible_db"
         networks:
           - name: plausible
