@@ -12,7 +12,7 @@ aws_access_key_id: "{{ lookup('ansible.builtin.env', 'AWS_ACCESS_KEY_ID') }}"
 aws_secret_access_key: "{{ lookup('ansible.builtin.env', 'AWS_SECRET_ACCESS_KEY') }}"
 
 plausible_secret_key_base: "{{ lookup('ansible.builtin.env', 'PLAUSIBLE_SECRET_KEY_BASE') }}"
-plausible_db_password: "{{ lookup('ansible.builtin.env', 'PLAUSIBLE_DB_PASSWORD') }}')}}"
+plausible_db_password: "{{ lookup('ansible.builtin.env', 'PLAUSIBLE_DB_PASSWORD') }}"
 
 domain_name: corecheck.dev
 email: bitcoin-coverage@aureleoules.com
