@@ -80,6 +80,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       API_SESSION_SECRET: ${{ secrets.API_SESSION_SECRET }}
+      PLAUSIBLE_DB_PASSWORD: ${{ secrets.PLAUSIBLE_DB_PASSWORD }}
       
       PLAUSIBLE_SECRET_KEY_BASE: ${{ secrets.PLAUSIBLE_SECRET_KEY_BASE }}
       
