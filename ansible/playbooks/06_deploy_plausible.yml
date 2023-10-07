@@ -1,0 +1,66 @@
+---
+- name: Setup plausible
+  hosts: core
+  become: yes
+  tasks:
+    - name: Create plausible network
+      docker_network:
+        name: plausible
+        state: present
+    - name: Plausible DB
+      docker_container:
+        name: plausible_db
+        image: postgres:14-alpine
+        restart_policy: always
+        restart: yes
+        pull: true
+        networks:
+          - name: plausible
+        env:
+          POSTGRES_PASSWORD: "postgres"
+    - name: Create config file folder
+      file:
+        path: /etc/clickhouse
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: Copy config files
+      copy:
+        src: "../config/plausible/{{ item }}"
+        dest: "/etc/clickhouse/{{ item }}"
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - config.xml
+        - user-config.xml
+    - name: Plausible Clickhouse
+      docker_container:
+        name: plausible_events_db
+        image: clickhouse/clickhouse-server:23.3.7.5-alpine
+        restart_policy: always
+        restart: yes
+        pull: true
+        volumes:
+          - /data/clickhouse:/var/lib/clickhouse/
+          - /etc/clickhouse/config.xml:/etc/clickhouse-server/config.d/logging.xml:ro
+          - /etc/clickhouse/user-config.xml:/etc/clickhouse-server/users.d/logging.xml:ro
+        networks:
+          - name: plausible
+        ulimits: nofile:262144:262144
+    - name: Plausible
+      docker_container:
+        name: plausible
+        image: plausible/analytics:v2.0
+        restart_policy: always
+        restart: yes
+        pull: true
+        command: "sh -c \"sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run\""
+        ports:
+          - "9000:8000"
+        env:
+          BASE_URL: "https://plausible.{{ domain_name }}"
+          SECRET_KEY_BASE: "{{ plausible_secret_key_base }}"
+        networks:
+          - name: plausible

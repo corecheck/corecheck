@@ -17,7 +17,7 @@
       notify: 
         - restart nginx
     - name: Certbot nginx
-      shell: certbot --nginx -d {{ domain_name }} --non-interactive --agree-tos --email {{ email }}
+      shell: certbot --nginx -d {{ domain_name }} -d plausible.{{ domain_name }} --non-interactive --agree-tos --expand --email {{ email }}
       notify: 
         - restart nginx
   handlers:

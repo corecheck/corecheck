@@ -14,6 +14,7 @@
           - curl
           - gnupg-agent
           - software-properties-common
+          - python3-pip
     - name: Add Docker official GPG key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -30,4 +31,8 @@
           - containerd.io
           - docker-buildx-plugin
           - docker-compose-plugin
+        state: present
+    - name: pip install docker
+      pip:
+        name: docker
         state: present
