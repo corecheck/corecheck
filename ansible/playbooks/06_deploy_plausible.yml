@@ -18,6 +18,8 @@
           - name: plausible
         env:
           POSTGRES_PASSWORD: "{{ plausible_db_password }}"
+        volumes:
+          - /data/plausible/db:/var/lib/postgresql/data
     - name: Create config file folder
       file:
         path: /etc/clickhouse
