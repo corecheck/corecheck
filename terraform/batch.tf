@@ -1,16 +1,23 @@
 resource "aws_batch_compute_environment" "jobs_compute" {
-  compute_environment_name = "jobs_compute"
+  compute_environment_name_prefix = "jobs_compute"
 
   compute_resources {
-    max_vcpus = 128
-
+    max_vcpus          = 128
     security_group_ids = [data.aws_security_group.default.id]
 
     subnets = [
       data.aws_subnets.example.ids[0],
+      data.aws_subnets.example.ids[1],
+      data.aws_subnets.example.ids[2],
     ]
 
-    type = "FARGATE_SPOT"
+    type                = "SPOT"
+    instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
+    instance_type       = ["c6i.2xlarge"]
+    allocation_strategy = "SPOT_PRICE_CAPACITY_OPTIMIZED"
+  }
+  lifecycle {
+    create_before_destroy = true
   }
 
   type = "MANAGED"
@@ -29,15 +36,28 @@ resource "aws_batch_job_queue" "coverage_queue" {
 resource "aws_batch_job_definition" "coverage_job" {
   name = "coverage-job"
   type = "container"
-  platform_capabilities = [
-    "FARGATE",
-  ]
+
 
   container_properties = jsonencode({
-    image = aws_ecrpublic_repository.bitcoin-coverage-coverage-worker.repository_uri
-    fargatePlatformConfiguration = {
-      platformVersion = "LATEST"
-    }
+    image      = aws_ecrpublic_repository.bitcoin-coverage-coverage-worker.repository_uri
+    privileged = true
+
+    mountPoints = [
+      {
+        containerPath = "/lib/modules"
+        readOnly      = false
+        sourceVolume  = "modules"
+      }
+    ]
+
+    volumes = [
+      {
+        name = "modules"
+        host = {
+          sourcePath = "/lib/modules"
+        }
+      }
+    ]
 
     resourceRequirements = [
       {
@@ -46,7 +66,7 @@ resource "aws_batch_job_definition" "coverage_job" {
       },
       {
         type  = "MEMORY"
-        value = "16384"
+        value = "15000",
       }
     ]
 
@@ -68,16 +88,12 @@ resource "aws_batch_job_definition" "coverage_job" {
         value = var.aws_secret_access_key
       },
       {
-        name = "SONAR_TOKEN",
+        name  = "SONAR_TOKEN",
         value = var.sonar_token
       }
     ]
 
-    networkConfiguration = {
-      "assignPublicIp" = "ENABLED"
-    }
-
-    executionRoleArn = aws_iam_role.ecs_task_execution_role.arn
+    executionRoleArn = aws_iam_role.job_role.arn
     jobRoleArn       = aws_iam_role.job_role.arn
   })
   timeout {
