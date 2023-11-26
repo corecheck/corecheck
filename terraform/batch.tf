@@ -97,6 +97,6 @@ resource "aws_batch_job_definition" "coverage_job" {
     jobRoleArn       = aws_iam_role.job_role.arn
   })
   timeout {
-    attempt_duration_seconds = 3600
+    attempt_duration_seconds = 5400
   }
 }
