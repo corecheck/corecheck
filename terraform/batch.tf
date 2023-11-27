@@ -37,6 +37,19 @@ resource "aws_batch_job_definition" "coverage_job" {
   name = "coverage-job"
   type = "container"
 
+  retry_strategy {
+    evaluate_on_exit {
+      on_status_reason = "Host EC2*"
+      action           = "RETRY"
+    }
+
+    evaluate_on_exit {
+      on_reason = "*"
+      action    = "EXIT"
+    }
+
+    attempts = 2
+  }
 
   container_properties = jsonencode({
     image      = aws_ecrpublic_repository.bitcoin-coverage-coverage-worker.repository_uri
