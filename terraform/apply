@@ -1,0 +1,1 @@
+TF_VAR_aws_access_key_id=AKIAU5P4GQO54VVLP53A TF_VAR_aws_secret_access_key=PKhg+iM69G+aTMJeCD3mgFfHmP/7Wm2OR2jvquH4terraform TF_VAR_sonar_token=916d6a9cf47395379627cb02b268ede3fdf26d8c terraform apply 
