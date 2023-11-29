@@ -18,3 +18,16 @@ terraform {
 provider "aws" {
   region = "eu-west-3"
 }
+
+provider "aws" {
+  alias  = "compute_region"
+  region = "ap-south-1"
+}
+
+data "aws_region" "compute_region" {
+  provider = aws.compute_region
+}
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}

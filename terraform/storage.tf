@@ -55,24 +55,3 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
     }
   }
 }
-
-resource "aws_s3_bucket" "bitcoin-coverage-cache" {
-  bucket = "bitcoin-coverage-cache"
-}
-
-resource "aws_s3_bucket" "bitcoin-coverage-ccache" {
-  bucket = "bitcoin-coverage-ccache"
-}
-
-# remove objects after 30days
-resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-ccache" {
-  bucket = aws_s3_bucket.bitcoin-coverage-ccache.id
-
-  rule {
-    id     = "bitcoin-coverage-ccache"
-    status = "Enabled"
-    expiration {
-      days = 30
-    }
-  }
-}
