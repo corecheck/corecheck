@@ -198,8 +198,6 @@ resource "aws_batch_compute_environment" "jobs_compute" {
 
     subnets = [
       data.aws_subnets.batch_subnets.ids[0],
-      data.aws_subnets.batch_subnets.ids[1],
-      data.aws_subnets.batch_subnets.ids[2],
     ]
 
     type                = "SPOT"
