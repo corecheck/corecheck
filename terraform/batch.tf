@@ -240,7 +240,7 @@ resource "aws_batch_job_definition" "coverage_job" {
       action    = "EXIT"
     }
 
-    attempts = 2
+    attempts = 5
   }
 
   container_properties = jsonencode({
