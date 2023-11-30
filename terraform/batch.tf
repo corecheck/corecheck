@@ -159,7 +159,7 @@ resource "aws_imagebuilder_infrastructure_configuration" "bitcoin-coverage-confi
   provider              = aws.compute_region
   name                  = "bitcoin-coverage-configuration"
   instance_profile_name = aws_iam_instance_profile.image_builder_instance_profile.name
-  instance_types        = ["c6g.medium"]
+  instance_types        = ["c7g.medium"]
   security_group_ids    = [data.aws_security_group.compute_security_group.id]
   subnet_id             = data.aws_subnets.batch_subnets.ids[0]
 }
@@ -204,7 +204,7 @@ resource "aws_batch_compute_environment" "jobs_compute" {
 
     type                = "SPOT"
     instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
-    instance_type       = ["c6g.2xlarge"]
+    instance_type       = ["c7g.2xlarge"]
     allocation_strategy = "SPOT_PRICE_CAPACITY_OPTIMIZED"
   }
   lifecycle {
