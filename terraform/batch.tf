@@ -38,7 +38,7 @@ resource "aws_imagebuilder_component" "bitcoin-coverage-component" {
   provider = aws.compute_region
   name     = "CPUAffinity"
   platform = "Linux"
-  version  = "1.0.3"
+  version  = "1.0.4"
 
   lifecycle {
     create_before_destroy = true
@@ -58,7 +58,7 @@ resource "aws_imagebuilder_component" "bitcoin-coverage-component" {
               "inputs" = {
                 "commands" = [
                   "echo 'CPUAffinity=0' >> /etc/systemd/system.conf",
-                  "if [ -f /tmp/reboot ]; then for pid in $(ps -e -o pid=); do taskset -p 0x1 $pid; done; exit 0; else touch /tmp/reboot; exit 194; fi"
+                  "echo 'kernel.randomize_va_space=0' >> /etc/sysctl.conf"
                 ]
               }
             }
@@ -93,7 +93,7 @@ data "aws_ami" "amazon-linux-2" {
 resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
   provider     = aws.compute_region
   name         = "bitcoin-coverage-recipe"
-  version      = "1.0.4"
+  version      = "1.0.5"
   parent_image = data.aws_ami.amazon-linux-2.id
   component {
     component_arn = aws_imagebuilder_component.bitcoin-coverage-component.arn
