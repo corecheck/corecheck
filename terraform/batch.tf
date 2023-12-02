@@ -93,8 +93,18 @@ data "aws_ami" "amazon-linux-2" {
 resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
   provider     = aws.compute_region
   name         = "bitcoin-coverage-recipe"
-  version      = "1.0.5"
+  version      = "1.0.7"
   parent_image = data.aws_ami.amazon-linux-2.id
+  block_device_mapping {
+    device_name = "/dev/xvda"
+    ebs {
+      delete_on_termination = true
+      encrypted             = false
+      volume_size           = 30
+      volume_type           = "io2"
+      iops = 10000
+    }
+  }
   component {
     component_arn = aws_imagebuilder_component.bitcoin-coverage-component.arn
   }
@@ -183,6 +193,7 @@ resource "aws_imagebuilder_image" "bitcoin-coverage-ami" {
     create_before_destroy = true
   }
 }
+
 
 resource "aws_batch_compute_environment" "jobs_compute" {
   provider                        = aws.compute_region
