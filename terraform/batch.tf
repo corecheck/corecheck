@@ -16,6 +16,7 @@ resource "aws_s3_bucket" "corecheck-ccache" {
   bucket   = "corecheck-ccache"
 }
 
+
 # remove objects after 30days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
   provider = aws.compute_region
@@ -29,186 +30,41 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
     }
   }
 }
+resource "aws_s3_bucket" "corecheck-artifacts" {
+  provider = aws.compute_region
+  bucket   = "corecheck-artifacts"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "corecheck-artifacts" {
+  provider = aws.compute_region
+  bucket   = aws_s3_bucket.corecheck-artifacts.id
+
+  rule {
+    id     = "corecheck-artifacts"
+    status = "Enabled"
+    expiration {
+      days = 30
+    }
+  }
+}
+
 data "aws_security_group" "compute_security_group" {
   provider = aws.compute_region
   name     = "default"
 }
 
-resource "aws_imagebuilder_component" "bitcoin-coverage-component" {
-  provider = aws.compute_region
-  name     = "CPUAffinity"
-  platform = "Linux"
-  version  = "1.0.4"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  data = yamlencode(
-    {
-      "schemaVersion" = "1.0"
-      "description"   = "CPUAffinity"
-      "phases" = [
-        {
-          "name" = "build"
-          "steps" = [
-            {
-              "name"   = "CPUAffinity"
-              "action" = "ExecuteBash"
-              "inputs" = {
-                "commands" = [
-                  "echo 'CPUAffinity=0' >> /etc/systemd/system.conf",
-                  "echo 'kernel.randomize_va_space=0' >> /etc/sysctl.conf"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    }
-  )
-}
-
-# arm 64 Amazon Linux 2
-data "aws_ami" "amazon-linux-2" {
-  provider    = aws.compute_region
-  most_recent = true
-
-  filter {
-    name   = "owner-alias"
-    values = ["amazon"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm*"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["arm64"]
-  }
-}
-
-resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
-  provider     = aws.compute_region
-  name         = "bitcoin-coverage-recipe"
-  version      = "1.0.7"
-  parent_image = data.aws_ami.amazon-linux-2.id
-  block_device_mapping {
-    device_name = "/dev/xvda"
-    ebs {
-      delete_on_termination = true
-      encrypted             = false
-      volume_size           = 30
-      volume_type           = "io2"
-      iops = 10000
-    }
-  }
-  component {
-    component_arn = aws_imagebuilder_component.bitcoin-coverage-component.arn
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# distribution
-resource "aws_imagebuilder_distribution_configuration" "bitcoin-coverage-distribution" {
-  provider = aws.compute_region
-  name     = "bitcoin-coverage-distribution"
-  distribution {
-    region = data.aws_region.compute_region.name
-    ami_distribution_configuration {}
-  }
-}
-
-resource "aws_iam_role" "image_builder_role" {
-  provider = aws.compute_region
-  name     = "image_builder_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "image_builder_role_policy_ssm" {
-  provider   = aws.compute_region
-  role       = aws_iam_role.image_builder_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-resource "aws_iam_role_policy_attachment" "image_builder_role_policy_ec2" {
-  provider   = aws.compute_region
-  role       = aws_iam_role.image_builder_role.name
-  policy_arn = "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder"
-}
-resource "aws_iam_role_policy_attachment" "image_builder_role_policy_ecr" {
-  provider   = aws.compute_region
-  role       = aws_iam_role.image_builder_role.name
-  policy_arn = "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilderECRContainerBuilds"
-}
-
-
-resource "aws_iam_instance_profile" "image_builder_instance_profile" {
-  provider = aws.compute_region
-  name     = "image_builder_instance_profile"
-  role     = aws_iam_role.image_builder_role.name
-}
-
-resource "aws_imagebuilder_infrastructure_configuration" "bitcoin-coverage-configuration" {
-  provider              = aws.compute_region
-  name                  = "bitcoin-coverage-configuration"
-  instance_profile_name = aws_iam_instance_profile.image_builder_instance_profile.name
-  instance_types        = ["c7g.medium"]
-  security_group_ids    = [data.aws_security_group.compute_security_group.id]
-  subnet_id             = data.aws_subnets.batch_subnets.ids[0]
-}
-
-resource "aws_imagebuilder_image" "bitcoin-coverage-ami" {
-  provider                         = aws.compute_region
-  distribution_configuration_arn   = aws_imagebuilder_distribution_configuration.bitcoin-coverage-distribution.arn
-  image_recipe_arn                 = aws_imagebuilder_image_recipe.bitcoin-coverage-recipe.arn
-  infrastructure_configuration_arn = aws_imagebuilder_infrastructure_configuration.bitcoin-coverage-configuration.arn
-  timeouts {
-    create = "20m"
-  }
-  tags = {
-    Name = "bitcoin-coverage-ami"
-  }
-  image_tests_configuration {
-    image_tests_enabled = false
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-
 resource "aws_batch_compute_environment" "jobs_compute" {
   provider                        = aws.compute_region
-  compute_environment_name_prefix = "jobs_compute"
+  compute_environment_name_prefix = "coverage-"
 
   compute_resources {
     max_vcpus          = 32
     security_group_ids = [data.aws_security_group.compute_security_group.id]
-    ec2_configuration {
-      image_id_override = tolist(aws_imagebuilder_image.bitcoin-coverage-ami.output_resources[0].amis)[0].image
-      image_type        = "ECS_AL2"
-    }
 
     subnets = [
       data.aws_subnets.batch_subnets.ids[0],
+      data.aws_subnets.batch_subnets.ids[1],
+      data.aws_subnets.batch_subnets.ids[2],
     ]
 
     type                = "SPOT"
@@ -254,24 +110,6 @@ resource "aws_batch_job_definition" "coverage_job" {
 
   container_properties = jsonencode({
     image      = aws_ecrpublic_repository.bitcoin-coverage-coverage-worker.repository_uri
-    privileged = true
-
-    mountPoints = [
-      {
-        containerPath = "/lib/modules"
-        readOnly      = false
-        sourceVolume  = "modules"
-      }
-    ]
-
-    volumes = [
-      {
-        name = "modules"
-        host = {
-          sourcePath = "/lib/modules"
-        }
-      }
-    ]
 
     resourceRequirements = [
       {
@@ -304,6 +142,14 @@ resource "aws_batch_job_definition" "coverage_job" {
       {
         name  = "SONAR_TOKEN",
         value = var.sonar_token
+      },
+      {
+        name  = "S3_BUCKET_DATA",
+        value = aws_s3_bucket.bitcoin-coverage-data.id
+      },
+      {
+        name = "S3_BUCKET_ARTIFACTS",
+        value = aws_s3_bucket.corecheck-artifacts.id
       }
     ]
 
