@@ -43,7 +43,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-artifacts" {
     id     = "corecheck-artifacts"
     status = "Enabled"
     expiration {
-      days = 30
+      days = 3
     }
   }
 }
