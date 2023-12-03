@@ -109,7 +109,7 @@ resource "aws_batch_job_definition" "coverage_job" {
   }
 
   container_properties = jsonencode({
-    image      = aws_ecrpublic_repository.bitcoin-coverage-coverage-worker.repository_uri
+    image      = aws_ecrpublic_repository.corecheck-coverage-worker.repository_uri
 
     resourceRequirements = [
       {
