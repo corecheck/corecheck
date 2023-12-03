@@ -31,7 +31,7 @@ resource "aws_batch_job_queue" "sonar_queue" {
   state    = "ENABLED"
   priority = 1
   compute_environments = [
-    aws_batch_compute_environment.jobs_compute.arn
+    aws_batch_compute_environment.sonar_compute.arn
   ]
 }
 resource "aws_batch_job_definition" "sonar_job" {
