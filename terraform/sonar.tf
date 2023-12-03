@@ -54,7 +54,7 @@ resource "aws_batch_job_definition" "sonar_job" {
   }
 
   container_properties = jsonencode({
-    image      = aws_ecrpublic_repository.corecheck-sonar-worker.repository_uri
+    image = aws_ecrpublic_repository.corecheck-sonar-worker.repository_uri
 
     resourceRequirements = [
       {
@@ -79,6 +79,14 @@ resource "aws_batch_job_definition" "sonar_job" {
       {
         name  = "SONAR_TOKEN",
         value = var.sonar_token
+      },
+      {
+        name  = "AWS_ACCESS_KEY_ID",
+        value = var.aws_access_key_id
+      },
+      {
+        name  = "AWS_SECRET_ACCESS_KEY",
+        value = var.aws_secret_access_key
       }
     ]
 
