@@ -57,7 +57,7 @@ data "aws_ami" "amazon-linux-2" {
 resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
   provider     = aws.compute_region
   name         = "bitcoin-coverage-recipe"
-  version      = "1.0.7"
+  version      = "1.0.8"
   parent_image = data.aws_ami.amazon-linux-2.id
   block_device_mapping {
     device_name = "/dev/xvda"
@@ -65,8 +65,8 @@ resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
       delete_on_termination = true
       encrypted             = false
       volume_size           = 30
-      volume_type           = "io2"
-      iops                  = 10000
+      volume_type           = "gp3"
+      iops                  = 3000
     }
   }
   component {
