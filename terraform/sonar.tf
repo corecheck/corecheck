@@ -14,7 +14,7 @@ resource "aws_batch_compute_environment" "sonar_compute" {
 
     type                = "SPOT"
     instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
-    instance_type       = ["c6i.2xlarge"]
+    instance_type       = ["c6a.2xlarge"]
     allocation_strategy = "SPOT_PRICE_CAPACITY_OPTIMIZED"
   }
   lifecycle {
