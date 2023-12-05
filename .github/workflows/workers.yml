@@ -10,6 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Run job only if workers/sonar-worker/* changed
+      run: |
+        if [[ $(git diff --name-only HEAD^ HEAD) =~ ^workers/sonar-worker/.* ]]; then
+          echo "##[set-output name=run;]true"
+        else
+          echo "##[set-output name=run;]false"
+        fi
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -35,6 +42,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Run job only if workers/bench-worker/* changed
+      run: |
+        if [[ $(git diff --name-only HEAD^ HEAD) =~ ^workers/bench-worker/.* ]]; then
+          echo "##[set-output name=run;]true"
+        else
+          echo "##[set-output name=run;]false"
+        fi
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -64,6 +78,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Run job only if workers/coverage-worker/* changed
+      run: |
+        if [[ $(git diff --name-only HEAD^ HEAD) =~ ^workers/coverage-worker/.* ]]; then
+          echo "##[set-output name=run;]true"
+        else
+          echo "##[set-output name=run;]false"
+        fi
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
