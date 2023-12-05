@@ -4,7 +4,6 @@ on:
     branches: [ "master" , "dev" ]
   workflow_dispatch:
 
-
 jobs:
   build_sonar:
     name: sonar-worker
@@ -14,6 +13,7 @@ jobs:
         shell: bash
         working-directory: ./workers/sonar-worker
     steps:
+    - uses: actions/checkout@v3
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -21,7 +21,6 @@ jobs:
         else
           echo "export SONAR_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-sonar-worker:latest" >> $GITHUB_ENV
         fi
-    - uses: actions/checkout@v3
     - name: Configure AWS CLI
       run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
     - name: Login to ECR
@@ -39,6 +38,7 @@ jobs:
         shell: bash
         working-directory: ./workers/bench-worker
     steps:
+    - uses: actions/checkout@v3
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -46,7 +46,6 @@ jobs:
         else
           echo "export BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker:latest" >> $GITHUB_ENV
         fi
-    - uses: actions/checkout@v3
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -73,6 +72,7 @@ jobs:
         shell: bash
         working-directory: ./workers/coverage-worker
     steps:
+    - uses: actions/checkout@v3
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -80,7 +80,6 @@ jobs:
         else
           echo "export COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker:latest" >> $GITHUB_ENV
         fi
-    - uses: actions/checkout@v3
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
