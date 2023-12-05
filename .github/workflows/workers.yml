@@ -8,10 +8,6 @@ jobs:
   build_sonar:
     name: sonar-worker
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./workers/sonar-worker
     steps:
     - uses: actions/checkout@v3
     - name: Setup env variables
@@ -25,18 +21,19 @@ jobs:
       run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
     - name: Login to ECR
       run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i3s2n0b6
-    - name: Build the Docker image
-      run: docker build . --tag $SONAR_IMAGE
-    - name: Push to ECR
-      run: docker push $SONAR_IMAGE
+    - name: Build and push
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        context: workers/sonar-worker
+        file: ./Dockerfile
+        push: true
+        platforms: linux/amd64
+        tags: ${{ env.SONAR_IMAGE }}
 
   build_bench:
     name: bench-worker
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./workers/bench-worker
     steps:
     - uses: actions/checkout@v3
     - name: Setup env variables
@@ -58,7 +55,7 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v2
       with:
-        context: .
+        context: workers/bench-worker
         file: ./Dockerfile
         push: true
         platforms: linux/arm64
@@ -67,10 +64,6 @@ jobs:
   build_coverage:
     name: coverage-worker
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./workers/coverage-worker
     steps:
     - uses: actions/checkout@v3
     - name: Setup env variables
@@ -92,7 +85,7 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v2
       with:
-        context: .
+        context: workers/coverage-worker
         file: ./Dockerfile
         push: true
         platforms: linux/arm64
