@@ -17,8 +17,6 @@ else
     chmod +x bench_bitcoin
 fi
 
-# exit if bench_bitcoin binary exists
-
 BENCH_DURATION=10000
 # set perf max sample rate to 1
 echo 1 | tee /proc/sys/kernel/perf_event_max_sample_rate
