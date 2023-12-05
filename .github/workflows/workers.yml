@@ -17,9 +17,9 @@ jobs:
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-          echo "export SONAR_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-sonar-worker-dev:latest" >> $GITHUB_ENV
+          echo "SONAR_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-sonar-worker-dev:latest" >> $GITHUB_ENV
         else
-          echo "export SONAR_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-sonar-worker:latest" >> $GITHUB_ENV
+          echo "SONAR_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-sonar-worker:latest" >> $GITHUB_ENV
         fi
     - name: Configure AWS CLI
       run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
@@ -42,9 +42,9 @@ jobs:
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-          echo "export BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker-dev:latest" >> $GITHUB_ENV
+          echo "BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker-dev:latest" >> $GITHUB_ENV
         else
-          echo "export BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker:latest" >> $GITHUB_ENV
+          echo "BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker:latest" >> $GITHUB_ENV
         fi
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -76,9 +76,9 @@ jobs:
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-          echo "export COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker-dev:latest" >> $GITHUB_ENV
+          echo "COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker-dev:latest" >> $GITHUB_ENV
         else
-          echo "export COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker:latest" >> $GITHUB_ENV
+          echo "COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker:latest" >> $GITHUB_ENV
         fi
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
