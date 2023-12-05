@@ -1,0 +1,18 @@
+---
+- name: Setup db
+  hosts: core
+  become: yes
+  tasks:
+    - name: Setup postgres
+      docker_container:
+        name: postgres
+        image: postgres:15.4
+        volumes:
+          - /data/postgres:/var/lib/postgresql/data
+        restart_policy: always
+        restart: yes
+        env:
+          POSTGRES_USER: "{{ db_user }}"
+          POSTGRES_PASSWORD: "{{ db_password }}"
+          POSTGRES_DB: "bitcoin-coverage"
+        network_mode: host
