@@ -26,7 +26,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: workers/sonar-worker
-        file: ./Dockerfile
         push: true
         platforms: linux/amd64
         tags: ${{ env.SONAR_IMAGE }}
@@ -56,7 +55,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: workers/bench-worker
-        file: ./Dockerfile
         push: true
         platforms: linux/arm64
         tags: ${{ env.BENCH_IMAGE }}
@@ -86,7 +84,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: workers/coverage-worker
-        file: ./Dockerfile
         push: true
         platforms: linux/arm64
         tags: ${{ env.COVERAGE_IMAGE }}
