@@ -62,7 +62,7 @@ resource "aws_lambda_function" "function" {
   architectures = ["arm64"]
   timeout       = 60
 
-  s3_key = local.binary_name
+  s3_key = "${local.binary_name}.zip"
   s3_bucket = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
