@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -190,15 +191,14 @@ func syncGitHubActivity(c *github.Client) error {
 	return nil
 }
 
-func main() {
+func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 	if err := config.Load(&cfg); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error loading config: %s", err)
 	}
 	if err := db.Connect(cfg.DatabaseConfig); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error connecting to database: %s", err)
 	}
 
-	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.Github.AccessToken},
 	)
@@ -213,4 +213,10 @@ func main() {
 	}
 
 	log.Info("GitHub Activity Sync finished")
+
+	return "OK", nil
+}
+
+func main() {
+	lambda.Start(HandleRequest)
 }

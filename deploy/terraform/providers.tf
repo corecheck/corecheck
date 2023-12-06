@@ -14,8 +14,8 @@ terraform {
   }
 }
 
-
 provider "aws" {
+  alias = "default"
   region = "eu-west-3"
 }
 
@@ -27,6 +27,11 @@ provider "aws" {
 data "aws_region" "compute_region" {
   provider = aws.compute_region
 }
+
+data "aws_region" "default" {
+  provider = aws.default
+}	
+
 provider "aws" {
   alias  = "us_east_1"
   region = "us-east-1"
@@ -37,4 +42,6 @@ resource "local_file" "hosts" {
 db ansible_host=${aws_instance.db.public_ip} ansible_ssh_user=ubuntu 
 EOF
   filename = "../ansible/hosts.ini"
+
 }
+

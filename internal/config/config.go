@@ -11,7 +11,7 @@ type DatabaseConfig struct {
 		User     string `env:"USER" env-required:"true"`
 		Password string `env:"PASSWORD" env-required:"true"`
 		Name     string `env:"NAME" env-default:"corecheck"`
-	} `env-prefix:"DATABASE"`
+	} `env-prefix:"DATABASE_"`
 }
 
 type AWSConfig struct {
@@ -23,5 +23,5 @@ type AWSConfig struct {
 }
 
 func Load(cfg interface{}) error {
-	return cleanenv.ReadEnv(&cfg)
+	return cleanenv.ReadEnv(cfg)
 }

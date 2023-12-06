@@ -150,14 +150,6 @@ resource "aws_batch_job_definition" "coverage_job" {
       {
         name  = "S3_BUCKET_ARTIFACTS",
         value = aws_s3_bucket.corecheck-artifacts.id
-      },
-      {
-        name  = "PR_NUM",
-        value = "Ref::pr_num"
-      },
-      {
-        name  = "IS_MASTER",
-        value = "Ref::is_master"
       }
     ]
 

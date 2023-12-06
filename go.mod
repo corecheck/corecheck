@@ -5,6 +5,7 @@ go 1.21.1
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
+	github.com/aws/aws-lambda-go v1.41.0 // indirect
 	github.com/aws/aws-sdk-go v1.48.13 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
