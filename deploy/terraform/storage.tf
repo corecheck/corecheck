@@ -55,3 +55,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
     }
   }
 }
+
+resource "aws_s3_bucket" "corecheck-lambdas" {
+  bucket = "corecheck-lambdas-${terraform.workspace}"
+}

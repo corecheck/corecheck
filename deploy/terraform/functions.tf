@@ -52,25 +52,6 @@ resource "aws_iam_role_policy_attachment" "lambda_logging_policy_attachment" {
   policy_arn = aws_iam_policy.function_logging_policy.arn
 }
 
-resource "null_resource" "function_binary" {
-  provisioner "local-exec" {
-    command = "echo build && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o ${local.binary_path} ${local.src_path}"
-  }
-
-  triggers = {
-    always_run = timestamp()
-  }
-}
-
-// zip the binary, as we can use only zip files to AWS lambda
-data "archive_file" "function_archive" {
-  depends_on = [null_resource.function_binary]
-
-  type        = "zip"
-  source_file = local.binary_path
-  output_path = local.archive_path
-}
-
 // create the lambda function from zip file
 resource "aws_lambda_function" "function" {
   function_name = "github-sync"
@@ -81,8 +62,8 @@ resource "aws_lambda_function" "function" {
   architectures = ["arm64"]
   timeout       = 60
 
-  filename         = local.archive_path
-  source_code_hash = data.archive_file.function_archive.output_base64sha256
+  s3_key = local.binary_name
+  s3_bucket = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
     variables = {

@@ -1,0 +1,34 @@
+name: Build Lambdas
+on:
+  push:
+    branches: [ "master" , "dev" ]
+    paths:
+      - 'functions/**'
+  workflow_dispatch:
+
+jobs:
+  build_functions:
+    name: coverage-worker
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup env variables
+      run: |
+        if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
+          echo "S3_BUCKET=corecheck-lambdas-dev" >> $GITHUB_ENV
+        else
+          echo "S3_BUCKET=corecheck-lambdas" >> $GITHUB_ENV
+        fi
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21.1
+    - name: Build
+      run: |
+        cd functions
+        for d in */ ; do
+          cd $d
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o main
+          aws s3 cp main s3://$S3_BUCKET/$d --acl public-read
+          cd ..
+        done
