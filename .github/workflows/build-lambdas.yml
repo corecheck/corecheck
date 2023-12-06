@@ -31,6 +31,6 @@ jobs:
         for d in */ ; do
           cd $d
           GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o main
-          aws s3 cp main s3://$S3_BUCKET/$d --acl public-read
+          aws s3 cp main s3://$S3_BUCKET/$d
           cd ..
         done
