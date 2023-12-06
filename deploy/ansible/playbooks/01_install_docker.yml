@@ -1,6 +1,6 @@
 ---
 - name: Update packages
-  hosts: core
+  hosts: db
   become: yes
   tasks:
     - name: Update apt cache

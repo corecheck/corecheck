@@ -1,6 +1,6 @@
 ---
 - name: Setup db
-  hosts: core
+  hosts: db
   become: yes
   tasks:
     - name: Setup postgres

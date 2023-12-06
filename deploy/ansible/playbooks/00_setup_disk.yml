@@ -1,6 +1,6 @@
 ---
 - name: Setup data disk
-  hosts: core
+  hosts: db
   become: true
   tasks:
     - name: Ensure partition is formatted
