@@ -52,6 +52,11 @@ resource "aws_iam_role_policy_attachment" "lambda_logging_policy_attachment" {
   policy_arn = aws_iam_policy.function_logging_policy.arn
 }
 
+data "aws_s3_object" "function_zip" {
+  bucket = aws_s3_bucket.corecheck-lambdas.id
+  key    = "${local.binary_name}.zip"
+}
+
 // create the lambda function from zip file
 resource "aws_lambda_function" "function" {
   function_name = "github-sync"
@@ -62,8 +67,9 @@ resource "aws_lambda_function" "function" {
   architectures = ["arm64"]
   timeout       = 60
 
-  s3_key = "${local.binary_name}.zip"
+  s3_key = data.aws_s3_object.function_zip.key
   s3_bucket = aws_s3_bucket.corecheck-lambdas.id
+  s3_object_version = data.aws_s3_object.function_zip.version
 
   environment {
     variables = {
