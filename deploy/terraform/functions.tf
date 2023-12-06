@@ -69,7 +69,7 @@ resource "aws_lambda_function" "function" {
 
   s3_key = data.aws_s3_object.function_zip.key
   s3_bucket = aws_s3_bucket.corecheck-lambdas.id
-  s3_object_version = data.aws_s3_object.function_zip.version
+  s3_object_version = data.aws_s3_object.function_zip.version_id
 
   environment {
     variables = {
