@@ -192,9 +192,13 @@ func syncGitHubActivity(c *github.Client) error {
 }
 
 func HandleRequest(ctx context.Context, event interface{}) (string, error) {
+	log.Info("GitHub Activity Sync starting")
+	log.Debug("Loading config...")
 	if err := config.Load(&cfg); err != nil {
 		log.Fatalf("Error loading config: %s", err)
 	}
+
+	log.Debug("Connecting to database...")
 	if err := db.Connect(cfg.DatabaseConfig); err != nil {
 		log.Fatalf("Error connecting to database: %s", err)
 	}
@@ -207,7 +211,7 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 	sess := session.Must(session.NewSession())
 	svc = sqs.New(sess)
 
-	log.Info("GitHub Activity Sync started")
+	log.Info("Now syncing GitHub activity...")
 	if err := syncGitHubActivity(client); err != nil {
 		log.Fatalf("Error checking GitHub activity: %s", err)
 	}
