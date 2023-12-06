@@ -12,7 +12,7 @@
         restart_policy: always
         restart: yes
         env:
-          POSTGRES_USER: "{{ db_user }}"
-          POSTGRES_PASSWORD: "{{ db_password }}"
-          POSTGRES_DB: "bitcoin-coverage"
+          POSTGRES_USER: "{{ lookup('ansible.builtin.env', 'DB_USER') }}"
+          POSTGRES_PASSWORD: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
+          POSTGRES_DB: "corecheck"
         network_mode: host

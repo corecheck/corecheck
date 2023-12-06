@@ -31,3 +31,10 @@ provider "aws" {
   alias  = "us_east_1"
   region = "us-east-1"
 }
+
+resource "local_file" "hosts" {
+  content  = <<EOF
+db ansible_host=${aws_instance.db.public_ip} ansible_ssh_user=ubuntu 
+EOF
+  filename = "../ansible/hosts.ini"
+}

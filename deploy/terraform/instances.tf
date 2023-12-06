@@ -27,7 +27,7 @@ resource "aws_key_pair" "ssh_key" {
 }
 
 resource "aws_eip" "lb" {
-  instance = aws_instance.core.id
+  instance = aws_instance.db.id
   domain   = "vpc"
 }
 
@@ -41,7 +41,7 @@ resource "aws_ebs_volume" "db" {
   }
 }
 
-resource "aws_instance" "core" {
+resource "aws_instance" "db" {
   instance_type = "t4g.nano"
 
   availability_zone = "eu-west-3a"
@@ -56,5 +56,5 @@ resource "aws_instance" "core" {
 resource "aws_volume_attachment" "db" {
   device_name = "/dev/sdf"
   volume_id   = aws_ebs_volume.db.id
-  instance_id = aws_instance.core.id
+  instance_id = aws_instance.db.id
 }

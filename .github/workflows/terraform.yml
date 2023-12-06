@@ -2,7 +2,7 @@ name: 'Terraform & Ansible'
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "dev"]
   workflow_dispatch:
   repository_dispatch:
     types:
@@ -25,7 +25,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./terraform
+        working-directory: ./deploy/terraform
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -46,6 +46,9 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
+    - name: Change workspace for dev
+      run: if [ "${{ github.ref }}" == "refs/heads/dev" ]; then terraform workspace select dev; else terraform workspace select default; fi
+
     # Generates an execution plan for Terraform
     - name: Terraform Plan
       run: terraform plan -input=false
@@ -57,6 +60,11 @@ jobs:
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
+    - name: Upload hosts.ini
+      uses: actions/upload-artifact@v3
+      with:
+        name: hosts.ini
+        path: deploy/ansible/hosts.ini
 
   ansible:
     name: 'Ansible'
@@ -68,7 +76,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./ansible
+        working-directory: ./deploy/ansible
 
     env:
       DB_USER: ${{ secrets.DB_USER }}
@@ -99,6 +107,12 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
+
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: hosts.ini
+        path: deploy/ansible
 
     - name: Install Ansible
       run: |
