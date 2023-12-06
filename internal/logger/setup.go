@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"github.com/corecheck/corecheck/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -9,13 +8,9 @@ import (
 func New() *zap.SugaredLogger {
 	var logger *zap.Logger
 
-	if config.Config.Dev {
-		config := zap.NewDevelopmentConfig()
-		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		logger, _ = config.Build()
-	} else {
-		logger, _ = zap.NewProduction()
-	}
+	config := zap.NewDevelopmentConfig()
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	logger, _ = config.Build()
 
 	return logger.Sugar()
 }

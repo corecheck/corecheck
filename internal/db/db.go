@@ -8,14 +8,16 @@ import (
 
 var DB *gorm.DB
 
-func Connect() {
-	dbURI := "host=" + config.Config.DB.Host + " user=" + config.Config.DB.User + " password=" + config.Config.DB.Password + " dbname=" + config.Config.DB.Name + " port=" + config.Config.DB.Port + " sslmode=disable TimeZone=Europe/Paris"
+func Connect(cfg config.DatabaseConfig) error {
+	dbURI := "host=" + cfg.Database.Host + " user=" + cfg.Database.User + " password=" + cfg.Database.Password + " dbname=" + cfg.Database.Name + " port=" + cfg.Database.Port + " sslmode=disable TimeZone=Europe/Paris"
 	database, err := gorm.Open(postgres.Open(dbURI), &gorm.Config{})
 	if err != nil {
-		panic("Failed to connect to database!")
+		return err
 	}
 
 	// TODO: move to cmd/migration/main.go?
 	// database.AutoMigrate(&PR{}, &BenchmarkResult{}, &CoverageReport{}, &Job{}, &CoverageLine{})
 	DB = database
+
+	return nil
 }
