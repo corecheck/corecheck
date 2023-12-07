@@ -73,9 +73,9 @@ resource "aws_lambda_function" "function" {
   s3_object_version = data.aws_s3_object.function_zip.version_id
   vpc_config {
     subnet_ids         = [
-      data.aws_subnet_ids.example.ids[0],
-      data.aws_subnet_ids.example.ids[1],
-      data.aws_subnet_ids.example.ids[2],
+      data.aws_subnets.example.ids[0],
+      data.aws_subnets.example.ids[1],
+      data.aws_subnets.example.ids[2],
     ]
     security_group_ids = [data.aws_security_group.default.id]
   }
