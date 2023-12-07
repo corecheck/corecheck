@@ -55,6 +55,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logging_policy_attachment" {
 data "aws_s3_object" "function_zip" {
   bucket = aws_s3_bucket.corecheck-lambdas.id
   key    = "${local.binary_name}.zip"
+  
 }
 
 // create the lambda function from zip file

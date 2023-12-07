@@ -59,3 +59,26 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
 resource "aws_s3_bucket" "corecheck-lambdas" {
   bucket = "corecheck-lambdas-${terraform.workspace}"
 }
+
+# enable versionning
+resource "aws_s3_bucket_versioning" "corecheck-lambdas" {
+  bucket = aws_s3_bucket.corecheck-lambdas.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
+# delete artifacts after 7 days
+resource "aws_s3_bucket_lifecycle_configuration" "corecheck-lambdas" {
+  bucket = aws_s3_bucket.corecheck-lambdas.id
+
+  rule {
+    id     = "corecheck-lambdas"
+    status = "Enabled"
+    expiration {
+      days = 7
+    }
+  }
+}
+
