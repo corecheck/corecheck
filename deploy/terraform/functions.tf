@@ -81,18 +81,10 @@ resource "aws_lambda_function" "function" {
   s3_key = data.aws_s3_object.function_zip.key
   s3_bucket = aws_s3_bucket.corecheck-lambdas.id
   s3_object_version = data.aws_s3_object.function_zip.version_id
-  vpc_config {
-    subnet_ids         = [
-      data.aws_subnets.example.ids[0],
-      data.aws_subnets.example.ids[1],
-      data.aws_subnets.example.ids[2],
-    ]
-    security_group_ids = [data.aws_security_group.default.id]
-  }
 
   environment {
     variables = {
-      DATABASE_HOST     = aws_instance.db.private_ip
+      DATABASE_HOST     = aws_instance.db.public_ip
       DATABASE_PORT     = 5432
       DATABASE_USER     = var.db_user
       DATABASE_PASSWORD = var.db_password
