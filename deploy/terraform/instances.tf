@@ -78,7 +78,7 @@ resource "aws_instance" "db" {
   ami               = data.aws_ami.ubuntu_22_04.id
   key_name          = aws_key_pair.ssh_key.key_name
   security_groups = [
-    aws_security_group.db.id,
+    aws_security_group.db.name
   ]
 
   root_block_device {
