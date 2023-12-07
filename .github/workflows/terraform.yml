@@ -6,6 +6,7 @@ on:
     paths:
       - 'functions/**'
       - 'deploy/**'
+      - .github/workflows/terraform.yml
   workflow_dispatch:
   repository_dispatch:
     types:
@@ -20,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Skip step if no changes in functions
+      run: |
+        if [[ $(git diff --name-only HEAD HEAD~1) == *"functions"* ]]; then
+          echo "No changes in functions"
+          exit 78
+        fi
     - name: Configure AWS CLI
       run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
     - name: Setup env variables
