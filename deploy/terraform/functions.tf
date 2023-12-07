@@ -52,6 +52,16 @@ resource "aws_iam_role_policy_attachment" "lambda_logging_policy_attachment" {
   policy_arn = aws_iam_policy.function_logging_policy.arn
 }
 
+# AWSLambdaVPCAccessExecutionRole
+data "aws_iam_policy" "lambda_vpc_access" {
+  arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
+  role       = aws_iam_role.lambda.id
+  policy_arn = data.aws_iam_policy.lambda_vpc_access.arn
+}
+
 data "aws_s3_object" "function_zip" {
   bucket = aws_s3_bucket.corecheck-lambdas.id
   key    = "${local.binary_name}.zip"
