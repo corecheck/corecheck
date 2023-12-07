@@ -69,16 +69,16 @@ resource "aws_s3_bucket_versioning" "corecheck-lambdas" {
 }
 
 
-# delete artifacts after 7 days
+# remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-lambdas" {
   bucket = aws_s3_bucket.corecheck-lambdas.id
 
   rule {
     id     = "corecheck-lambdas"
     status = "Enabled"
-    expiration {
-      days = 7
+    noncurrent_version_expiration {
+      newer_noncurrent_versions = 1
+      noncurrent_days           = 7
     }
   }
 }
-
