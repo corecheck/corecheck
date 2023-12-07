@@ -11,14 +11,14 @@ data "aws_ami" "ecs-optimized" {
 }
 
 data "aws_ami" "ubuntu_22_04" {
-    most_recent = true
+  most_recent = true
 
-    filter {
-        name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
-    }
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
+  }
 
-    owners = ["099720109477"] # Canonical
+  owners = ["099720109477"] # Canonical
 }
 
 resource "aws_key_pair" "ssh_key" {
@@ -41,16 +41,49 @@ resource "aws_ebs_volume" "db" {
   }
 }
 
+# create security group for db
+resource "aws_security_group" "db" {
+  name        = "db"
+  description = "Security group for db"
+
+  ingress {
+    description = "Postgres"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_instance" "db" {
   instance_type = "t4g.nano"
 
   availability_zone = "eu-west-3a"
-  ami      = data.aws_ami.ubuntu_22_04.id
-  key_name = aws_key_pair.ssh_key.key_name
+  ami               = data.aws_ami.ubuntu_22_04.id
+  key_name          = aws_key_pair.ssh_key.key_name
+  security_groups = [
+    aws_security_group.db.id,
+  ]
 
-    root_block_device {
-        volume_size = 10
-    }
+  root_block_device {
+    volume_size = 10
+  }
 }
 
 resource "aws_volume_attachment" "db" {
