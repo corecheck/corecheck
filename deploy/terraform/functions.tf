@@ -108,7 +108,7 @@ resource "aws_lambda_function" "function" {
   timeout       = 60
 
   s3_key            = data.aws_s3_object.lambda_zip[each.value].key
-  s3_object_version = data.aws_s3_object.lambda_zip[each.value].version
+  s3_object_version = data.aws_s3_object.lambda_zip[each.value].version_id
   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
