@@ -97,12 +97,10 @@ data "aws_s3_object" "lambda_zip" {
 # }
 
 resource "aws_lambda_function" "function" {
-  for_each = toset(local.lambdas)
-
-  function_name = each.value
+  function_name = "migrate"
+  handler       = "migrate"
   description   = "Syncs github repositories with the database"
   role          = aws_iam_role.lambda.arn
-  handler       = each.value
   memory_size   = 128
   architectures = ["arm64"]
   timeout       = 60
@@ -112,7 +110,7 @@ resource "aws_lambda_function" "function" {
   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
-    variables = local.lambda_env[each.value]
+    variables = local.lambda_env["migrate"]
   }
 
   runtime = "provided.al2"
