@@ -94,6 +94,10 @@ resource "aws_cloudwatch_log_group" "function_logs" {
     create_before_destroy = true
     prevent_destroy       = false
   }
+
+  depends_on = [
+    aws_lambda_function.function,
+  ]
 }
 
 resource "aws_lambda_function" "function" {
