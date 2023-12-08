@@ -84,17 +84,17 @@ data "aws_s3_object" "lambda_zip" {
   key      = "${each.value}.zip"
 }
 
-resource "aws_cloudwatch_log_group" "function_logs" {
-  for_each = toset(local.lambdas)
-  name     = "/aws/lambda/${each.value}"
+# resource "aws_cloudwatch_log_group" "function_logs" {
+#   for_each = toset(local.lambdas)
+#   name     = "/aws/lambda/${each.value}"
 
-  retention_in_days = 7
+#   retention_in_days = 7
 
-  lifecycle {
-    create_before_destroy = true
-    prevent_destroy       = false
-  }
-}
+#   lifecycle {
+#     create_before_destroy = true
+#     prevent_destroy       = false
+#   }
+# }
 
 resource "aws_lambda_function" "function" {
   for_each = toset(local.lambdas)
@@ -119,10 +119,10 @@ resource "aws_lambda_function" "function" {
 }
 
 
-resource "aws_lambda_invocation" "invoke" {
-  function_name = "migrate"
-  input = "{\"action\": \"up\"}"
-  depends_on = [
-    aws_lambda_function.function,
-  ]
-}
+# resource "aws_lambda_invocation" "invoke" {
+#   function_name = "migrate"
+#   input = "{\"action\": \"up\"}"
+#   depends_on = [
+#     aws_lambda_function.function,
+#   ]
+# }
