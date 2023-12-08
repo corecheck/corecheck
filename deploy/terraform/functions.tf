@@ -5,24 +5,33 @@ locals {
   ]
 
   # create a map of lambdas and their environment variables
-  lambda_env = {
+  lambda_overrides = {
     "github-sync" = {
-      DATABASE_HOST     = aws_instance.db.public_ip
-      DATABASE_PORT     = 5432
-      DATABASE_USER     = var.db_user
-      DATABASE_PASSWORD = var.db_password
-      DATABASE_NAME     = var.db_database
+      timeout = 7200
+      environment = {
+        variables = {
+          DATABASE_HOST     = aws_instance.db.public_ip
+          DATABASE_PORT     = 5432
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
 
-      SQS_QUEUE_URL = aws_sqs_queue.corecheck_queue.url
+          SQS_QUEUE_URL = aws_sqs_queue.corecheck_queue.url
 
-      GITHUB_ACCESS_TOKEN = var.github_token
+          GITHUB_ACCESS_TOKEN = var.github_token
+        }
+      }
     },
     "migrate" = {
-      DATABASE_HOST     = aws_instance.db.public_ip
-      DATABASE_PORT     = 5432
-      DATABASE_USER     = var.db_user
-      DATABASE_PASSWORD = var.db_password
-      DATABASE_NAME     = var.db_database
+      environment = {
+        variables = {
+          DATABASE_HOST     = aws_instance.db.public_ip
+          DATABASE_PORT     = 5432
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+        }
+      }
     }
   }
 }
@@ -129,14 +138,14 @@ resource "aws_lambda_function" "function" {
   handler       = each.value
   memory_size   = 128
   architectures = ["arm64"]
-  timeout       = 60
+  timeout       = local.lambda_overrides[each.value].timeout
 
   s3_key            = data.aws_s3_object.lambda_zip[each.value].key
   s3_object_version = data.aws_s3_object.lambda_zip[each.value].version_id
   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
-    variables = local.lambda_env[each.value]
+    variables = local.lambda_overrides[each.value].environment.variables
   }
 
   runtime = "provided.al2"
@@ -145,7 +154,7 @@ resource "aws_lambda_function" "function" {
 
 resource "aws_lambda_invocation" "invoke" {
   function_name = "migrate"
-  input = "{\"action\": \"up\"}"
+  input         = "{\"action\": \"up\"}"
   depends_on = [
     aws_lambda_function.function,
   ]
