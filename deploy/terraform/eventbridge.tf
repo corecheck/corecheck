@@ -55,14 +55,9 @@ resource "aws_cloudwatch_event_target" "coverage_target" {
     job_name       = "coverage"
   }
 
-  input = <<INPUT
-{
-  "commit": "$${detail.commit}",
-  "is_master": "$${detail.is_master}",
-  "pr_num": "$${detail.pr_num}"
+  input_path = "$.detail"
 }
-INPUT
-}
+
 
 # another batch target
 resource "aws_cloudwatch_event_target" "sonar_target" {
@@ -76,11 +71,5 @@ resource "aws_cloudwatch_event_target" "sonar_target" {
     job_name       = "sonar"
   }
 
-  input = <<INPUT
-{
-  "commit": "$${detail.commit}",
-  "is_master": "$${detail.is_master}",
-  "pr_num": "$${detail.pr_num}"
-}
-INPUT
+  input_path = "$.detail"
 }
