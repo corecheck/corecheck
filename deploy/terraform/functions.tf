@@ -78,11 +78,11 @@ data "aws_iam_policy" "lambda_vpc_access" {
   arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-data "aws_s3_object" "lambda_zip" {
-  for_each = toset(local.lambdas)
-  bucket   = aws_s3_bucket.corecheck-lambdas.id
-  key      = "${each.value}.zip"
-}
+# data "aws_s3_object" "lambda_zip" {
+#   for_each = toset(local.lambdas)
+#   bucket   = aws_s3_bucket.corecheck-lambdas.id
+#   key      = "${each.value}.zip"
+# }
 
 # resource "aws_cloudwatch_log_group" "function_logs" {
 #   for_each = toset(local.lambdas)
@@ -96,25 +96,25 @@ data "aws_s3_object" "lambda_zip" {
 #   }
 # }
 
-resource "aws_lambda_function" "function" {
-  function_name = "migrate"
-  handler       = "migrate"
-  description   = "Syncs github repositories with the database"
-  role          = aws_iam_role.lambda.arn
-  memory_size   = 128
-  architectures = ["arm64"]
-  timeout       = 60
+# resource "aws_lambda_function" "function" {
+#   function_name = "migrate"
+#   handler       = "migrate"
+#   description   = "Syncs github repositories with the database"
+#   role          = aws_iam_role.lambda.arn
+#   memory_size   = 128
+#   architectures = ["arm64"]
+#   timeout       = 60
 
-  s3_key            = data.aws_s3_object.lambda_zip["migrate"].key
-  s3_object_version = data.aws_s3_object.lambda_zip["migrate"].version_id
-  s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
+#   s3_key            = data.aws_s3_object.lambda_zip["migrate"].key
+#   s3_object_version = data.aws_s3_object.lambda_zip["migrate"].version_id
+#   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
-  environment {
-    variables = local.lambda_env["migrate"]
-  }
+#   environment {
+#     variables = local.lambda_env["migrate"]
+#   }
 
-  runtime = "provided.al2"
-}
+#   runtime = "provided.al2"
+# }
 
 
 # resource "aws_lambda_invocation" "invoke" {
