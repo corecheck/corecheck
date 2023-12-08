@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/eventbridge"
 	"github.com/corecheck/corecheck/internal/config"
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/logger"
@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	cfg = Config{}
-	log = logger.New()
-	svc *sqs.SQS
+	cfg         = Config{}
+	log         = logger.New()
+	eventBridge *eventbridge.EventBridge
 )
 
 func checkMasterCoverage(c *github.Client) error {
@@ -43,20 +43,14 @@ func checkMasterCoverage(c *github.Client) error {
 	} else {
 		log.Info("Master does not have coverage for latest commit, adding to queue")
 
-		_, err := svc.SendMessage(&sqs.SendMessageInput{
-			DelaySeconds: aws.Int64(10),
-			MessageAttributes: map[string]*sqs.MessageAttributeValue{
-				"commit": &sqs.MessageAttributeValue{
-					DataType:    aws.String("String"),
-					StringValue: aws.String(master.GetCommit().GetSHA()),
-				},
-				"is_master": &sqs.MessageAttributeValue{
-					DataType:    aws.String("String"),
-					StringValue: aws.String("true"),
+		_, err := eventBridge.PutEvents(&eventbridge.PutEventsInput{
+			Entries: []*eventbridge.PutEventsRequestEntry{
+				{
+					Detail:     aws.String(`{"commit":"` + master.GetCommit().GetSHA() + `","is_master":"true"}`),
+					DetailType: aws.String("start-jobs"),
+					Source:     aws.String("github-sync"),
 				},
 			},
-			MessageBody: aws.String("Master coverage for latest commit (" + master.GetCommit().GetSHA() + ")"),
-			QueueUrl:    aws.String(cfg.SQS.QueueURL),
 		})
 
 		if err != nil {
@@ -96,24 +90,14 @@ func handlePullRequest(pr *github.PullRequest) error {
 
 		log.Info("PR does not have coverage for latest commit, triggering coverage job")
 
-		_, err = svc.SendMessage(&sqs.SendMessageInput{
-			DelaySeconds: aws.Int64(10),
-			MessageAttributes: map[string]*sqs.MessageAttributeValue{
-				"commit": {
-					DataType:    aws.String("String"),
-					StringValue: aws.String(dbPR.Head),
-				},
-				"is_master": {
-					DataType:    aws.String("String"),
-					StringValue: aws.String("false"),
-				},
-				"pr_num": {
-					DataType:    aws.String("Number"),
-					StringValue: aws.String(strconv.Itoa(dbPR.Number)),
+		_, err = eventBridge.PutEvents(&eventbridge.PutEventsInput{
+			Entries: []*eventbridge.PutEventsRequestEntry{
+				{
+					Detail:     aws.String(`{"commit":"` + dbPR.Head + `","is_master":"false","pr_num":"` + fmt.Sprint(dbPR.Number) + `"}`),
+					DetailType: aws.String("start-jobs"),
+					Source:     aws.String("github-sync"),
 				},
 			},
-			MessageBody: aws.String("PR #" + strconv.Itoa(dbPR.Number) + " coverage for latest commit (" + dbPR.Head + ")"),
-			QueueUrl:    aws.String(cfg.SQS.QueueURL),
 		})
 
 		if err != nil {
@@ -209,7 +193,7 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 	client := github.NewClient(oauth2.NewClient(ctx, ts))
 
 	sess := session.Must(session.NewSession())
-	svc = sqs.New(sess)
+	eventBridge = eventbridge.New(sess)
 
 	log.Info("Now syncing GitHub activity...")
 	if err := syncGitHubActivity(client); err != nil {

@@ -1,5 +1,5 @@
-# event bridge bus
-resource "aws_cloudwatch_event_bus" "eventbridge" {
-  name = "corecheck-events"
+# event bridge bus default
+data "aws_cloudwatch_event_bus" "default" {
+  name = "default"
   provider = aws.compute_region
 }
