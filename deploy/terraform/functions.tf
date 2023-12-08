@@ -1,11 +1,32 @@
 locals {
-  binary_name  = "github-sync"
-  src_path     = "../../functions/github-sync"
-  binary_path  = "${local.src_path}/bootstrap"
-  archive_path = "/tmp/${local.binary_name}.zip"
+  lambdas = [
+    "github-sync",
+    "migrate",
+  ]
+
+  # create a map of lambdas and their environment variables
+  lambda_env = {
+    "github-sync" = {
+      DATABASE_HOST     = aws_instance.db.public_ip
+      DATABASE_PORT     = 5432
+      DATABASE_USER     = var.db_user
+      DATABASE_PASSWORD = var.db_password
+      DATABASE_NAME     = var.db_database
+
+      SQS_QUEUE_URL = aws_sqs_queue.corecheck_queue.url
+
+      GITHUB_ACCESS_TOKEN = var.github_token
+    },
+    "migrate" = {
+      DATABASE_HOST     = aws_instance.db.public_ip
+      DATABASE_PORT     = 5432
+      DATABASE_USER     = var.db_user
+      DATABASE_PASSWORD = var.db_password
+      DATABASE_NAME     = var.db_database
+    }
+  }
 }
 
-// allow lambda service to assume (use) the role with such policy
 data "aws_iam_policy_document" "assume_lambda_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -57,50 +78,15 @@ data "aws_iam_policy" "lambda_vpc_access" {
   arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.lambda.id
-  policy_arn = data.aws_iam_policy.lambda_vpc_access.arn
-}
-
-data "aws_s3_object" "function_zip" {
-  bucket = aws_s3_bucket.corecheck-lambdas.id
-  key    = "${local.binary_name}.zip"
-  
-}
-
-// create the lambda function from zip file
-resource "aws_lambda_function" "function" {
-  function_name = "github-sync"
-  description   = "Syncs github repositories with the database"
-  role          = aws_iam_role.lambda.arn
-  handler       = local.binary_name
-  memory_size   = 128
-  architectures = ["arm64"]
-  timeout       = 60
-
-  s3_key = data.aws_s3_object.function_zip.key
-  s3_bucket = aws_s3_bucket.corecheck-lambdas.id
-  s3_object_version = data.aws_s3_object.function_zip.version_id
-
-  environment {
-    variables = {
-      DATABASE_HOST     = aws_instance.db.public_ip
-      DATABASE_PORT     = 5432
-      DATABASE_USER     = var.db_user
-      DATABASE_PASSWORD = var.db_password
-      DATABASE_NAME     = var.db_database
-
-      SQS_QUEUE_URL = aws_sqs_queue.corecheck_queue.url
-
-      GITHUB_ACCESS_TOKEN = var.github_token
-    }
-  }
-
-  runtime = "provided.al2"
+data "aws_s3_object" "lambda_zip" {
+  for_each = toset(local.lambdas)
+  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  key      = "${each.value}.zip"
 }
 
 resource "aws_cloudwatch_log_group" "function_logs" {
-  name = "/aws/lambda/${aws_lambda_function.function.function_name}"
+  for_each = toset(local.lambdas)
+  name     = "/aws/lambda/${each.value}"
 
   retention_in_days = 7
 
@@ -108,4 +94,35 @@ resource "aws_cloudwatch_log_group" "function_logs" {
     create_before_destroy = true
     prevent_destroy       = false
   }
+}
+
+resource "aws_lambda_function" "function" {
+  for_each = toset(local.lambdas)
+
+  function_name = each.value
+  description   = "Syncs github repositories with the database"
+  role          = aws_iam_role.lambda.arn
+  handler       = each.value
+  memory_size   = 128
+  architectures = ["arm64"]
+  timeout       = 60
+
+  s3_key            = data.aws_s3_object.lambda_zip[each.value].key
+  s3_object_version = data.aws_s3_object.lambda_zip[each.value].version
+  s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
+
+  environment {
+    variables = local.lambda_env[each.value]
+  }
+
+  runtime = "provided.al2"
+
+  vpc_config {
+    subnet_ids         = data.aws_subnet_ids.private.ids
+    security_group_ids = [data.aws_security_group.compute_security_group.id]
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.function_logs,
+  ]
 }

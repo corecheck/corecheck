@@ -15,7 +15,7 @@ terraform {
 }
 
 provider "aws" {
-  alias = "default"
+  alias  = "default"
   region = "eu-west-3"
 }
 
@@ -30,7 +30,7 @@ data "aws_region" "compute_region" {
 
 data "aws_region" "default" {
   provider = aws.default
-}	
+}
 
 provider "aws" {
   alias  = "us_east_1"
