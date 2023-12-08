@@ -117,12 +117,16 @@ resource "aws_lambda_function" "function" {
 
   runtime = "provided.al2"
 
-  vpc_config {
-    subnet_ids         = data.aws_subnet_ids.private.ids
-    security_group_ids = [data.aws_security_group.compute_security_group.id]
-  }
-
   depends_on = [
     aws_cloudwatch_log_group.function_logs,
+  ]
+}
+
+
+resource "aws_lambda_invocation" "invoke" {
+  function_name = "migrate"
+  input = "{\"action\": \"up\"}"
+  depends_on = [
+    aws_lambda_function.function,
   ]
 }
