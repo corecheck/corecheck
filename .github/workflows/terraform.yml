@@ -21,18 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 2
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v40
-      with:
-        files: 'functions/**'
     - name: Configure AWS CLI
-      if: steps.changed-files.outputs.any_changed == 'true'
       run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
     - name: Setup env variables
-      if: steps.changed-files.outputs.any_changed == 'true'
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
           echo "S3_BUCKET=corecheck-lambdas-dev" >> $GITHUB_ENV
@@ -40,12 +31,10 @@ jobs:
           echo "S3_BUCKET=corecheck-lambdas" >> $GITHUB_ENV
         fi
     - name: Set up Go
-      if: steps.changed-files.outputs.any_changed == 'true'
       uses: actions/setup-go@v2
       with:
         go-version: 1.21.1
     - name: Build
-      if: steps.changed-files.outputs.any_changed == 'true'
       run: |
         cd functions
         for d in */ ; do
