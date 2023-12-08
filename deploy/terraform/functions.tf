@@ -78,11 +78,11 @@ data "aws_iam_policy" "lambda_vpc_access" {
   arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-# data "aws_s3_object" "lambda_zip" {
-#   for_each = toset(local.lambdas)
-#   bucket   = aws_s3_bucket.corecheck-lambdas.id
-#   key      = "${each.value}.zip"
-# }
+data "aws_s3_object" "lambda_zip" {
+  for_each = toset(local.lambdas)
+  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  key      = "${each.value}.zip"
+}
 
 # resource "aws_cloudwatch_log_group" "function_logs" {
 #   for_each = toset(local.lambdas)
@@ -96,31 +96,33 @@ data "aws_iam_policy" "lambda_vpc_access" {
 #   }
 # }
 
-# resource "aws_lambda_function" "function" {
-#   function_name = "migrate"
-#   handler       = "migrate"
-#   description   = "Syncs github repositories with the database"
-#   role          = aws_iam_role.lambda.arn
-#   memory_size   = 128
-#   architectures = ["arm64"]
-#   timeout       = 60
+resource "aws_lambda_function" "function" {
+  for_each = toset(local.lambdas)
 
-#   s3_key            = data.aws_s3_object.lambda_zip["migrate"].key
-#   s3_object_version = data.aws_s3_object.lambda_zip["migrate"].version_id
-#   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
+  function_name = each.value
+  description   = "Syncs github repositories with the database"
+  role          = aws_iam_role.lambda.arn
+  handler       = each.value
+  memory_size   = 128
+  architectures = ["arm64"]
+  timeout       = 60
 
-#   environment {
-#     variables = local.lambda_env["migrate"]
-#   }
+  s3_key            = data.aws_s3_object.lambda_zip[each.value].key
+  s3_object_version = data.aws_s3_object.lambda_zip[each.value].version_id
+  s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
-#   runtime = "provided.al2"
-# }
+  environment {
+    variables = local.lambda_env[each.value]
+  }
+
+  runtime = "provided.al2"
+}
 
 
-# resource "aws_lambda_invocation" "invoke" {
-#   function_name = "migrate"
-#   input = "{\"action\": \"up\"}"
-#   depends_on = [
-#     aws_lambda_function.function,
-#   ]
-# }
+resource "aws_lambda_invocation" "invoke" {
+  function_name = "migrate"
+  input = "{\"action\": \"up\"}"
+  depends_on = [
+    aws_lambda_function.function,
+  ]
+}
