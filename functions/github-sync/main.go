@@ -142,7 +142,7 @@ func checkPullsCoverage(c *github.Client) error {
 	for lastDBUpdate.Before(now) {
 		log.Debugf("Retrieving page %d", page)
 		prs, _, err := c.PullRequests.List(context.Background(), "bitcoin", "bitcoin", &github.PullRequestListOptions{
-			State:     "all",
+			State:     "open",
 			Sort:      "updated",
 			Direction: "desc",
 			ListOptions: github.ListOptions{

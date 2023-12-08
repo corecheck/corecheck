@@ -7,7 +7,7 @@ locals {
   # create a map of lambdas and their environment variables
   lambda_overrides = {
     "github-sync" = {
-      timeout = 7200
+      timeout = 900
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
