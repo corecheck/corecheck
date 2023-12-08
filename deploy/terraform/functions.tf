@@ -117,6 +117,10 @@ resource "aws_lambda_function" "function" {
 
   runtime = "provided.al2"
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   depends_on = [
     aws_cloudwatch_log_group.function_logs,
   ]
