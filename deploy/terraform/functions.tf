@@ -23,6 +23,7 @@ locals {
       }
     },
     "migrate" = {
+      timeout = 60
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
