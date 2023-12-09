@@ -78,6 +78,7 @@ EOF
 resource "aws_sfn_state_machine" "state_machine" {
   name     = "start-jobs"
   role_arn = aws_iam_role.state_machine_role.arn
+  provider = aws.compute_region
 
   definition = <<EOF
 {
