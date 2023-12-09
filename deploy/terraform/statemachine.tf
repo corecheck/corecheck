@@ -295,7 +295,8 @@ resource "aws_sfn_state_machine" "state_machine" {
         "FunctionName": "handle-coverage:$LATEST",
         "Payload.$": "$"
       },
-      "Next": "Parallel"
+      "Next": "Parallel",
+      "ResultPath": "$.coverage_result"
     },
     "Parallel": {
       "Type": "Parallel",
