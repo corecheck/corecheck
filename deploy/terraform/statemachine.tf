@@ -295,7 +295,7 @@ resource "aws_sfn_state_machine" "state_machine" {
         "FunctionName": "handle-coverage:$LATEST",
         "Payload.$": "$"
       },
-      "End": true
+      "Next": "Parallel",
     },
     "Parallel": {
       "Type": "Parallel",
@@ -324,7 +324,8 @@ resource "aws_sfn_state_machine" "state_machine" {
           "Next": "Handle Benchmarks",
           "ResultPath": "$.benchmarks_job"
         }
-      }
+      },
+      "End": true
     },
     "Handle Benchmarks": {
       "Type": "Task",
