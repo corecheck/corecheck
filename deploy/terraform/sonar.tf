@@ -90,6 +90,13 @@ resource "aws_batch_job_definition" "sonar_job" {
       }
     ]
 
+    command = [
+      "/entrypoint.sh",
+      "Ref::commit",
+      "Ref::pr_number",
+      "Ref::is_master",
+    ]
+
     executionRoleArn = aws_iam_role.job_role.arn
     jobRoleArn       = aws_iam_role.job_role.arn
   })

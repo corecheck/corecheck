@@ -1,5 +1,9 @@
 #!/bin/bash
 
+COMMIT=$1
+PR_NUM=$2
+IS_MASTER=$3
+
 # check if benchmark already exists
 if [ "$IS_MASTER" != "true" ]; then
     aws s3 ls "s3://$S3_BUCKET_DATA/$PR_NUM/$COMMIT/bench/bench-$AWS_BATCH_JOB_ARRAY_INDEX.json" && exit 0
