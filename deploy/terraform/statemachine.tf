@@ -271,6 +271,16 @@ resource "aws_sfn_state_machine" "state_machine" {
         "JobName": "coverage",
         "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
       },
+      "Next": "Handle coverage",
+      "ResultPath": "$"
+    },
+    "Handle coverage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.handle-coverage.arn}",
+        "Payload.$": "$"
+      },
       "End": true
     }
   }
