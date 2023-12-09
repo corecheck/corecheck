@@ -64,6 +64,7 @@ resource "aws_s3_bucket" "corecheck-lambdas" {
 # enable versionning
 resource "aws_s3_bucket_versioning" "corecheck-lambdas" {
   bucket = aws_s3_bucket.corecheck-lambdas.id
+  provider = aws.compute_region
   versioning_configuration {
     status = "Enabled"
   }
@@ -73,6 +74,7 @@ resource "aws_s3_bucket_versioning" "corecheck-lambdas" {
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-lambdas" {
   bucket = aws_s3_bucket.corecheck-lambdas.id
+  provider = aws.compute_region
 
   rule {
     id     = "corecheck-lambdas"

@@ -126,6 +126,7 @@ data "aws_iam_policy" "lambda_vpc_access" {
 }
 
 data "aws_s3_object" "lambda_zip" {
+  provider = aws.compute_region
   for_each = toset(local.lambdas)
   bucket   = aws_s3_bucket.corecheck-lambdas.id
   key      = "${each.value}.zip"
