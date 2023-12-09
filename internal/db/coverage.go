@@ -87,6 +87,18 @@ func GetCoverageReport(id int) (*CoverageReport, error) {
 	return &report, err
 }
 
+func GetCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, error) {
+	var report CoverageReport
+	err := DB.Preload("CoverageLines").Preload("Jobs").Preload("Benchmarks").Where("commit = ? AND pr_number = ?", commit, prNum).First(&report).Error
+	return &report, err
+}
+
+func GetCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
+	var report CoverageReport
+	err := DB.Preload("CoverageLines").Preload("Jobs").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
+	return &report, err
+}
+
 func UpdateCoverageReport(reportID int, status string, benchStatus string, coverage *float64, baseCommit string) error {
 	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(map[string]interface{}{
 		"status":           status,

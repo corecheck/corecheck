@@ -23,15 +23,21 @@ var (
 	log = logger.New()
 )
 
-func handleCodeCoverageSuccess(job *db.Job) error {
+func handleCodeCoverageSuccess(job *types.JobParams) error {
 	log.Info("Handling code coverage success")
 
-	log.Debugf("Getting coverage data for PR %d", job.PullRequestNumber)
+	var report *db.CoverageReport
 	var coverage *CoverageData
 	var lines []*db.CoverageLine
 	var baseCommit string
 	var err error
-	if job.Master {
+	if job.IsMaster {
+		report, err = db.GetCoverageReportByCommitMaster(job.Commit)
+		if err != nil {
+			log.Error("Error getting coverage report", err)
+			return err
+		}
+
 		baseCommit = job.Commit
 		log.Debugf("Getting coverage data for master commit %s", job.Commit)
 		coverage, err = GetCoverageDataMaster(job.Commit)
@@ -42,36 +48,36 @@ func handleCodeCoverageSuccess(job *db.Job) error {
 
 		log.Debugf("Computing coverage for master commit %s", job.Commit)
 
-		lines = computeMasterCoverage(job, coverage)
+		lines = computeMasterCoverage(report.ID, job, coverage)
 	} else {
-		coverage, err = GetCoverageData(job.PullRequestNumber, job.Commit)
+		report, err = db.GetCoverageReportByCommitPr(job.Commit, job.PRNumber)
+		if err != nil {
+			log.Error("Error getting coverage report", err)
+			return err
+		}
+
+		coverage, err = GetCoverageData(job.PRNumber, job.Commit)
 		if err != nil {
 			return err
 		}
-		log.Debugf("Getting diff for PR %d", job.PullRequestNumber)
-		diff, err := GetPullDiff(job.PullRequestNumber)
+		log.Debugf("Getting diff for PR %d", job.PRNumber)
+		diff, err := GetPullDiff(job.PRNumber)
 		if err != nil {
 			return err
 		}
 
-		lines = computeDiffCoverage(job, coverage, diff)
+		lines = computeDiffCoverage(report.ID, coverage, diff)
 
-		log.Debugf("Getting base commit for PR %d", job.PullRequestNumber)
-		baseCommit, err = GetBaseCommit(job.PullRequestNumber, job.Commit)
+		log.Debugf("Getting base commit for PR %d", job.PRNumber)
+		baseCommit, err = GetBaseCommit(job.PRNumber, job.Commit)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Debugf("Updating coverage data for PR %d", job.PullRequestNumber)
-	err = db.CreateLinesCoverage(*job.CoverageReportID, lines)
+	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
+	err = db.CreateLinesCoverage(report.ID, lines)
 	if err != nil {
-		return err
-	}
-
-	report, err := db.GetCoverageReport(*job.CoverageReportID)
-	if err != nil {
-		log.Error("Error getting coverage report", err)
 		return err
 	}
 
@@ -84,8 +90,7 @@ func handleCodeCoverageSuccess(job *db.Job) error {
 		return err
 	}
 
-	log.Infof("Coverage for PR %d updated", job.PullRequestNumber)
-
+	log.Infof("Coverage for PR %d updated", job.PRNumber)
 	return nil
 }
 
@@ -165,7 +170,7 @@ func isLineCovered(coverage *CoverageData, file string, line int) lineCoveredRes
 	}
 }
 
-func computeDiffCoverage(job *db.Job, coverage *CoverageData, diff *diffparser.Diff) []*db.CoverageLine {
+func computeDiffCoverage(reportID int, coverage *CoverageData, diff *diffparser.Diff) []*db.CoverageLine {
 	var lines []*db.CoverageLine
 
 	hunks := 0
@@ -182,7 +187,7 @@ func computeDiffCoverage(job *db.Job, coverage *CoverageData, diff *diffparser.D
 			for _, diffLine := range hunk.NewRange.Lines {
 				coveredResult := isLineCovered(coverage, file.NewName, diffLine.Number)
 				lines = append(lines, &db.CoverageLine{
-					CoverageReportID: *job.CoverageReportID,
+					CoverageReportID: reportID,
 					File:             file.NewName,
 					Line:             diffLine.Content,
 					LineNumber:       diffLine.Number,
@@ -230,7 +235,7 @@ func downloadSourceFile(commit string, file string, cache map[string]string) (st
 	return string(content), nil
 }
 
-func computeMasterCoverage(job *db.Job, coverage *CoverageData) []*db.CoverageLine {
+func computeMasterCoverage(reportID int, job *types.JobParams, coverage *CoverageData) []*db.CoverageLine {
 	var lines []*db.CoverageLine
 
 	for _, file := range coverage.Files {
@@ -248,7 +253,7 @@ func computeMasterCoverage(job *db.Job, coverage *CoverageData) []*db.CoverageLi
 
 		for _, line := range file.Lines {
 			lines = append(lines, &db.CoverageLine{
-				CoverageReportID: *job.CoverageReportID,
+				CoverageReportID: reportID,
 				File:             file.File,
 				Line:             contentSplit[line.LineNumber-1],
 				LineNumber:       line.LineNumber,
@@ -263,6 +268,7 @@ func computeMasterCoverage(job *db.Job, coverage *CoverageData) []*db.CoverageLi
 }
 
 func HandleRequest(ctx context.Context, event map[string]interface{}) (string, error) {
+	spew.Dump(event)
 	log.Debug("Loading config...")
 	if err := config.Load(&cfg); err != nil {
 		log.Fatalf("Error loading config: %s", err)
@@ -285,7 +291,11 @@ func HandleRequest(ctx context.Context, event map[string]interface{}) (string, e
 		return "", err
 	}
 
-	spew.Dump(params)
+	err = handleCodeCoverageSuccess(params)
+	if err != nil {
+		log.Error("Error handling code coverage success", err)
+		return "", err
+	}
 
 	return "OK", nil
 }
