@@ -1,4 +1,9 @@
 #!/bin/bash
+
+COMMIT=$1
+PR_NUM=$2
+IS_MASTER=$3
+
 set -e
 ccache --show-stats
 
