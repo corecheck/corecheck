@@ -9,7 +9,6 @@ locals {
   lambda_overrides = {
     "github-sync" = {
       timeout = 900
-      provider = aws.default
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -24,7 +23,6 @@ locals {
     },
     "migrate" = {
       timeout = 60
-      provider = aws.default
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -37,7 +35,6 @@ locals {
     },
     "handle-coverage" = {
       timeout = 900
-      provider = aws.compute_region
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -149,7 +146,7 @@ resource "aws_cloudwatch_log_group" "function_logs" {
 resource "aws_lambda_function" "function" {
   for_each = toset(local.lambdas)
 
-  provider = local.lambda_overrides[each.value].provider
+  provider = aws.compute_region
   function_name = each.value
   description   = "Syncs github repositories with the database"
   role          = aws_iam_role.lambda.arn
