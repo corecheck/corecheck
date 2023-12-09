@@ -1,4 +1,7 @@
 locals {
+
+  bench_array_size = 4
+
   lambdas = [
     "github-sync",
     "migrate",
@@ -333,7 +336,10 @@ resource "aws_sfn_state_machine" "state_machine" {
                 "Parameters.$": "$.params",
                 "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
                 "JobName": "benchmarks",
-                "JobQueue": "${aws_batch_job_queue.bench_queue.arn}"
+                "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
+                "ArrayProperties": {
+                  "Size": ${local.bench_array_size}
+                }
               },
               "ResultPath": "$.benchmarks_job",
               "Next": "Handle Benchmarks"
