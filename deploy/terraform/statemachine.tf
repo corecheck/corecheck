@@ -89,7 +89,7 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Type": "Task",
       "Resource": "arn:aws:states:::batch:submitJob.sync",
       "Parameters": {
-        "Parameters": {},
+        "Parameters.$": "$",
         "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
         "JobName": "coverage",
         "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
