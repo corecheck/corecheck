@@ -7,6 +7,7 @@ set -e
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
+MASTER_COMMIT=$(git rev-parse HEAD)
 
 if [ "$IS_MASTER" != "true" ]; then
     git fetch origin pull/$PR_NUM/head && git checkout FETCH_HEAD
