@@ -26,9 +26,9 @@ jobs:
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-          echo "S3_BUCKET=corecheck-lambdas-dev" >> $GITHUB_ENV
+          echo "S3_BUCKET=corecheck-compute-lambdas-dev" >> $GITHUB_ENV
         else
-          echo "S3_BUCKET=corecheck-lambdas" >> $GITHUB_ENV
+          echo "S3_BUCKET=corecheck-compute-lambdas" >> $GITHUB_ENV
         fi
     - name: Set up Go
       uses: actions/setup-go@v2
