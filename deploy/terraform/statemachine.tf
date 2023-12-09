@@ -10,6 +10,7 @@ locals {
   lambda_overrides = {
     "github-sync" = {
       timeout = 900
+      memory_size = 128
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -24,6 +25,7 @@ locals {
     },
     "migrate" = {
       timeout = 60
+      memory_size = 128
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -36,6 +38,7 @@ locals {
     },
     "handle-coverage" = {
       timeout = 900
+      memory_size = 256
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -50,6 +53,7 @@ locals {
     },
     "handle-benchmarks" = {
       timeout = 900
+      memory_size = 128
       environment = {
         variables = {
           DATABASE_HOST     = aws_instance.db.public_ip
@@ -166,7 +170,7 @@ resource "aws_lambda_function" "function" {
   description   = "Syncs github repositories with the database"
   role          = aws_iam_role.lambda.arn
   handler       = each.value
-  memory_size   = 128
+  memory_size   = local.lambda_overrides[each.value].memory_size
   architectures = ["arm64"]
   timeout       = local.lambda_overrides[each.value].timeout
 
