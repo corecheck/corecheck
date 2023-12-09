@@ -2,7 +2,8 @@ locals {
   lambdas = [
     "github-sync",
     "migrate",
-    "handle-coverage"
+    "handle-coverage",
+    "handle-benchmarks"
   ]
 
   # create a map of lambdas and their environment variables
@@ -47,6 +48,18 @@ locals {
         }
       }
     },
+    "handle-benchmarks" = {
+      timeout = 900
+      environment = {
+        variables = {
+          DATABASE_HOST     = aws_instance.db.public_ip
+          DATABASE_PORT     = 5432
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+        }
+      }
+    }
   }
 }
 
@@ -280,6 +293,44 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "handle-coverage:$LATEST",
+        "Payload.$": "$"
+      },
+      "End": true
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": {
+        "Start Sonarcloud": {
+          "Type": "Task",
+          "Resource": "arn:aws:states:::batch:submitJob.sync",
+          "Parameters": {
+            "Parameters.$": "$.params",
+            "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
+            "JobName": "sonar",
+            "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
+          },
+          "ResultPath": "$.sonar_job",
+          "End": true
+        },
+        "Start Benchmarks": {
+          "Type": "Task",
+          "Resource": "arn:aws:states:::batch:submitJob.sync",
+          "Parameters": {
+            "Parameters.$": "$.params",
+            "JobDefinition": "${aws_batch_job_definition.benchmarks_job.arn}",
+            "JobName": "benchmarks",
+            "JobQueue": "${aws_batch_job_queue.benchmarks_queue.arn}"
+          },
+          "Next": "Handle Benchmarks",
+          "ResultPath": "$.benchmarks_job"
+        }
+      }
+    },
+    "Handle Benchmarks": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "handle-benchmarks:$LATEST",
         "Payload.$": "$"
       },
       "End": true
