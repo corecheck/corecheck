@@ -73,3 +73,11 @@ resource "aws_cloudwatch_event_target" "sonar_target" {
 
   input_path = "$.detail"
 }
+
+
+# logging event bridge
+resource "aws_cloudwatch_log_group" "event_bridge" {
+  name              = "/aws/events/event_bridge"
+  retention_in_days = 7
+  provider          = aws.compute_region
+}
