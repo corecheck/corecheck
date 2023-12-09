@@ -161,7 +161,7 @@ resource "aws_cloudwatch_log_group" "function_logs" {
 resource "aws_lambda_function" "function" {
   for_each = toset(local.lambdas)
 
-  provider = aws.compute_region
+  provider      = aws.compute_region
   function_name = each.value
   description   = "Syncs github repositories with the database"
   role          = aws_iam_role.lambda.arn
@@ -295,46 +295,56 @@ resource "aws_sfn_state_machine" "state_machine" {
         "FunctionName": "handle-coverage:$LATEST",
         "Payload.$": "$"
       },
-      "Next": "Parallel",
+      "Next": "Parallel"
     },
     "Parallel": {
       "Type": "Parallel",
-      "Branches": {
-        "Start Sonarcloud": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::batch:submitJob.sync",
-          "Parameters": {
-            "Parameters.$": "$.params",
-            "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
-            "JobName": "sonar",
-            "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
-          },
-          "ResultPath": "$.sonar_job",
-          "End": true
+      "End": true,
+      "Branches": [
+        {
+          "StartAt": "Start Sonarcloud",
+          "States": {
+            "Start Sonarcloud": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::batch:submitJob.sync",
+              "Parameters": {
+                "Parameters.$": "$.params",
+                "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
+                "JobName": "sonar",
+                "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
+              },
+              "ResultPath": "$.sonar_job",
+              "End": true
+            }
+          }
         },
-        "Start Benchmarks": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::batch:submitJob.sync",
-          "Parameters": {
-            "Parameters.$": "$.params",
-            "JobDefinition": "${aws_batch_job_definition.benchmarks_job.arn}",
-            "JobName": "benchmarks",
-            "JobQueue": "${aws_batch_job_queue.benchmarks_queue.arn}"
-          },
-          "Next": "Handle Benchmarks",
-          "ResultPath": "$.benchmarks_job"
+        {
+          "StartAt": "Start Benchmarks",
+          "States": {
+            "Start Benchmarks": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::batch:submitJob.sync",
+              "Parameters": {
+                "Parameters.$": "$.params",
+                "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
+                "JobName": "benchmarks",
+                "JobQueue": "${aws_batch_job_queue.bench_queue.arn}"
+              },
+              "ResultPath": "$.benchmarks_job",
+              "Next": "Handle Benchmarks"
+            },
+            "Handle Benchmarks": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "handle-benchmarks:$LATEST",
+                "Payload.$": "$"
+              },
+              "End": true
+            }
+          }
         }
-      },
-      "End": true
-    },
-    "Handle Benchmarks": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "Parameters": {
-        "FunctionName": "handle-benchmarks:$LATEST",
-        "Payload.$": "$"
-      },
-      "End": true
+      ]
     }
   }
 }
