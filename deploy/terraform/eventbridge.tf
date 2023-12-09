@@ -22,32 +22,34 @@ resource "aws_cloudwatch_event_rule" "start_jobs" {
 PATTERN
 }
 
-# create role arn for batch
-resource "aws_iam_role" "batch_role" {
-  name = "batch_role"
 
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "batch.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
+data "aws_iam_policy_document" "assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
     }
-  ]
+  }
 }
-POLICY
+
+resource "aws_iam_role" "event_bridge_role" {
+  name               = "event_bridge_role-${terraform.workspace}"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+}
+
+
+resource "aws_iam_role_policy_attachment" "event_bridge_policy_attachment" {
+  role       = aws_iam_role.event_bridge_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSBatchFullAccess"
 }
 
 # create event bridge target
 resource "aws_cloudwatch_event_target" "coverage_target" {
   rule     = aws_cloudwatch_event_rule.start_jobs.name
   arn      = aws_batch_job_queue.coverage_queue.arn
-  role_arn = aws_iam_role.batch_role.arn
+  role_arn = aws_iam_role.event_bridge_role.arn
   provider = aws.compute_region
 
   batch_target {
@@ -63,7 +65,7 @@ resource "aws_cloudwatch_event_target" "coverage_target" {
 resource "aws_cloudwatch_event_target" "sonar_target" {
   rule     = aws_cloudwatch_event_rule.start_jobs.name
   arn      = aws_batch_job_queue.sonar_queue.arn
-  role_arn = aws_iam_role.batch_role.arn
+  role_arn = aws_iam_role.event_bridge_role.arn
   provider = aws.compute_region
 
   batch_target {
