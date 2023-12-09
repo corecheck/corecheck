@@ -32,5 +32,3 @@ RUN git config --global user.name "corecheck"
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
