@@ -27,13 +27,6 @@ else
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/master/$COMMIT/bench_bitcoin
 fi
 
-./test/get_previous_releases.py -b
-
-NPROC_2=$(expr $(nproc) \* 2)
-
-./autogen.sh && ./configure --disable-bench --disable-fuzz --enable-fuzz-binary=no --with-gui=no --disable-zmq BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include" --enable-lcov #--enable-extended-functional-tests
-time make -j$(nproc)
-
 set +e
 coverage_exists=$(aws s3 ls $S3_COVERAGE_FILE)
 set -e
@@ -41,6 +34,13 @@ set -e
 if [ "$coverage_exists" != "" ]; then
     echo "Coverage data already exists for this commit"
 else
+    ./test/get_previous_releases.py -b
+    
+    NPROC_2=$(expr $(nproc) \* 2)
+    
+    ./autogen.sh && ./configure --disable-bench --disable-fuzz --enable-fuzz-binary=no --with-gui=no --disable-zmq BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include" --enable-lcov #--enable-extended-functional-tests
+    time make -j$(nproc)
+
     time ./src/test/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./src/test/test_bitcoin -t {} 2>&1
     time python3 test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2
 
