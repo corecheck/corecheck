@@ -2,6 +2,7 @@ locals {
   lambdas = [
     "github-sync",
     "migrate",
+    "handle-coverage"
   ]
 
   # create a map of lambdas and their environment variables
@@ -15,8 +16,6 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
-
-          SQS_QUEUE_URL = aws_sqs_queue.corecheck_queue.url
 
           GITHUB_ACCESS_TOKEN = var.github_token
         }
@@ -33,7 +32,21 @@ locals {
           DATABASE_NAME     = var.db_database
         }
       }
-    }
+    },
+    "handle-coverage" = {
+      timeout = 900
+      environment = {
+        variables = {
+          DATABASE_HOST     = aws_instance.db.public_ip
+          DATABASE_PORT     = 5432
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+
+          GITHUB_ACCESS_TOKEN = var.github_token
+        }
+      }
+    },
   }
 }
 
