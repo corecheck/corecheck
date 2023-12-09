@@ -278,7 +278,7 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "FunctionName": "${aws_lambda_function.handle-coverage.arn}",
+        "FunctionName": "handle-coverage:$LATEST",
         "Payload.$": "$"
       },
       "End": true
