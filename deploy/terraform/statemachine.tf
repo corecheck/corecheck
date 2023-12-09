@@ -272,7 +272,7 @@ resource "aws_sfn_state_machine" "state_machine" {
         "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
       },
       "Next": "Handle coverage",
-      "ResultPath": "$.batch_job"
+      "ResultPath": "$.coverage_job"
     },
     "Handle coverage": {
       "Type": "Task",
