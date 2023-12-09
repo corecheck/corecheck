@@ -123,23 +123,6 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	return nil
 }
 
-func handleCodeCoverageFailure(job *db.Job) error {
-	log.Info("Handling code coverage failure")
-
-	report, err := db.GetCoverageReport(*job.CoverageReportID)
-	if err != nil {
-		return err
-	}
-
-	report.Status = db.COVERAGE_REPORT_STATUS_FAILURE
-
-	err = db.UpdateCoverageReport(report.ID, report.Status, report.BenchmarkStatus, report.CoverageRatio, report.BaseCommit)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 var excludedFolders = []string{
 	"src/test",
 	"src/qt/test",

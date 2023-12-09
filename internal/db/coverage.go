@@ -56,7 +56,6 @@ type CoverageReport struct {
 	CoverageFiles     []*CoverageFile              `json:"coverage_files" gorm:"-"`
 	Benchmarks        []BenchmarkResult            `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	BenchmarksGrouped map[string][]BenchmarkResult `json:"benchmarks_grouped" gorm:"-"`
-	Jobs              []Job                        `json:"jobs" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	CreatedAt         time.Time                    `json:"created_at"`
 }
 
@@ -83,19 +82,19 @@ func CreateCoverageReport(report *CoverageReport) error {
 
 func GetCoverageReport(id int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Jobs").Preload("Benchmarks").Where("id = ?", id).First(&report).Error
+	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("id = ?", id).First(&report).Error
 	return &report, err
 }
 
 func GetCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Jobs").Preload("Benchmarks").Where("commit = ? AND pr_number = ?", commit, prNum).First(&report).Error
+	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("commit = ? AND pr_number = ?", commit, prNum).First(&report).Error
 	return &report, err
 }
 
 func GetCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Jobs").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
+	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
 	return &report, err
 }
 
@@ -115,6 +114,11 @@ func HasCoverageReportForCommit(commit string) (bool, error) {
 }
 
 func CreateLinesCoverage(reportID int, lines []*CoverageLine) error {
+	err := DB.Where("coverage_report_id = ?", reportID).Delete(&CoverageLine{}).Error
+	if err != nil {
+		return err
+	}
+
 	for i := 0; i < len(lines); i += 5000 {
 		end := i + 5000
 		if end > len(lines) {
