@@ -86,7 +86,8 @@ jobs:
       run: if [ "${{ github.ref }}" == "refs/heads/dev" ]; then terraform workspace select dev; else terraform workspace select default; fi
 
     - name: Terraform Apply
-      run: terraform apply -auto-approve -input=false
+      run: terraform apply -auto-approve -input=false | tee /dev/tty | grep -q "Apply complete!" && exit 0 || exit 1
+
     - name: Upload hosts.ini
       uses: actions/upload-artifact@v3
       with:
