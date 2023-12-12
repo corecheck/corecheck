@@ -92,10 +92,53 @@ func GetCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, err
 	return &report, err
 }
 
+func GetOrCreateCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, error) {
+	report, err := GetCoverageReportByCommitPr(commit, prNum)
+	if err != nil {
+		if err.Error() == "record not found" {
+			report = &CoverageReport{
+				PRNumber: prNum,
+				Commit:   commit,
+				IsMaster: false,
+			}
+
+			err = CreateCoverageReport(report)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return report, nil
+}
+
 func GetCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
 	var report CoverageReport
 	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
 	return &report, err
+}
+
+func GetOrCreateCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
+	report, err := GetCoverageReportByCommitMaster(commit)
+	if err != nil {
+		if err.Error() == "record not found" {
+			report = &CoverageReport{
+				Commit:   commit,
+				IsMaster: true,
+			}
+
+			err = CreateCoverageReport(report)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return report, nil
 }
 
 func UpdateCoverageReport(reportID int, status string, benchStatus string, coverage *float64, baseCommit string) error {

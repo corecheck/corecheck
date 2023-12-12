@@ -1,6 +1,5 @@
 locals {
-
-  bench_array_size = 4
+  bench_array_size = 5
 
   lambdas = [
     "github-sync",
@@ -64,6 +63,8 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+
+          BENCH_ARRAY_SIZE = local.bench_array_size
         }
       }
     }

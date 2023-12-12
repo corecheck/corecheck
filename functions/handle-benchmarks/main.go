@@ -8,7 +8,6 @@ import (
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/logger"
 	"github.com/corecheck/corecheck/internal/types"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -16,8 +15,63 @@ var (
 	log = logger.New()
 )
 
+func handleBenchmarkSuccess(job *types.JobParams) error {
+	log.Info("Handling benchmark success")
+
+	var totalBenchmarks []*db.BenchmarkResult
+	var report *db.CoverageReport
+	var err error
+
+	if job.IsMaster {
+		report, err = db.GetOrCreateCoverageReportByCommitMaster(job.Commit)
+		if err != nil {
+			log.Error("Error getting coverage report", err)
+			return err
+		}
+	} else {
+		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.PRNumber)
+		if err != nil {
+			log.Error("Error getting coverage report", err)
+			return err
+		}
+	}
+
+	for n := 0; n < cfg.BenchArraySize; n++ {
+		var benchResults []*db.BenchmarkResult
+		var err error
+		if job.IsMaster {
+			benchResults, err = GetBenchDataMaster(job.Commit, n)
+			if err != nil {
+				log.Error("Error getting benchmark data", err)
+				return err
+			}
+		} else {
+			benchResults, err = GetBenchData(job.PRNumber, job.Commit, n)
+			if err != nil {
+				log.Error("Error getting benchmark data", err)
+				return err
+			}
+		}
+
+		totalBenchmarks = append(totalBenchmarks, benchResults...)
+	}
+
+	err = db.CreateBenchmarkResults(report.ID, totalBenchmarks)
+	if err != nil {
+		log.Error("Error creating benchmark results", err)
+		return err
+	}
+
+	err = db.UpdateCoverageReport(report.ID, report.Status, db.BENCHMARK_STATUS_SUCCESS, report.CoverageRatio, report.BaseCommit)
+	if err != nil {
+		log.Error("Error updating coverage report", err)
+		return err
+	}
+
+	return nil
+}
+
 func HandleRequest(ctx context.Context, event map[string]interface{}) (string, error) {
-	spew.Dump(event)
 	log.Debug("Loading config...")
 	if err := config.Load(&cfg); err != nil {
 		log.Fatalf("Error loading config: %s", err)
@@ -34,7 +88,11 @@ func HandleRequest(ctx context.Context, event map[string]interface{}) (string, e
 		return "", err
 	}
 
-	spew.Dump(params)
+	err = handleBenchmarkSuccess(params)
+	if err != nil {
+		log.Error("Error handling benchmark success", err)
+		return "", err
+	}
 
 	return "OK", nil
 }

@@ -32,24 +32,10 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	var baseCommit string
 	var err error
 	if job.IsMaster {
-		report, err = db.GetCoverageReportByCommitMaster(job.Commit)
+		report, err = db.GetOrCreateCoverageReportByCommitMaster(job.Commit)
 		if err != nil {
-			// if not exist, create a new report
-			if err.Error() == "record not found" {
-				log.Debugf("Creating new coverage report for master commit %s", job.Commit)
-				report = &db.CoverageReport{
-					Commit:   job.Commit,
-					IsMaster: true,
-				}
-
-				err = db.CreateCoverageReport(report)
-				if err != nil {
-					return err
-				}
-			} else {
-				log.Error("Error getting coverage report", err)
-				return err
-			}
+			log.Error("Error getting coverage report", err)
+			return err
 		}
 
 		baseCommit = job.Commit
@@ -64,25 +50,10 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 
 		lines = computeMasterCoverage(report.ID, job, coverage)
 	} else {
-		report, err = db.GetCoverageReportByCommitPr(job.Commit, job.PRNumber)
+		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.PRNumber)
 		if err != nil {
-			// if not exist, create a new report
-			if err.Error() == "record not found" {
-				log.Debugf("Creating new coverage report for PR %d", job.PRNumber)
-				report = &db.CoverageReport{
-					PRNumber: job.PRNumber,
-					Commit:   job.Commit,
-					IsMaster: false,
-				}
-
-				err = db.CreateCoverageReport(report)
-				if err != nil {
-					return err
-				}
-			} else {
-				log.Error("Error getting coverage report", err)
-				return err
-			}
+			log.Error("Error getting coverage report", err)
+			return err
 		}
 
 		coverage, err = GetCoverageData(job.PRNumber, job.Commit)
