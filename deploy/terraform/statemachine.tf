@@ -69,20 +69,6 @@ locals {
         }
       }
     }
-
-    "get-pull" = {
-      timeout = 30
-      memory_size = 128
-      environment = {
-        variables = {
-          DATABASE_HOST     = aws_instance.db.public_ip
-          DATABASE_PORT     = 5432
-          DATABASE_USER     = var.db_user
-          DATABASE_PASSWORD = var.db_password
-          DATABASE_NAME     = var.db_database
-        }
-      }
-    }
   }
 }
 
@@ -182,7 +168,7 @@ resource "aws_cloudwatch_log_group" "function_logs" {
 }
 
 resource "aws_lambda_function" "function" {
-  for_each = toset(local.lambdas)
+  for_each = toset(local.lambda_overrides)
 
   provider      = aws.compute_region
   function_name = each.value
