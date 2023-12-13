@@ -5,7 +5,8 @@ locals {
     "github-sync",
     "migrate",
     "handle-coverage",
-    "handle-benchmarks"
+    "handle-benchmarks",
+    "get-pull",
   ]
 
   # create a map of lambdas and their environment variables
@@ -65,6 +66,20 @@ locals {
           DATABASE_NAME     = var.db_database
 
           BENCH_ARRAY_SIZE = local.bench_array_size
+        }
+      }
+    }
+
+    "get-pull" = {
+      timeout = 30
+      memory_size = 128
+      environment = {
+        variables = {
+          DATABASE_HOST     = aws_instance.db.public_ip
+          DATABASE_PORT     = 5432
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
         }
       }
     }
