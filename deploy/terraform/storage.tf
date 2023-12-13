@@ -85,3 +85,31 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-lambdas" {
     }
   }
 }
+
+
+resource "aws_s3_bucket" "corecheck-lambdas-api" {
+  bucket = "corecheck-api-lambdas-${terraform.workspace}"
+}
+
+# enable versionning
+resource "aws_s3_bucket_versioning" "corecheck-lambdas" {
+  bucket = aws_s3_bucket.corecheck-lambdas-api.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
+# remove non current versions after 7 days
+resource "aws_s3_bucket_lifecycle_configuration" "corecheck-lambdas" {
+  bucket = aws_s3_bucket.corecheck-lambdas-api.id
+
+  rule {
+    id     = "corecheck-lambdas"
+    status = "Enabled"
+    noncurrent_version_expiration {
+      newer_noncurrent_versions = 1
+      noncurrent_days           = 7
+    }
+  }
+}
