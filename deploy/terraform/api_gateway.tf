@@ -83,7 +83,7 @@ resource "aws_api_gateway_integration" "lambda" {
   http_method             = aws_api_gateway_method.proxy.http_method
   resource_id             = aws_api_gateway_resource.pull.id
   rest_api_id             = aws_api_gateway_rest_api.api.id
-  integration_http_method = "GET"
+  integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.get_pull.invoke_arn
 }
