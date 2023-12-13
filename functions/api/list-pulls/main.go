@@ -21,7 +21,7 @@ func listPulls(c echo.Context) error {
 	pageNum, err := strconv.Atoi(page)
 	if err != nil {
 		log.Warn(err)
-		return err
+		pageNum = 1
 	}
 	pulls, err := db.ListPulls(db.SearchPRsOptions{
 		Title: title,
