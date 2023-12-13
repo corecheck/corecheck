@@ -62,7 +62,6 @@ data "aws_iam_policy_document" "job_role_assume_role" {
   }
 }
 
-
 resource "aws_iam_role" "job_role" {
   name               = "job-role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.job_role_assume_role.json

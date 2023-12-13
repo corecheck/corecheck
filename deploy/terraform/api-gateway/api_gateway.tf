@@ -63,8 +63,8 @@ resource "aws_api_gateway_integration" "lambda_list" {
 resource "aws_api_gateway_deployment" "api" {
   rest_api_id       = aws_api_gateway_rest_api.api.id
   stage_name        = "api"
-  description       = md5(file("api_gateway/api_gateway.tf"))
-  stage_description = md5(file("api_gateway/api_gateway.tf"))
+  description       = md5(file("api-gateway/api_gateway.tf"))
+  stage_description = md5(file("api-gateway/api_gateway.tf"))
   lifecycle {
     create_before_destroy = true
     prevent_destroy       = false

@@ -1,59 +1,4 @@
-data "aws_vpc" "batch_vpc" {
-  provider = aws.compute_region
-  default  = true
-}
-
-data "aws_subnets" "batch_subnets" {
-  provider = aws.compute_region
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.batch_vpc.id]
-  }
-}
-
-resource "aws_s3_bucket" "corecheck-ccache" {
-  provider = aws.compute_region
-  bucket   = "corecheck-ccache-${terraform.workspace}"
-}
-
-
-# remove objects after 30days
-resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
-  provider = aws.compute_region
-  bucket   = aws_s3_bucket.corecheck-ccache.id
-
-  rule {
-    id     = "corecheck-ccache"
-    status = "Enabled"
-    expiration {
-      days = 30
-    }
-  }
-}
-resource "aws_s3_bucket" "corecheck-artifacts" {
-  provider = aws.compute_region
-  bucket   = "corecheck-artifacts-${terraform.workspace}"
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "corecheck-artifacts" {
-  provider = aws.compute_region
-  bucket   = aws_s3_bucket.corecheck-artifacts.id
-
-  rule {
-    id     = "corecheck-artifacts"
-    status = "Enabled"
-    expiration {
-      days = 3
-    }
-  }
-}
-
-data "aws_security_group" "compute_security_group" {
-  provider = aws.compute_region
-  name     = "default"
-}
-
-resource "aws_batch_compute_environment" "jobs_compute" {
+resource "aws_batch_compute_environment" "coverage_compute" {
   provider                        = aws.compute_region
   compute_environment_name_prefix = "coverage-${terraform.workspace}-"
 
@@ -79,16 +24,16 @@ resource "aws_batch_compute_environment" "jobs_compute" {
   type = "MANAGED"
 }
 
-
 resource "aws_batch_job_queue" "coverage_queue" {
   name     = "coverage-queue-${terraform.workspace}"
   provider = aws.compute_region
   state    = "ENABLED"
   priority = 1
   compute_environments = [
-    aws_batch_compute_environment.jobs_compute.arn
+    aws_batch_compute_environment.coverage_compute.arn
   ]
 }
+
 resource "aws_batch_job_definition" "coverage_job" {
   name     = "coverage-job-${terraform.workspace}"
   type     = "container"
@@ -145,7 +90,7 @@ resource "aws_batch_job_definition" "coverage_job" {
       },
       {
         name  = "S3_BUCKET_DATA",
-        value = aws_s3_bucket.bitcoin-coverage-data.id
+        value = var.corecheck_data_bucket
       },
       {
         name  = "S3_BUCKET_ARTIFACTS",

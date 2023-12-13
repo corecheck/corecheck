@@ -260,7 +260,7 @@ resource "aws_batch_job_definition" "bench_job" {
       },
       {
         name  = "S3_BUCKET_DATA",
-        value = aws_s3_bucket.bitcoin-coverage-data.id
+        value = var.corecheck_data_bucket
       },
       {
         name  = "S3_BUCKET_ARTIFACTS",

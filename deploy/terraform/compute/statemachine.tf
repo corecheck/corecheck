@@ -14,8 +14,8 @@ locals {
       memory_size = 128
       environment = {
         variables = {
-          DATABASE_HOST     = aws_instance.db.public_ip
-          DATABASE_PORT     = 5432
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
@@ -29,8 +29,8 @@ locals {
       memory_size = 128
       environment = {
         variables = {
-          DATABASE_HOST     = aws_instance.db.public_ip
-          DATABASE_PORT     = 5432
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
@@ -42,8 +42,8 @@ locals {
       memory_size = 256
       environment = {
         variables = {
-          DATABASE_HOST     = aws_instance.db.public_ip
-          DATABASE_PORT     = 5432
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
@@ -57,8 +57,8 @@ locals {
       memory_size = 128
       environment = {
         variables = {
-          DATABASE_HOST     = aws_instance.db.public_ip
-          DATABASE_PORT     = 5432
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
@@ -73,7 +73,7 @@ locals {
 data "aws_s3_object" "lambda_statemachine_zip" {
   provider = aws.compute_region
   for_each = toset(local.state_machine_lambdas)
-  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  bucket   = var.lambda_bucket
   key      = "${each.value}.zip"
 }
 
@@ -103,7 +103,7 @@ resource "aws_lambda_function" "function" {
 
   s3_key            = data.aws_s3_object.lambda_statemachine_zip[each.value].key
   s3_object_version = data.aws_s3_object.lambda_statemachine_zip[each.value].version_id
-  s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
+  s3_bucket         = var.lambda_bucket
 
   environment {
     variables = local.lambda_overrides[each.value].environment.variables
