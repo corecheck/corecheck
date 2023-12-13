@@ -76,7 +76,7 @@ func main() {
 	}))
 	e.Use(middleware.Logger())
 
-	e.GET("/:stage/pulls/:number", getPull)
+	e.GET("/pulls/:number", getPull)
 
 	echoLambda = echoadapter.New(e)
 	handler := func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
