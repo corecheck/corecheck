@@ -1,7 +1,7 @@
 locals {
-    api_lambdas = [
-        "get-pull",
-    ]
+  api_lambdas = [
+    "get-pull",
+  ]
 }
 
 data "aws_s3_object" "lambda_api_zip" {
@@ -71,11 +71,11 @@ resource "aws_lambda_function" "get_pull" {
 }
 
 resource "aws_lambda_permission" "api_gw" {
-    statement_id = "AllowAPIGatewayInvoke"
-    action       = "lambda:InvokeFunction"
-    function_name = aws_lambda_function.get_pull.function_name
-    principal    = "apigateway.amazonaws.com"
-    source_arn   = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_pull.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*"
 }
 
 
@@ -90,47 +90,47 @@ resource "aws_api_gateway_integration" "lambda" {
 
 # deployment
 resource "aws_api_gateway_deployment" "api" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    lifecycle {
-        create_before_destroy = true
-        prevent_destroy       = false
-    }
-    depends_on = [
-        aws_api_gateway_method.proxy,
-        aws_api_gateway_integration.lambda,
-    ]
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+  depends_on = [
+    aws_api_gateway_method.proxy,
+    aws_api_gateway_integration.lambda,
+  ]
 }
 
 # enable deploment logging
 resource "aws_api_gateway_stage" "api" {
-    deployment_id = aws_api_gateway_deployment.api.id
-    rest_api_id   = aws_api_gateway_rest_api.api.id
-    stage_name    = "api"
-    xray_tracing_enabled = true
-    access_log_settings {
-        destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
-        format          = jsonencode({
-        requestId     = "$context.requestId"
-        ip            = "$context.identity.sourceIp"
-        requestTime   = "$context.requestTime"
-        httpMethod    = "$context.httpMethod"
-        routeKey      = "$context.routeKey"
-        status        = "$context.status"
-        protocol      = "$context.protocol"
-        responseLength= "$context.responseLength"
-        integrationLatency = "$context.integrationLatency"
-        integrationStatus  = "$context.integrationStatus"
-        integrationErrorMessage = "$context.integrationErrorMessage"
-        error = "$context.error"
-        })
-    }
+  deployment_id        = aws_api_gateway_deployment.api.id
+  rest_api_id          = aws_api_gateway_rest_api.api.id
+  stage_name           = "api"
+  xray_tracing_enabled = true
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      ip                      = "$context.identity.sourceIp"
+      requestTime             = "$context.requestTime"
+      httpMethod              = "$context.httpMethod"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      protocol                = "$context.protocol"
+      responseLength          = "$context.responseLength"
+      integrationLatency      = "$context.integrationLatency"
+      integrationStatus       = "$context.integrationStatus"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+      error                   = "$context.error"
+    })
+  }
 
-    depends_on = [
-        aws_api_gateway_deployment.api,
-        aws_cloudwatch_log_group.api_gateway_logs,
-    ]
+  depends_on = [
+    aws_api_gateway_deployment.api,
+    aws_cloudwatch_log_group.api_gateway_logs,
+  ]
 }
- 
+
 # api gateway log
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   name = "/aws/api-gateway/${aws_api_gateway_rest_api.api.id}"
