@@ -35,6 +35,11 @@ resource "aws_lambda_permission" "api_gw" {
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*"
+
+  depends_on = [
+    aws_api_gateway_deployment.api,
+    aws_lambda_function.lambda,
+  ]
 }
 
 resource "aws_api_gateway_integration" "lambda" {
