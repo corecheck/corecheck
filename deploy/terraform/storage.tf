@@ -57,13 +57,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
 }
 
 resource "aws_s3_bucket" "corecheck-lambdas" {
-  bucket = "corecheck-compute-lambdas-${terraform.workspace}"
+  bucket   = "corecheck-compute-lambdas-${terraform.workspace}"
   provider = aws.compute_region
 }
 
 # enable versionning
 resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
-  bucket = aws_s3_bucket.corecheck-lambdas.id
+  bucket   = aws_s3_bucket.corecheck-lambdas.id
   provider = aws.compute_region
   versioning_configuration {
     status = "Enabled"
@@ -73,7 +73,7 @@ resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas" {
-  bucket = aws_s3_bucket.corecheck-lambdas.id
+  bucket   = aws_s3_bucket.corecheck-lambdas.id
   provider = aws.compute_region
 
   rule {

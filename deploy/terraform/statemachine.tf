@@ -10,7 +10,7 @@ locals {
   # create a map of lambdas and their environment variables
   lambda_overrides = {
     "github-sync" = {
-      timeout = 900
+      timeout     = 900
       memory_size = 128
       environment = {
         variables = {
@@ -25,7 +25,7 @@ locals {
       }
     },
     "migrate" = {
-      timeout = 60
+      timeout     = 60
       memory_size = 128
       environment = {
         variables = {
@@ -38,7 +38,7 @@ locals {
       }
     },
     "handle-coverage" = {
-      timeout = 900
+      timeout     = 900
       memory_size = 256
       environment = {
         variables = {
@@ -53,7 +53,7 @@ locals {
       }
     },
     "handle-benchmarks" = {
-      timeout = 900
+      timeout     = 900
       memory_size = 128
       environment = {
         variables = {
