@@ -22,8 +22,24 @@ resource "aws_cloudwatch_log_group" "function_api_logs" {
   }
 }
 
+# logging policy
+data "aws_iam_policy_document" "allow_lambda_logging" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [
+      "arn:aws:logs:*:*:*",
+    ]
+  }
+}
+
 resource "aws_api_gateway_rest_api" "api" {
   name = "api"
+
 }
 
 resource "aws_api_gateway_resource" "pulls" {
@@ -114,11 +130,6 @@ resource "aws_api_gateway_stage" "api" {
         integrationErrorMessage = "$context.integrationErrorMessage"
         error = "$context.error"
         })
-    }
-
-    lifecycle {
-        create_before_destroy = true
-        prevent_destroy       = false
     }
 
     depends_on = [
