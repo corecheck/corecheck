@@ -103,7 +103,6 @@ resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-api-lambdas" {
   bucket = aws_s3_bucket.corecheck-lambdas-api.id
-
   rule {
     id     = "corecheck-lambdas"
     status = "Enabled"

@@ -55,7 +55,7 @@ resource "aws_lambda_function" "get_pull" {
 
   s3_key            = data.aws_s3_object.lambda_api_zip["get-pull"].key
   s3_object_version = data.aws_s3_object.lambda_api_zip["get-pull"].version_id
-  s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
+  s3_bucket         = aws_s3_bucket.corecheck-lambdas-api.id
 
   environment {
     variables = {
