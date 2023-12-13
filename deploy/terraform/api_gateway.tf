@@ -79,6 +79,19 @@ resource "aws_api_gateway_integration" "lambda" {
   uri                     = aws_lambda_function.get_pull.invoke_arn
 }
 
+# deployment
+resource "aws_api_gateway_deployment" "api" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    lifecycle {
+        create_before_destroy = true
+        prevent_destroy       = false
+    }
+    depends_on = [
+        aws_api_gateway_method.proxy,
+        aws_api_gateway_integration.lambda,
+    ]
+}
+
 # enable deploment logging
 resource "aws_api_gateway_stage" "api" {
     deployment_id = aws_api_gateway_deployment.api.id
