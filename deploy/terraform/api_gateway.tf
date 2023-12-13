@@ -6,7 +6,7 @@ locals {
 
 data "aws_s3_object" "lambda_api_zip" {
   for_each = toset(local.api_lambdas)
-  bucket   = aws_s3_bucket.corecheck-lambdas-api
+  bucket   = aws_s3_bucket.corecheck-lambdas-api.id
   key      = "${each.value}.zip"
 }
 
