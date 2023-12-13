@@ -1,4 +1,26 @@
-# rest api gateway for lambda functions /api/pulls/{id}
+locals {
+    api_lambdas = [
+        "get-pull",
+    ]
+}
+
+data "aws_s3_object" "lambda_api_zip" {
+  for_each = toset(local.api_lambdas)
+  bucket   = aws_s3_bucket.corecheck-lambdas-api
+  key      = "${each.value}.zip"
+}
+
+resource "aws_cloudwatch_log_group" "function_api_logs" {
+  for_each = toset(local.api_lambdas)
+  name     = "/aws/lambda/${each.value}"
+
+  retention_in_days = 7
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+}
 
 resource "aws_api_gateway_rest_api" "api" {
   name = "api"
@@ -31,8 +53,8 @@ resource "aws_lambda_function" "get_pull" {
   architectures = ["arm64"]
   timeout       = 30
 
-  s3_key            = data.aws_s3_object.lambda_zip["get-pull"].key
-  s3_object_version = data.aws_s3_object.lambda_zip["get-pull"].version_id
+  s3_key            = data.aws_s3_object.lambda_api_zip["get-pull"].key
+  s3_object_version = data.aws_s3_object.lambda_api_zip["get-pull"].version_id
   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
   environment {

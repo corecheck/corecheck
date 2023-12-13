@@ -70,20 +70,39 @@ locals {
   }
 }
 
+data "aws_s3_object" "lambda_statemachine_zip" {
+  provider = aws.compute_region
+  for_each = toset(local.state_machine_lambdas)
+  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  key      = "${each.value}.zip"
+}
+
+resource "aws_cloudwatch_log_group" "function_statemachine_logs" {
+  for_each = toset(local.state_machine_lambdas)
+  name     = "/aws/lambda/${each.value}"
+  provider = aws.compute_region
+
+  retention_in_days = 7
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+}
+
 resource "aws_lambda_function" "function" {
   for_each = toset(local.state_machine_lambdas)
 
   provider      = aws.compute_region
   function_name = each.value
-  description   = "Syncs github repositories with the database"
   role          = aws_iam_role.lambda.arn
   handler       = each.value
   memory_size   = local.lambda_overrides[each.value].memory_size
   architectures = ["arm64"]
   timeout       = local.lambda_overrides[each.value].timeout
 
-  s3_key            = data.aws_s3_object.lambda_zip[each.value].key
-  s3_object_version = data.aws_s3_object.lambda_zip[each.value].version_id
+  s3_key            = data.aws_s3_object.lambda_statemachine_zip[each.value].key
+  s3_object_version = data.aws_s3_object.lambda_statemachine_zip[each.value].version_id
   s3_bucket         = aws_s3_bucket.corecheck-lambdas.id
 
   environment {
