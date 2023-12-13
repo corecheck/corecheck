@@ -87,3 +87,8 @@ resource "aws_api_gateway_deployment" "api" {
   stage_name  = "prod"
 }
 
+
+# api gateway log
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name = "/aws/api-gateway/${aws_api_gateway_rest_api.api.id}"
+}
