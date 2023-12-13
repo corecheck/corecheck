@@ -24,7 +24,7 @@ resource "aws_cloudwatch_log_group" "function_api_logs" {
 }
 
 resource "aws_api_gateway_rest_api" "api" {
-  name = "api"
+  name = "api-${terraform.workspace}"
 }
 
 resource "aws_api_gateway_resource" "pulls" {
