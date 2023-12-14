@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -52,7 +53,7 @@ func checkMasterCoverage(c *github.Client) error {
 		params := StateMachineInput{
 			Params: types.JobParams{
 				Commit:   master.GetCommit().GetSHA(),
-				IsMaster: true,
+				IsMaster: "true",
 			},
 		}
 		paramsJson, err := json.Marshal(params)
@@ -105,8 +106,8 @@ func handlePullRequest(pr *github.PullRequest) error {
 		params := StateMachineInput{
 			Params: types.JobParams{
 				Commit:   dbPR.Head,
-				IsMaster: false,
-				PRNumber: dbPR.Number,
+				IsMaster: "false",
+				PRNumber: fmt.Sprint(dbPR.Number),
 			},
 		}
 		paramsJson, err := json.Marshal(params)

@@ -31,7 +31,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	var lines []*db.CoverageLine
 	var baseCommit string
 	var err error
-	if job.IsMaster {
+	if job.GetIsMaster() {
 		report, err = db.GetOrCreateCoverageReportByCommitMaster(job.Commit)
 		if err != nil {
 			log.Error("Error getting coverage report", err)
@@ -50,18 +50,18 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 
 		lines = computeMasterCoverage(report.ID, job, coverage)
 	} else {
-		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.PRNumber)
+		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.GetPRNumber())
 		if err != nil {
 			log.Error("Error getting coverage report", err)
 			return err
 		}
 
-		coverage, err = GetCoverageData(job.PRNumber, job.Commit)
+		coverage, err = GetCoverageData(job.GetPRNumber(), job.Commit)
 		if err != nil {
 			return err
 		}
 		log.Debugf("Getting diff for PR %d", job.PRNumber)
-		diff, err := GetPullDiff(job.PRNumber)
+		diff, err := GetPullDiff(job.GetPRNumber())
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		lines = computeDiffCoverage(report.ID, coverage, diff)
 
 		log.Debugf("Getting base commit for PR %d", job.PRNumber)
-		baseCommit, err = GetBaseCommit(job.PRNumber, job.Commit)
+		baseCommit, err = GetBaseCommit(job.GetPRNumber(), job.Commit)
 		if err != nil {
 			return err
 		}

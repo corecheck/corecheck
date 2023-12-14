@@ -1,28 +1,32 @@
 package types
 
-import (
-	"strconv"
-)
+import "strconv"
 
 type JobParams struct {
-	PRNumber int    `json:"pr_number"`
+	PRNumber string `json:"pr_number"`
 	Commit   string `json:"commit"`
-	IsMaster bool   `json:"is_master"`
+	IsMaster string `json:"is_master"`
+}
+
+func (j *JobParams) GetPRNumber() int {
+	prNumber, _ := strconv.Atoi(j.PRNumber)
+	return prNumber
+}
+
+func (j *JobParams) GetIsMaster() bool {
+	isMaster, _ := strconv.ParseBool(j.IsMaster)
+	return isMaster
+}
+
+func (j *JobParams) GetCommit() string {
+	return j.Commit
 }
 
 func getJobParams(event map[string]interface{}) (*JobParams, error) {
 	params := event["params"].(map[string]interface{})
-	prNumber, err := strconv.Atoi(params["pr_number"].(string))
-	if err != nil {
-		return nil, err
-	}
-
-	isMaster, err := strconv.ParseBool(params["is_master"].(string))
-	if err != nil {
-		return nil, err
-	}
-
 	commit := params["commit"].(string)
+	prNumber := params["pr_number"].(string)
+	isMaster := params["is_master"].(string)
 
 	return &JobParams{
 		PRNumber: prNumber,

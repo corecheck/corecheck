@@ -22,14 +22,14 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 	var report *db.CoverageReport
 	var err error
 
-	if job.IsMaster {
+	if job.GetIsMaster() {
 		report, err = db.GetOrCreateCoverageReportByCommitMaster(job.Commit)
 		if err != nil {
 			log.Error("Error getting coverage report", err)
 			return err
 		}
 	} else {
-		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.PRNumber)
+		report, err = db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.GetPRNumber())
 		if err != nil {
 			log.Error("Error getting coverage report", err)
 			return err
@@ -39,14 +39,14 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 	for n := 0; n < cfg.BenchArraySize; n++ {
 		var benchResults []*db.BenchmarkResult
 		var err error
-		if job.IsMaster {
+		if job.GetIsMaster() {
 			benchResults, err = GetBenchDataMaster(job.Commit, n)
 			if err != nil {
 				log.Error("Error getting benchmark data", err)
 				return err
 			}
 		} else {
-			benchResults, err = GetBenchData(job.PRNumber, job.Commit, n)
+			benchResults, err = GetBenchData(job.GetPRNumber(), job.Commit, n)
 			if err != nil {
 				log.Error("Error getting benchmark data", err)
 				return err
