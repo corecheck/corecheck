@@ -54,6 +54,7 @@ func checkMasterCoverage(c *github.Client) error {
 			Params: types.JobParams{
 				Commit:   master.GetCommit().GetSHA(),
 				IsMaster: "true",
+				PRNumber: "0",
 			},
 		}
 		paramsJson, err := json.Marshal(params)
