@@ -164,10 +164,8 @@ func checkPullsCoverage(c *github.Client) error {
 
 	log.Debugf("Last DB update: %s", lastDBUpdate.Format(time.RFC3339))
 
-	checkpoint := time.Date(2023, 12, 14, 0, 0, 0, 0, time.UTC)
 	page := 0
-
-	for lastDBUpdate.Before(checkpoint) {
+	for {
 		log.Debugf("Retrieving page %d", page)
 		prs, _, err := c.PullRequests.List(context.Background(), "bitcoin", "bitcoin", &github.PullRequestListOptions{
 			State:     "open",
@@ -190,6 +188,10 @@ func checkPullsCoverage(c *github.Client) error {
 
 		for _, pr := range prs {
 			if pr.GetUpdatedAt().Before(lastDBUpdate) {
+				break
+			}
+
+			if pr.GetUpdatedAt().Before(time.Now().Add(-2 * time.Hour)) {
 				break
 			}
 
