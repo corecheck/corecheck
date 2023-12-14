@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -11,6 +11,7 @@ import (
 	"github.com/corecheck/corecheck/internal/config"
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/logger"
+	"github.com/corecheck/corecheck/internal/types"
 	"github.com/google/go-github/v57/github"
 
 	"github.com/aws/aws-sdk-go/service/sfn"
@@ -22,6 +23,10 @@ var (
 	log          = logger.New()
 	stateMachine *sfn.SFN
 )
+
+type StateMachineInput struct {
+	Params types.JobParams `json:"params"`
+}
 
 func checkMasterCoverage(c *github.Client) error {
 	log.Info("Checking master coverage...")
@@ -44,9 +49,20 @@ func checkMasterCoverage(c *github.Client) error {
 	} else {
 		log.Info("Master does not have coverage for latest commit, adding to queue")
 
-		_, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
+		params := StateMachineInput{
+			Params: types.JobParams{
+				Commit:   master.GetCommit().GetSHA(),
+				IsMaster: true,
+			},
+		}
+		paramsJson, err := json.Marshal(params)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.StateMachineARN),
-			Input:           aws.String(`{"commit":"` + master.GetCommit().GetSHA() + `","is_master":"true"}`),
+			Input:           aws.String(string(paramsJson)),
 		})
 
 		if err != nil {
@@ -85,9 +101,23 @@ func handlePullRequest(pr *github.PullRequest) error {
 		}
 
 		log.Info("PR does not have coverage for latest commit, triggering coverage job")
+
+		params := StateMachineInput{
+			Params: types.JobParams{
+				Commit:   dbPR.Head,
+				IsMaster: false,
+				PRNumber: dbPR.Number,
+			},
+		}
+		paramsJson, err := json.Marshal(params)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
 		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.StateMachineARN),
-			Input:           aws.String(`{"commit":"` + dbPR.Head + `","is_master":"false","pr_num":"` + fmt.Sprint(dbPR.Number) + `"}`),
+			Input:           aws.String(string(paramsJson)),
 		})
 
 		if err != nil {
