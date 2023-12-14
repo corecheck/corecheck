@@ -2,7 +2,7 @@ resource "aws_imagebuilder_component" "bitcoin-coverage-component" {
   provider = aws.compute_region
   name     = "CPUAffinity-${terraform.workspace}"
   platform = "Linux"
-  version  = "1.0.4"
+  version  = "1.0.5"
 
   lifecycle {
     create_before_destroy = true
@@ -57,7 +57,7 @@ data "aws_ami" "amazon-linux-2" {
 resource "aws_imagebuilder_image_recipe" "bitcoin-coverage-recipe" {
   provider     = aws.compute_region
   name         = "bitcoin-coverage-recipe-${terraform.workspace}"
-  version      = "1.0.12"
+  version      = "1.0.13"
   parent_image = data.aws_ami.amazon-linux-2.id
   block_device_mapping {
     device_name = "/dev/xvda"
