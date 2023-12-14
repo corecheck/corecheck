@@ -114,6 +114,7 @@ resource "aws_lambda_function" "function" {
 
 
 resource "aws_lambda_invocation" "invoke" {
+  provider = aws.compute_region
   function_name = "migrate"
   input         = "{\"action\": \"up\"}"
   depends_on = [
