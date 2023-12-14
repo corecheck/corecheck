@@ -10,7 +10,5 @@ type Config struct {
 		AccessToken string `env:"ACCESS_TOKEN" env-required:"true"`
 	} `env-prefix:"GITHUB_"`
 
-	SQS struct {
-		QueueURL string `env:"QUEUE_URL" env-required:"true"`
-	} `env-prefix:"SQS_"`
+	StateMachineARN string `env:"STATE_MACHINE_ARN" env-required:"true"`
 }

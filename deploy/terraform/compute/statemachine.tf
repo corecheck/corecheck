@@ -21,6 +21,7 @@ locals {
           DATABASE_NAME     = var.db_database
 
           GITHUB_ACCESS_TOKEN = var.github_token
+          STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
         }
       }
     },

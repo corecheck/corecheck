@@ -8,18 +8,19 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/eventbridge"
 	"github.com/corecheck/corecheck/internal/config"
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/logger"
 	"github.com/google/go-github/v57/github"
+
+	"github.com/aws/aws-sdk-go/service/sfn"
 	"golang.org/x/oauth2"
 )
 
 var (
-	cfg         = Config{}
-	log         = logger.New()
-	eventBridge *eventbridge.EventBridge
+	cfg          = Config{}
+	log          = logger.New()
+	stateMachine *sfn.SFN
 )
 
 func checkMasterCoverage(c *github.Client) error {
@@ -43,14 +44,9 @@ func checkMasterCoverage(c *github.Client) error {
 	} else {
 		log.Info("Master does not have coverage for latest commit, adding to queue")
 
-		_, err := eventBridge.PutEvents(&eventbridge.PutEventsInput{
-			Entries: []*eventbridge.PutEventsRequestEntry{
-				{
-					Detail:     aws.String(`{"commit":"` + master.GetCommit().GetSHA() + `","is_master":"true"}`),
-					DetailType: aws.String("start-jobs"),
-					Source:     aws.String("github-sync"),
-				},
-			},
+		_, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
+			StateMachineArn: aws.String(cfg.StateMachineARN),
+			Input:           aws.String(`{"commit":"` + master.GetCommit().GetSHA() + `","is_master":"true"}`),
 		})
 
 		if err != nil {
@@ -89,15 +85,9 @@ func handlePullRequest(pr *github.PullRequest) error {
 		}
 
 		log.Info("PR does not have coverage for latest commit, triggering coverage job")
-
-		_, err = eventBridge.PutEvents(&eventbridge.PutEventsInput{
-			Entries: []*eventbridge.PutEventsRequestEntry{
-				{
-					Detail:     aws.String(`{"commit":"` + dbPR.Head + `","is_master":"false","pr_num":"` + fmt.Sprint(dbPR.Number) + `"}`),
-					DetailType: aws.String("start-jobs"),
-					Source:     aws.String("github-sync"),
-				},
-			},
+		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
+			StateMachineArn: aws.String(cfg.StateMachineARN),
+			Input:           aws.String(`{"commit":"` + dbPR.Head + `","is_master":"false","pr_num":"` + fmt.Sprint(dbPR.Number) + `"}`),
 		})
 
 		if err != nil {
@@ -119,11 +109,10 @@ func checkPullsCoverage(c *github.Client) error {
 
 	log.Debugf("Last DB update: %s", lastDBUpdate.Format(time.RFC3339))
 
-	now := time.Now()
-
+	checkpoint := time.Date(2023, 12, 14, 0, 0, 0, 0, time.UTC)
 	page := 0
 
-	for lastDBUpdate.Before(now) {
+	for lastDBUpdate.Before(checkpoint) {
 		log.Debugf("Retrieving page %d", page)
 		prs, _, err := c.PullRequests.List(context.Background(), "bitcoin", "bitcoin", &github.PullRequestListOptions{
 			State:     "open",
@@ -193,7 +182,7 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 	client := github.NewClient(oauth2.NewClient(ctx, ts))
 
 	sess := session.Must(session.NewSession())
-	eventBridge = eventbridge.New(sess)
+	stateMachine = sfn.New(sess)
 
 	log.Info("Now syncing GitHub activity...")
 	if err := syncGitHubActivity(client); err != nil {
