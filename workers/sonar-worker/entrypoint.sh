@@ -14,14 +14,14 @@ if [ "$IS_MASTER" != "true" ]; then
     HEAD_COMMIT=$(git rev-parse HEAD)
     if [ "$COMMIT" != "$HEAD_COMMIT" ]; then
         echo "Commit $COMMIT is not equal to HEAD commit $HEAD_COMMIT"
-        exit 1
+        exit 0
     fi
     
     git rebase master
 else
     if [ "$COMMIT" != "$MASTER_COMMIT" ]; then
         echo "Commit $COMMIT is not equal to master commit $MASTER_COMMIT"
-        exit 1
+        exit 0
     fi
 fi
 
