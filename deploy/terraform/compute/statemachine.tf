@@ -123,6 +123,14 @@ resource "aws_lambda_invocation" "invoke" {
   ]
 }
 
+# execute github-sync every 15 minutes
+resource "aws_cloudwatch_event_rule" "github_sync" {
+  provider = aws.compute_region
+  name        = "github-sync"
+  description = "github-sync"
+  schedule_expression = "rate(15 minutes)"
+}
+
 # state machine role
 resource "aws_iam_role" "state_machine_role" {
   name = "state_machine_role"
@@ -142,6 +150,15 @@ resource "aws_iam_role" "state_machine_role" {
   ]
 }
 EOF
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  provider = aws.compute_region
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = "github-sync"
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.github_sync.arn
 }
 
 # state machine policy (batch + lambda), create managed-rule

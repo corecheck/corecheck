@@ -50,6 +50,7 @@ data "aws_iam_policy_document" "allow_lambda_invoke" {
     effect = "Allow"
     actions = [
       "states:StartExecution",
+      "lambda:InvokeFunction",
     ]
 
     resources = [
