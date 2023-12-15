@@ -123,12 +123,11 @@ resource "aws_lambda_invocation" "invoke" {
   ]
 }
 
-# execute github-sync every 15 minutes
 resource "aws_cloudwatch_event_rule" "github_sync" {
   provider = aws.compute_region
   name        = "github-sync-rule-${terraform.workspace}"
   description = "github-sync"
-  schedule_expression = "rate(5 minutes)"
+  schedule_expression = "rate(10 minutes)"
   is_enabled = terraform.workspace == "default"
 }
 
