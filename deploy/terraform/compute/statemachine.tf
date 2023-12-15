@@ -129,6 +129,7 @@ resource "aws_cloudwatch_event_rule" "github_sync" {
   name        = "github-sync"
   description = "github-sync"
   schedule_expression = "rate(1 minute)"
+  is_enabled = terraform.workspace == "default"
 }
 
 # state machine role
