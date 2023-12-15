@@ -128,7 +128,7 @@ resource "aws_cloudwatch_event_rule" "github_sync" {
   provider = aws.compute_region
   name        = "github-sync"
   description = "github-sync"
-  schedule_expression = "rate(15 minutes)"
+  schedule_expression = "rate(1 minute)"
 }
 
 # state machine role
