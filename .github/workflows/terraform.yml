@@ -29,8 +29,8 @@ jobs:
           echo "S3_COMPUTE_BUCKET=corecheck-compute-lambdas-dev" >> $GITHUB_ENV
           echo "S3_API_BUCKET=corecheck-api-lambdas-dev" >> $GITHUB_ENV
         else
-          echo "S3_COMPUTE_BUCKET=corecheck-compute-lambdas" >> $GITHUB_ENV
-          echo "S3_API_BUCKET=corecheck-api-lambdas" >> $GITHUB_ENV
+          echo "S3_COMPUTE_BUCKET=corecheck-compute-lambdas-default" >> $GITHUB_ENV
+          echo "S3_API_BUCKET=corecheck-api-lambdas-default" >> $GITHUB_ENV
         fi
     - name: Set up Go
       uses: actions/setup-go@v2
