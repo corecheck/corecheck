@@ -38,7 +38,7 @@ resource "aws_lambda_function" "lambda" {
 
 resource "aws_cloudwatch_log_group" "function_api_logs" {
   for_each = toset(local.api_lambdas)
-  name     = "/aws/lambda/${each.value}"
+  name     = "/aws/lambda/${each.value}-${terraform.workspace}"
 
   retention_in_days = 7
 

@@ -80,7 +80,7 @@ data "aws_s3_object" "lambda_statemachine_zip" {
 
 resource "aws_cloudwatch_log_group" "function_statemachine_logs" {
   for_each = toset(local.state_machine_lambdas)
-  name     = "/aws/lambda/${each.value}"
+  name     = "/aws/lambda/${each.value}-${terraform.workspace}"
   provider = aws.compute_region
 
   retention_in_days = 7
@@ -134,7 +134,7 @@ resource "aws_cloudwatch_event_rule" "github_sync" {
 
 # state machine role
 resource "aws_iam_role" "state_machine_role" {
-  name = "state_machine_role"
+  name = "state_machine_role-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -155,7 +155,7 @@ EOF
 
 resource "aws_lambda_permission" "allow_eventbridge" {
   provider = aws.compute_region
-  statement_id  = "AllowExecutionFromEventBridge"
+  statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
   action        = "lambda:InvokeFunction"
   function_name = "github-sync"
   principal     = "events.amazonaws.com"

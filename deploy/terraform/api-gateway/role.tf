@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "assume_lambda_role" {
 }
 
 resource "aws_iam_role" "lambda" {
-  name               = "AssumeLambdaRoleForApiGateway"
+  name               = "AssumeLambdaRoleForApiGateway-${terraform.workspace}"
   description        = "Role for lambda to assume lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_lambda_role.json
 }
@@ -30,7 +30,7 @@ data "aws_iam_policy_document" "allow_lambda_logging" {
 }
 
 resource "aws_iam_policy" "function_logging_policy" {
-  name        = "AllowLambdaLoggingPolicyForApiGateway"
+  name        = "AllowLambdaLoggingPolicyForApiGateway-${terraform.workspace}"
   description = "Policy for lambda cloudwatch logging"
   policy      = data.aws_iam_policy_document.allow_lambda_logging.json
 }

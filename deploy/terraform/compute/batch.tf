@@ -14,6 +14,7 @@ data "aws_subnets" "batch_subnets" {
 resource "aws_s3_bucket" "corecheck-ccache" {
   provider = aws.compute_region
   bucket   = "corecheck-ccache-${terraform.workspace}"
+  force_destroy = true
 }
 
 
@@ -33,6 +34,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
 resource "aws_s3_bucket" "corecheck-artifacts" {
   provider = aws.compute_region
   bucket   = "corecheck-artifacts-${terraform.workspace}"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-artifacts" {
