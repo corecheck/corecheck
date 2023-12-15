@@ -132,6 +132,23 @@ resource "aws_cloudwatch_event_rule" "github_sync" {
   is_enabled = terraform.workspace == "default"
 }
 
+# target
+resource "aws_cloudwatch_event_target" "github_sync" {
+  provider = aws.compute_region
+  rule      = aws_cloudwatch_event_rule.github_sync.name
+  target_id = "github-sync-${terraform.workspace}"
+  arn       = aws_lambda_function.function["github-sync"].arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  provider = aws.compute_region
+  statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
+  action        = "lambda:InvokeFunction"
+  function_name = "github-sync-${terraform.workspace}"
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.github_sync.arn
+}
+
 # state machine role
 resource "aws_iam_role" "state_machine_role" {
   name = "state_machine_role-${terraform.workspace}"
@@ -151,15 +168,6 @@ resource "aws_iam_role" "state_machine_role" {
   ]
 }
 EOF
-}
-
-resource "aws_lambda_permission" "allow_eventbridge" {
-  provider = aws.compute_region
-  statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
-  action        = "lambda:InvokeFunction"
-  function_name = "github-sync-${terraform.workspace}"
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.github_sync.arn
 }
 
 # state machine policy (batch + lambda), create managed-rule
