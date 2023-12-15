@@ -173,7 +173,7 @@ mainLoop:
 			Sort:      "updated",
 			Direction: "desc",
 			ListOptions: github.ListOptions{
-				PerPage: 100,
+				PerPage: 20,
 				Page:    page,
 			},
 		})
