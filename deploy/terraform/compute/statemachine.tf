@@ -218,7 +218,7 @@ EOF
 
 # statemachine resource
 resource "aws_sfn_state_machine" "state_machine" {
-  name     = "start-jobs"
+  name     = "start-jobs-${terraform.workspace}"
   role_arn = aws_iam_role.state_machine_role.arn
   provider = aws.compute_region
 

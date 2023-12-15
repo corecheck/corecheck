@@ -43,7 +43,7 @@ resource "aws_ebs_volume" "db" {
 
 # create security group for db
 resource "aws_security_group" "db" {
-  name        = "db"
+  name        = "db-${terraform.workspace}"
   description = "Security group for db"
 
   ingress {

@@ -17,7 +17,7 @@ jobs:
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
           echo "BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker-dev:latest" >> $GITHUB_ENV
         else
-          echo "BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker:latest" >> $GITHUB_ENV
+          echo "BENCH_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-bench-worker-default:latest" >> $GITHUB_ENV
         fi
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3

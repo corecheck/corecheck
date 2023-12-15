@@ -17,7 +17,7 @@ jobs:
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
           echo "COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker-dev:latest" >> $GITHUB_ENV
         else
-          echo "COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker:latest" >> $GITHUB_ENV
+          echo "COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-coverage-worker-default:latest" >> $GITHUB_ENV
         fi
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
