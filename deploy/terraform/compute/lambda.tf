@@ -60,7 +60,7 @@ data "aws_iam_policy_document" "allow_lambda_invoke" {
 }
 
 resource "aws_iam_policy" "function_invoke_policy" {
-  name        = "AllowLambdaInvokePolicy"
+  name        = "AllowLambdaInvokePolicy-${terraform.workspace}"
   description = "Policy for lambda to invoke state machine"
   policy      = data.aws_iam_policy_document.allow_lambda_invoke.json
 }

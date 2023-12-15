@@ -30,7 +30,7 @@ resource "aws_api_gateway_method" "list_pulls" {
 
 resource "aws_lambda_permission" "api_gw" {
   for_each      = toset(local.api_lambdas)
-  function_name = each.value
+  function_name = "${each.value}-${terraform.workspace}"
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"

@@ -13,7 +13,7 @@ data "aws_s3_object" "lambda_api_zip" {
 
 resource "aws_lambda_function" "lambda" {
   for_each      = toset(local.api_lambdas)
-  function_name = each.value
+  function_name = "${each.value}-${terraform.workspace}"
   handler       = each.value
   role          = aws_iam_role.lambda.arn
   memory_size   = 128

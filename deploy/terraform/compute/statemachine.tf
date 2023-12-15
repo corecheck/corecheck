@@ -95,7 +95,7 @@ resource "aws_lambda_function" "function" {
   for_each = toset(local.state_machine_lambdas)
 
   provider      = aws.compute_region
-  function_name = each.value
+  function_name = "${each.value}-${terraform.workspace}"
   role          = aws_iam_role.lambda.arn
   handler       = each.value
   memory_size   = local.lambda_overrides[each.value].memory_size
@@ -116,7 +116,7 @@ resource "aws_lambda_function" "function" {
 
 resource "aws_lambda_invocation" "invoke" {
   provider = aws.compute_region
-  function_name = "migrate"
+  function_name = "migrate-${terraform.workspace}"
   input         = "{\"action\": \"up\"}"
   depends_on = [
     aws_lambda_function.function,
@@ -157,7 +157,7 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   provider = aws.compute_region
   statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
   action        = "lambda:InvokeFunction"
-  function_name = "github-sync"
+  function_name = "github-sync-${terraform.workspace}"
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.github_sync.arn
 }
