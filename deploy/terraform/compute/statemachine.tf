@@ -97,7 +97,7 @@ resource "aws_lambda_function" "function" {
   provider      = aws.compute_region
   function_name = "${each.value}-${terraform.workspace}"
   role          = aws_iam_role.lambda.arn
-  handler       = each.value
+  handler       = "${each.value}-${terraform.workspace}"
   memory_size   = local.lambda_overrides[each.value].memory_size
   architectures = ["arm64"]
   timeout       = local.lambda_overrides[each.value].timeout
