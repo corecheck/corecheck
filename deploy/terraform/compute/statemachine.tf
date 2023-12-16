@@ -250,7 +250,7 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "FunctionName": "handle-coverage:$LATEST",
+        "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
         "Payload.$": "$"
       },
       "Next": "Parallel",
@@ -299,7 +299,7 @@ resource "aws_sfn_state_machine" "state_machine" {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
-                "FunctionName": "handle-benchmarks:$LATEST",
+                "FunctionName": "handle-benchmarks-${terraform.workspace}:$LATEST",
                 "Payload.$": "$"
               },
               "End": true
