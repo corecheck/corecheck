@@ -120,16 +120,11 @@ jobs:
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-      GH_OAUTH_CLIENT_ID: ${{ secrets.GH_OAUTH_CLIENT_ID }}
-      GH_OAUTH_SECRET: ${{ secrets.GH_OAUTH_SECRET }}
-      GH_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_REDIRECT_URL }}
 
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      API_SESSION_SECRET: ${{ secrets.API_SESSION_SECRET }}
       PLAUSIBLE_DB_PASSWORD: ${{ secrets.PLAUSIBLE_DB_PASSWORD }}
-      
       PLAUSIBLE_SECRET_KEY_BASE: ${{ secrets.PLAUSIBLE_SECRET_KEY_BASE }}
       
       PYTHONUNBUFFERED: "1"

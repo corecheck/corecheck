@@ -245,7 +245,7 @@ resource "aws_batch_job_definition" "bench_job" {
       },
       {
         type  = "MEMORY"
-        value = "2048",
+        value = "1900",
       },
     ]
 
