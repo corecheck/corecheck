@@ -241,7 +241,7 @@ resource "aws_batch_job_definition" "bench_job" {
     resourceRequirements = [
       {
         type  = "VCPU"
-        value = "2",
+        value = "1",
       },
       {
         type  = "MEMORY"
