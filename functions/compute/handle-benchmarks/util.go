@@ -9,11 +9,11 @@ import (
 )
 
 func GetBenchData(prNum int, commit string, n int) ([]*db.BenchmarkResult, error) {
-	return getBenchData("https://bitcoin-coverage-data.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/bench/bench-" + strconv.Itoa(n) + ".json")
+	return getBenchData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/bench/bench-" + strconv.Itoa(n) + ".json")
 }
 
 func GetBenchDataMaster(commit string, n int) ([]*db.BenchmarkResult, error) {
-	return getBenchData("https://bitcoin-coverage-data.s3.eu-west-3.amazonaws.com/master/" + commit + "/bench/bench-" + strconv.Itoa(n) + ".json")
+	return getBenchData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/master/" + commit + "/bench/bench-" + strconv.Itoa(n) + ".json")
 }
 
 func getBenchData(url string) ([]*db.BenchmarkResult, error) {
