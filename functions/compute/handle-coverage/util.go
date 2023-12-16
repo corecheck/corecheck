@@ -28,15 +28,15 @@ type CoverageData struct {
 }
 
 func GetCoverageData(prNum int, commit string) (*CoverageData, error) {
-	return getCoverageData("https://bitcoin-coverage-data.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
+	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
 }
 
 func GetCoverageDataMaster(commit string) (*CoverageData, error) {
-	return getCoverageData("https://bitcoin-coverage-data.s3.eu-west-3.amazonaws.com/master/" + commit + "/coverage.json")
+	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/master/" + commit + "/coverage.json")
 }
 
 func GetBaseCommit(prNum int, commit string) (string, error) {
-	resp, err := http.Get("https://bitcoin-coverage-data.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/.base_commit")
+	resp, err := http.Get("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/.base_commit")
 	if err != nil {
 		return "", err
 	}
