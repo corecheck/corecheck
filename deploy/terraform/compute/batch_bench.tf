@@ -178,7 +178,7 @@ resource "aws_batch_compute_environment" "bench" {
 
     type                = "SPOT"
     instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
-    instance_type       = ["c7g.large"]
+    instance_type       = ["c7g.medium"]
     allocation_strategy = "SPOT_PRICE_CAPACITY_OPTIMIZED"
   }
   lifecycle {

@@ -32,8 +32,7 @@ bench_list=$(echo "$bench_list" | grep -v "LogPrint*") # Do not run LogPrint* be
 
 time for bench in $bench_list; do
     echo "Running $bench"
-    # run bench_bitcoin with valgrind
-    taskset -c 1 valgrind --tool=cachegrind --I1=32768,8,64 --D1=32768,8,64 --LL=8388608,16,64 --cachegrind-out-file=bench_$bench.cachegrind ./bench_bitcoin -filter=$bench -min-time=$BENCH_DURATION
+    valgrind --tool=cachegrind --I1=32768,8,64 --D1=32768,8,64 --LL=8388608,16,64 --cachegrind-out-file=bench_$bench.cachegrind ./bench_bitcoin -filter=$bench -min-time=$BENCH_DURATION
 done
 
 # bench.json
