@@ -45,7 +45,7 @@ type CoverageFileHunk struct {
 
 	CoverageType string                 `json:"coverage_type"`
 	Filename     string                 `json:"filename"`
-	Lines        []CoverageFileHunkLine `json:"lines"`
+	Lines        []CoverageFileHunkLine `json:"lines" gorm:"foreignKey:CoverageFileHunkID;constraint:OnDelete:CASCADE"`
 }
 
 func GetPullCoverageReports(prNum int) ([]*CoverageReport, error) {
