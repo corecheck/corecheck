@@ -118,6 +118,9 @@ resource "aws_lambda_invocation" "invoke" {
   provider = aws.compute_region
   function_name = "migrate-${terraform.workspace}"
   input         = "{\"action\": \"up\"}"
+  triggers = {
+    always_run = timestamp()
+  }
   depends_on = [
     aws_lambda_function.function,
   ]
