@@ -50,7 +50,7 @@ type CoverageFileHunk struct {
 
 func GetPullCoverageReports(prNum int) ([]*CoverageReport, error) {
 	var reports []*CoverageReport
-	err := DB.Where("pr_number = ? AND (status = ? OR status = ?)", prNum, COVERAGE_REPORT_STATUS_PENDING, COVERAGE_REPORT_STATUS_SUCCESS).Preload(clause.Associations).Order("created_at desc").Find(&reports).Error
+	err := DB.Where("pr_number = ? AND (status = ? OR status = ?)", prNum, COVERAGE_REPORT_STATUS_PENDING, COVERAGE_REPORT_STATUS_SUCCESS).Preload(clause.Associations).Preload("Hunks.Lines").Order("created_at desc").Find(&reports).Error
 	return reports, err
 }
 
