@@ -140,16 +140,13 @@ func CreateCoverageHunks(reportID int, hunks []*CoverageFileHunk) error {
 		return err
 	}
 
-	for i := 0; i < len(hunks); i += 5000 {
-		end := i + 5000
-		if end > len(hunks) {
-			end = len(hunks)
-		}
-		err := DB.CreateInBatches(hunks[i:end], len(hunks)).Error
+	for _, hunk := range hunks {
+		err := DB.Create(hunk).Error
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
