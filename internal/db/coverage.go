@@ -134,7 +134,7 @@ func HasCoverageReportForCommit(commit string) (bool, error) {
 	return count > 0, err
 }
 
-func CreateCoverageHunks(reportID int, hunks []CoverageFileHunk) error {
+func CreateCoverageHunks(reportID int, hunks []*CoverageFileHunk) error {
 	err := DB.Where("coverage_report_id = ?", reportID).Delete(&CoverageFileHunk{}).Error
 	if err != nil {
 		return err

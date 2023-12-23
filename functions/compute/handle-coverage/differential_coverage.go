@@ -295,8 +295,8 @@ func groupLinesByGap(lines []CoverageLine, maxGap int) [][]CoverageLine {
 }
 
 // For each coverage type, for each file, fetch the source file and create hunks
-func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []string, filename string, commit string, lines []CoverageLine) []db.CoverageFileHunk {
-	var fileHunks []db.CoverageFileHunk
+func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []string, filename string, commit string, lines []CoverageLine) []*db.CoverageFileHunk {
+	var fileHunks []*db.CoverageFileHunk
 
 	currentHunk := &db.CoverageFileHunk{
 		Filename: filename,
@@ -333,7 +333,7 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 			})
 		}
 
-		fileHunks = append(fileHunks, *currentHunk)
+		fileHunks = append(fileHunks, currentHunk)
 		currentHunk = &db.CoverageFileHunk{
 			Filename: filename,
 		}
@@ -360,10 +360,10 @@ func isContextLine(lineNumber int, lines []CoverageLine) bool {
 	return true
 }
 
-func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport) []db.CoverageFileHunk {
+func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport) []*db.CoverageFileHunk {
 	sourceFiles := fetchAllFiles(diffCoverage.Coverage.ListFiles(), report.Commit)
 
-	var coverageHunks []db.CoverageFileHunk
+	var coverageHunks []*db.CoverageFileHunk
 	for coverageType, files := range diffCoverage.Results {
 		for filename, lines := range files {
 			hunks := diffCoverage.createFileHunks(sourceFiles[filename], filename, report.Commit, lines)

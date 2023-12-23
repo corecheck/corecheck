@@ -64,8 +64,6 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	}
 
 	differentialCoverage := coverage.Diff(coverageMaster, diff)
-	fmt.Println(differentialCoverage)
-
 	hunks := differentialCoverage.CreateHunks(report)
 
 	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
