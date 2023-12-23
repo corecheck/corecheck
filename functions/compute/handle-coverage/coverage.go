@@ -49,11 +49,7 @@ func ComputeDifferentialCoverage(masterCoverage, pullCoverage *CoverageData, dif
 					})
 				} else {
 					// Pull still has coverage
-					diffCoverage.CoveredBaselineCode = append(diffCoverage.CoveredBaselineCode, types.CoverageLine{
-						OriginalLineNumber: l.LineNumber,
-						NewLineNumber:      r,
-						File:               file.File,
-					})
+					// Do nothing
 				}
 			} else { // Master previously had no coverage
 				r, err := diff.TranslateOriginalToNew(file.File, l.LineNumber)
@@ -75,11 +71,7 @@ func ComputeDifferentialCoverage(masterCoverage, pullCoverage *CoverageData, dif
 					})
 				} else {
 					// Still no coverage
-					diffCoverage.UncoveredBaselineCode = append(diffCoverage.UncoveredBaselineCode, types.CoverageLine{
-						OriginalLineNumber: l.LineNumber,
-						NewLineNumber:      r,
-						File:               file.File,
-					})
+					// Do nothing
 				}
 			}
 		}

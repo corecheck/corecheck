@@ -13,16 +13,12 @@ type DifferentialCoverage struct {
 	LostBaselineCoverage []CoverageLine
 	// Previously unused code is not covered
 	UncoveredIncludedCode []CoverageLine
-	// Preexisting code was not covered before, not covered now
-	UncoveredBaselineCode []CoverageLine
 	// Unchanged code is covered now
 	GainedBaselineCoverage []CoverageLine
 	// Previously unused code is covered now
 	GainedCoverageIncludedCode []CoverageLine
 	// Newly added code is exercised
 	GainedCoverageNewCode []CoverageLine
-	// Unchanged code was covered before and is still covered
-	CoveredBaselineCode []CoverageLine
 	// Previously un-exercised code is unused now.
 	ExcludedUncoveredBaselineCode []CoverageLine
 	// Previously exercised code is unused now.

@@ -200,16 +200,6 @@ func StoreDifferentialCoverage(reportID int, differentialCoverage *types.Differe
 		})
 	}
 
-	for _, line := range differentialCoverage.UncoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_UNCOVERED_BASELINE_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
 	for _, line := range differentialCoverage.GainedBaselineCoverage {
 		lines = append(lines, &CoverageLine{
 			CoverageReportID:   reportID,
@@ -234,16 +224,6 @@ func StoreDifferentialCoverage(reportID int, differentialCoverage *types.Differe
 		lines = append(lines, &CoverageLine{
 			CoverageReportID:   reportID,
 			CoverageType:       COVERAGE_TYPE_GAINED_COVERAGE_NEW_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.CoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_COVERED_BASELINE_CODE,
 			File:               line.File,
 			OriginalLineNumber: line.OriginalLineNumber,
 			NewLineNumber:      line.NewLineNumber,
