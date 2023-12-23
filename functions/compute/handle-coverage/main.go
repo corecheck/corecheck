@@ -66,7 +66,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	differentialCoverage := coverage.Diff(coverageMaster, diff)
 	hunks := differentialCoverage.CreateHunks(report)
 
-	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
+	log.Info(fmt.Sprintf("Found %d hunks", len(hunks)))
 	err = db.CreateCoverageHunks(report.ID, hunks)
 	if err != nil {
 		return err
@@ -74,6 +74,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 
 	report.Status = db.COVERAGE_REPORT_STATUS_SUCCESS
 
+	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
 	err = db.UpdateCoverageReport(report.ID, report.Status, report.BenchmarkStatus, report.BaseCommit)
 	if err != nil {
 		return err
