@@ -6,6 +6,7 @@ on:
     paths:
       - 'functions/**'
       - 'deploy/**'
+      - 'internal/**'
       - .github/workflows/terraform.yml
   workflow_dispatch:
   repository_dispatch:
