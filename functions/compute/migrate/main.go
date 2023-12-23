@@ -25,7 +25,7 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 		log.Fatalf("Error connecting to database: %s", err)
 	}
 
-	err := db.DB.AutoMigrate(&db.CoverageReport{}, &db.CoverageFileHunkLine{}, &db.CoverageFileHunk{}, &db.BenchmarkResult{}, &db.PR{})
+	err := db.DB.AutoMigrate(&db.CoverageReport{}, &db.CoverageFileHunk{}, &db.CoverageFileHunkLine{}, &db.BenchmarkResult{}, &db.PR{})
 	if err != nil {
 		log.Fatalf("Error migrating database: %s", err)
 	}
