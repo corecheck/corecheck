@@ -2,78 +2,25 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/waigani/diffparser"
 )
 
-type CoverageData struct {
-	Files []struct {
-		File      string `json:"file"`
-		Functions []struct {
-			ExecutionCount int    `json:"execution_count"`
-			Lineno         int    `json:"lineno"`
-			Name           string `json:"name"`
-		} `json:"functions"`
-		Lines []struct {
-			Branches   []any `json:"branches"`
-			Count      int   `json:"count"`
-			LineNumber int   `json:"line_number"`
-		} `json:"lines"`
-	} `json:"files"`
-}
-
-type LineCoverage struct {
-	LineNumber int
-	Count      int
-}
-
-type CoverageMap map[string]map[int]LineCoverage
-
-func (c CoverageData) ToMap() CoverageMap {
-	m := make(CoverageMap)
-
-	for _, file := range c.Files {
-		m[file.File] = make(map[int]LineCoverage)
-		for _, l := range file.Lines {
-			m[file.File][l.LineNumber] = LineCoverage{
-				LineNumber: l.LineNumber,
-				Count:      l.Count,
-			}
-		}
-	}
-
-	return m
-}
-
-func GetCoverageData(prNum int, commit string) (*CoverageData, error) {
+func GetCoverageData(prNum int, commit string) (*RawCoverageData, error) {
 	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
 }
 
-func GetCoverageDataMaster(commit string) (*CoverageData, error) {
+func GetCoverageDataMaster(commit string) (*RawCoverageData, error) {
 	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/master/" + commit + "/coverage.json")
 }
 
-func GetBaseCommit(prNum int, commit string) (string, error) {
-	resp, err := http.Get("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/.base_commit")
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	baseCommit, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.ReplaceAll(string(baseCommit), "\n", ""), nil
-}
-
-func getCoverageData(url string) (*CoverageData, error) {
+func getCoverageData(url string) (*RawCoverageData, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -81,7 +28,7 @@ func getCoverageData(url string) (*CoverageData, error) {
 
 	defer resp.Body.Close()
 
-	coverageData := CoverageData{}
+	coverageData := RawCoverageData{}
 	err = json.NewDecoder(resp.Body).Decode(&coverageData)
 	if err != nil {
 		return nil, err
@@ -108,4 +55,39 @@ func GetPullDiff(prNum int) (*diffparser.Diff, error) {
 	}
 
 	return diffparser.Parse(string(data))
+}
+func getSourceFile(filename string, commit string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/bitcoin/bitcoin/%s/%s", commit, filename))
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+func fetchAllFiles(files []string, commit string) map[string][]string {
+	var wg sync.WaitGroup
+	var filesMap = make(map[string][]string)
+
+	wg.Add(len(files))
+	for _, file := range files {
+		go func(file string) {
+			defer wg.Done()
+			sourceCodeFile, err := getSourceFile(file, commit)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			filesMap[file] = strings.Split(sourceCodeFile, "\n")
+		}(file)
+	}
+	wg.Wait()
+
+	return filesMap
 }

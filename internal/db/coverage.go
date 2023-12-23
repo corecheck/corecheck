@@ -3,7 +3,6 @@ package db
 import (
 	"time"
 
-	"github.com/corecheck/corecheck/internal/types"
 	"gorm.io/gorm/clause"
 )
 
@@ -11,19 +10,6 @@ const (
 	COVERAGE_REPORT_STATUS_PENDING = "pending"
 	COVERAGE_REPORT_STATUS_SUCCESS = "success"
 	COVERAGE_REPORT_STATUS_FAILURE = "failure"
-
-	COVERAGE_TYPE_UNCOVERED_NEW_CODE               = "uncovered_new_code"
-	COVERAGE_TYPE_LOST_BASELINE_COVERAGE           = "lost_baseline_coverage"
-	COVERAGE_TYPE_UNCOVERED_INCLUDED_CODE          = "uncovered_included_code"
-	COVERAGE_TYPE_UNCOVERED_BASELINE_CODE          = "uncovered_baseline_code"
-	COVERAGE_TYPE_GAINED_BASELINE_COVERAGE         = "gained_baseline_coverage"
-	COVERAGE_TYPE_GAINED_COVERAGE_INCLUDED_CODE    = "gained_coverage_included_code"
-	COVERAGE_TYPE_GAINED_COVERAGE_NEW_CODE         = "gained_coverage_new_code"
-	COVERAGE_TYPE_COVERED_BASELINE_CODE            = "covered_baseline_code"
-	COVERAGE_TYPE_EXCLUDED_UNCOVERED_BASELINE_CODE = "excluded_uncovered_baseline_code"
-	COVERAGE_TYPE_EXCLUDED_COVERED_BASELINE_CODE   = "excluded_covered_baseline_code"
-	COVERAGE_TYPE_DELETED_UNCOVERED_BASELINE_CODE  = "deleted_uncovered_baseline_code"
-	COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE    = "deleted_covered_baseline_code"
 )
 
 type CoverageReport struct {
@@ -35,32 +21,31 @@ type CoverageReport struct {
 	Commit            string                        `json:"commit"`
 	BaseCommit        string                        `json:"base_commit"`
 	BaseReport        *CoverageReport               `json:"base_report" gorm:"-"`
-	CoverageRatio     *float64                      `json:"coverage_ratio"`
-	CoverageLines     []CoverageLine                `json:"coverage_lines" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	Benchmarks        []BenchmarkResult             `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	BenchmarksGrouped map[string][]BenchmarkResult  `json:"benchmarks_grouped" gorm:"-"`
 	Coverage          map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
 	CreatedAt         time.Time                     `json:"created_at"`
 }
 
-type CoverageLine struct {
-	ID                 int    `json:"id,omitempty" gorm:"primaryKey"`
-	CoverageReportID   int    `json:"coverage_report_id"`
-	CoverageType       string `json:"coverage_type"`
-	File               string `json:"file"`
+type CoverageFileHunkLine struct {
+	CoverageFileHunkID int `json:"hunk_id"`
+
 	OriginalLineNumber int    `json:"original_line_number"`
 	NewLineNumber      int    `json:"new_line_number"`
-}
-type CoverageFileHunkLine struct {
-	LineNumber int    `json:"line_number"`
-	Content    string `json:"content"`
-	Highlight  bool   `json:"highlight"`
-	Context    bool   `json:"context"`
+	Content            string `json:"content"`
+	Highlight          bool   `json:"highlight"`
+	Context            bool   `json:"context"`
+	Covered            bool   `json:"covered"`
+	Tested             bool   `json:"tested"`
 }
 
 type CoverageFileHunk struct {
-	Filename string                 `json:"filename"`
-	Lines    []CoverageFileHunkLine `json:"lines"`
+	ID               int `json:"id,omitempty" gorm:"primaryKey"`
+	CoverageReportID int `json:"coverage_report_id"`
+
+	CoverageType string                 `json:"coverage_type"`
+	Filename     string                 `json:"filename"`
+	Lines        []CoverageFileHunkLine `json:"lines"`
 }
 
 func GetPullCoverageReports(prNum int) ([]*CoverageReport, error) {
@@ -135,11 +120,10 @@ func GetOrCreateCoverageReportByCommitMaster(commit string) (*CoverageReport, er
 	return report, nil
 }
 
-func UpdateCoverageReport(reportID int, status string, benchStatus string, coverage *float64, baseCommit string) error {
+func UpdateCoverageReport(reportID int, status string, benchStatus string, baseCommit string) error {
 	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(map[string]interface{}{
 		"status":           status,
 		"benchmark_status": benchStatus,
-		"coverage_ratio":   coverage,
 		"base_commit":      baseCommit,
 	}).Error
 }
@@ -150,125 +134,23 @@ func HasCoverageReportForCommit(commit string) (bool, error) {
 	return count > 0, err
 }
 
-func CreateLinesCoverage(reportID int, lines []*CoverageLine) error {
-	err := DB.Where("coverage_report_id = ?", reportID).Delete(&CoverageLine{}).Error
+func CreateCoverageHunks(reportID int, hunks []CoverageFileHunk) error {
+	err := DB.Where("coverage_report_id = ?", reportID).Delete(&CoverageFileHunk{}).Error
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < len(lines); i += 5000 {
+	for i := 0; i < len(hunks); i += 5000 {
 		end := i + 5000
-		if end > len(lines) {
-			end = len(lines)
+		if end > len(hunks) {
+			end = len(hunks)
 		}
-		err := DB.CreateInBatches(lines[i:end], len(lines)).Error
+		err := DB.CreateInBatches(hunks[i:end], len(hunks)).Error
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func StoreDifferentialCoverage(reportID int, differentialCoverage *types.DifferentialCoverage) error {
-	var lines []*CoverageLine
-	for _, line := range differentialCoverage.UncoveredNewCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_UNCOVERED_NEW_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.LostBaselineCoverage {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_LOST_BASELINE_COVERAGE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.UncoveredIncludedCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_UNCOVERED_INCLUDED_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.GainedBaselineCoverage {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_GAINED_BASELINE_COVERAGE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.GainedCoverageIncludedCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_GAINED_COVERAGE_INCLUDED_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.GainedCoverageNewCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_GAINED_COVERAGE_NEW_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-
-	for _, line := range differentialCoverage.ExcludedUncoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_EXCLUDED_UNCOVERED_BASELINE_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-	for _, line := range differentialCoverage.ExcludedCoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_EXCLUDED_COVERED_BASELINE_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      line.NewLineNumber,
-		})
-	}
-	for _, line := range differentialCoverage.DeletedUncoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_DELETED_UNCOVERED_BASELINE_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      -1,
-		})
-	}
-	for _, line := range differentialCoverage.DeletedCoveredBaselineCode {
-		lines = append(lines, &CoverageLine{
-			CoverageReportID:   reportID,
-			CoverageType:       COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE,
-			File:               line.File,
-			OriginalLineNumber: line.OriginalLineNumber,
-			NewLineNumber:      -1,
-		})
-	}
-
-	return CreateLinesCoverage(reportID, lines)
 }
 
 func GetLatestMasterCoverageReport() (*CoverageReport, error) {

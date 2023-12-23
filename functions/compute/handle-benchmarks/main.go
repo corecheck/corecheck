@@ -68,7 +68,7 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 	}
 	log.Info("Updating coverage report")
 
-	err = db.UpdateCoverageReport(report.ID, report.Status, db.BENCHMARK_STATUS_SUCCESS, report.CoverageRatio, report.BaseCommit)
+	err = db.UpdateCoverageReport(report.ID, report.Status, db.BENCHMARK_STATUS_SUCCESS, report.BaseCommit)
 	if err != nil {
 		log.Error("Error updating coverage report", err)
 		return err

@@ -30,7 +30,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 			return err
 		}
 
-		err = db.UpdateCoverageReport(report.ID, db.COVERAGE_REPORT_STATUS_SUCCESS, report.BenchmarkStatus, report.CoverageRatio, report.BaseCommit)
+		err = db.UpdateCoverageReport(report.ID, db.COVERAGE_REPORT_STATUS_SUCCESS, report.BenchmarkStatus, report.BaseCommit)
 		if err != nil {
 			log.Error("Error updating coverage report", err)
 			return err
@@ -63,17 +63,20 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		return err
 	}
 
-	differentialCoverage := ComputeDifferentialCoverage(coverageMaster, coverage, diff)
+	differentialCoverage := coverage.Diff(coverageMaster, diff)
+	fmt.Println(differentialCoverage)
+
+	hunks := differentialCoverage.CreateHunks(report)
 
 	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
-	err = db.StoreDifferentialCoverage(report.ID, differentialCoverage)
+	err = db.CreateCoverageHunks(report.ID, hunks)
 	if err != nil {
 		return err
 	}
 
 	report.Status = db.COVERAGE_REPORT_STATUS_SUCCESS
 
-	err = db.UpdateCoverageReport(report.ID, report.Status, report.BenchmarkStatus, report.CoverageRatio, report.BaseCommit)
+	err = db.UpdateCoverageReport(report.ID, report.Status, report.BenchmarkStatus, report.BaseCommit)
 	if err != nil {
 		return err
 	}
