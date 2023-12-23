@@ -19,7 +19,7 @@ if [ "$IS_MASTER" != "true" ]; then
         exit 1
     fi
     
-    git rebase master
+    git rebase $BASE_COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
 else
