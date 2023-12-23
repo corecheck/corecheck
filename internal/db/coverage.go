@@ -84,14 +84,15 @@ func GetCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, err
 	return &report, err
 }
 
-func GetOrCreateCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, error) {
+func GetOrCreateCoverageReportByCommitPr(commit string, prNum int, baseCommit string) (*CoverageReport, error) {
 	report, err := GetCoverageReportByCommitPr(commit, prNum)
 	if err != nil {
 		if err.Error() == "record not found" {
 			report = &CoverageReport{
-				PRNumber: prNum,
-				Commit:   commit,
-				IsMaster: false,
+				PRNumber:   prNum,
+				Commit:     commit,
+				IsMaster:   false,
+				BaseCommit: baseCommit,
 			}
 
 			err = CreateCoverageReport(report)

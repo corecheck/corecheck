@@ -40,7 +40,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		return nil
 	}
 
-	report, err := db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.GetPRNumber())
+	report, err := db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.GetPRNumber(), job.BaseCommit)
 	if err != nil {
 		log.Error("Error getting coverage report", err)
 		return err
