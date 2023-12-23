@@ -26,31 +26,21 @@ const (
 	COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE    = "deleted_covered_baseline_code"
 )
 
-type CoverageFile struct {
-	Name        string          `json:"name" gorm:"-"`
-	TestedRatio float64         `json:"tested_ratio" gorm:"-"`
-	Hunks       []*CoverageHunk `json:"hunks" gorm:"-"`
-}
-
-type CoverageHunk struct {
-	Lines []CoverageLine `json:"lines" gorm:"-"`
-}
-
 type CoverageReport struct {
-	ID                int                          `json:"id,omitempty" gorm:"primaryKey"`
-	Status            string                       `json:"status" gorm:"default:pending"`
-	BenchmarkStatus   string                       `json:"benchmark_status" gorm:"default:pending"`
-	IsMaster          bool                         `json:"is_master"`
-	PRNumber          int                          `json:"pr_number"`
-	Commit            string                       `json:"commit"`
-	BaseCommit        string                       `json:"base_commit"`
-	BaseReport        *CoverageReport              `json:"base_report" gorm:"-"`
-	CoverageRatio     *float64                     `json:"coverage_ratio"`
-	CoverageLines     []CoverageLine               `json:"coverage_lines" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	CoverageFiles     []*CoverageFile              `json:"coverage_files" gorm:"-"`
-	Benchmarks        []BenchmarkResult            `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	BenchmarksGrouped map[string][]BenchmarkResult `json:"benchmarks_grouped" gorm:"-"`
-	CreatedAt         time.Time                    `json:"created_at"`
+	ID                int                           `json:"id,omitempty" gorm:"primaryKey"`
+	Status            string                        `json:"status" gorm:"default:pending"`
+	BenchmarkStatus   string                        `json:"benchmark_status" gorm:"default:pending"`
+	IsMaster          bool                          `json:"is_master"`
+	PRNumber          int                           `json:"pr_number"`
+	Commit            string                        `json:"commit"`
+	BaseCommit        string                        `json:"base_commit"`
+	BaseReport        *CoverageReport               `json:"base_report" gorm:"-"`
+	CoverageRatio     *float64                      `json:"coverage_ratio"`
+	CoverageLines     []CoverageLine                `json:"coverage_lines" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	Benchmarks        []BenchmarkResult             `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	BenchmarksGrouped map[string][]BenchmarkResult  `json:"benchmarks_grouped" gorm:"-"`
+	Coverage          map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
+	CreatedAt         time.Time                     `json:"created_at"`
 }
 
 type CoverageLine struct {
@@ -60,6 +50,17 @@ type CoverageLine struct {
 	File               string `json:"file"`
 	OriginalLineNumber int    `json:"original_line_number"`
 	NewLineNumber      int    `json:"new_line_number"`
+}
+type CoverageFileHunkLine struct {
+	LineNumber int    `json:"line_number"`
+	Content    string `json:"content"`
+	Highlight  bool   `json:"highlight"`
+	Context    bool   `json:"context"`
+}
+
+type CoverageFileHunk struct {
+	Filename string                 `json:"filename"`
+	Lines    []CoverageFileHunkLine `json:"lines"`
 }
 
 func GetPullCoverageReports(prNum int) ([]*CoverageReport, error) {

@@ -35,7 +35,7 @@ func getPull(c echo.Context) error {
 	}
 
 	for i := range reports {
-		// reports[i].CoverageFiles = CreateCoverageFileHunks(reports[i].CoverageLines)
+		reports[i].Coverage = CreateCoverageHunks(reports[i])
 		reports[i].BenchmarksGrouped = GroupBenchmarks(reports[i].Benchmarks)
 		reports[i].BaseReport, err = db.GetMasterCoverageReport(reports[i].BaseCommit)
 		reports[i].BaseReport.BenchmarksGrouped = GroupBenchmarks(reports[i].BaseReport.Benchmarks)
