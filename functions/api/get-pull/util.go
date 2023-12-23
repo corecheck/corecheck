@@ -62,7 +62,7 @@ func groupLinesByGap(lines []db.CoverageLine, maxGap int) [][]db.CoverageLine {
 		}
 
 		lastLine := currentGroup[len(currentGroup)-1]
-		if line.OriginalLineNumber-lastLine.OriginalLineNumber <= maxGap {
+		if line.NewLineNumber-lastLine.NewLineNumber <= maxGap {
 			currentGroup = append(currentGroup, line)
 		} else {
 			groupedLines = append(groupedLines, currentGroup)
@@ -90,12 +90,12 @@ func createFileHunks(sourceCodeLines []string, filename string, commit string, l
 
 	// For each group of lines, create a hunk with context (5 lines before and after)
 	for _, group := range groupedLines {
-		startLine := group[0].OriginalLineNumber - 5
+		startLine := group[0].NewLineNumber - 5
 		if startLine < 0 {
 			startLine = 0
 		}
 
-		endLine := group[len(group)-1].OriginalLineNumber + 5
+		endLine := group[len(group)-1].NewLineNumber + 5
 		if endLine > len(sourceCodeLines) {
 			endLine = len(sourceCodeLines)
 		}
@@ -125,7 +125,7 @@ func createFileHunks(sourceCodeLines []string, filename string, commit string, l
 
 func containsLine(lines []db.CoverageLine, lineNumber int) bool {
 	for _, line := range lines {
-		if line.OriginalLineNumber == lineNumber {
+		if line.NewLineNumber == lineNumber {
 			return true
 		}
 	}
@@ -134,7 +134,7 @@ func containsLine(lines []db.CoverageLine, lineNumber int) bool {
 
 func isContextLine(lineNumber int, lines []db.CoverageLine) bool {
 	for _, line := range lines {
-		if line.OriginalLineNumber == lineNumber {
+		if line.NewLineNumber == lineNumber {
 			return false
 		}
 	}
