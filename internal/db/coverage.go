@@ -13,18 +13,18 @@ const (
 )
 
 type CoverageReport struct {
-	ID                int                           `json:"id,omitempty" gorm:"primaryKey"`
-	Status            string                        `json:"status" gorm:"default:pending"`
-	BenchmarkStatus   string                        `json:"benchmark_status" gorm:"default:pending"`
-	IsMaster          bool                          `json:"is_master"`
-	PRNumber          int                           `json:"pr_number"`
-	Commit            string                        `json:"commit"`
-	BaseCommit        string                        `json:"base_commit"`
-	BaseReport        *CoverageReport               `json:"base_report" gorm:"-"`
-	Benchmarks        []BenchmarkResult             `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	BenchmarksGrouped map[string][]BenchmarkResult  `json:"benchmarks_grouped" gorm:"-"`
-	Coverage          map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
-	CreatedAt         time.Time                     `json:"created_at"`
+	ID                int                          `json:"id,omitempty" gorm:"primaryKey"`
+	Status            string                       `json:"status" gorm:"default:pending"`
+	BenchmarkStatus   string                       `json:"benchmark_status" gorm:"default:pending"`
+	IsMaster          bool                         `json:"is_master"`
+	PRNumber          int                          `json:"pr_number"`
+	Commit            string                       `json:"commit"`
+	BaseCommit        string                       `json:"base_commit"`
+	BaseReport        *CoverageReport              `json:"base_report" gorm:"-"`
+	Benchmarks        []BenchmarkResult            `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	BenchmarksGrouped map[string][]BenchmarkResult `json:"benchmarks_grouped" gorm:"-"`
+	Hunks             []CoverageFileHunk           `json:"hunks" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	CreatedAt         time.Time                    `json:"created_at"`
 }
 
 type CoverageFileHunkLine struct {
@@ -60,13 +60,13 @@ func CreateCoverageReport(report *CoverageReport) error {
 
 func GetCoverageReport(id int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("id = ?", id).First(&report).Error
+	err := DB.Preload("Hunks").Preload("Benchmarks").Where("id = ?", id).First(&report).Error
 	return &report, err
 }
 
 func GetCoverageReportByCommitPr(commit string, prNum int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("commit = ? AND pr_number = ?", commit, prNum).First(&report).Error
+	err := DB.Preload("Hunks").Preload("Benchmarks").Where("commit = ? AND pr_number = ?", commit, prNum).First(&report).Error
 	return &report, err
 }
 
@@ -95,7 +95,7 @@ func GetOrCreateCoverageReportByCommitPr(commit string, prNum int, baseCommit st
 
 func GetCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("CoverageLines").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
+	err := DB.Preload("Hunks").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
 	return &report, err
 }
 
