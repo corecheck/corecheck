@@ -333,9 +333,11 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 			})
 		}
 
-		fileHunks = append(fileHunks, currentHunk)
-		currentHunk = &db.CoverageFileHunk{
-			Filename: filename,
+		if len(currentHunk.Lines) > 0 {
+			fileHunks = append(fileHunks, currentHunk)
+			currentHunk = &db.CoverageFileHunk{
+				Filename: filename,
+			}
 		}
 	}
 
