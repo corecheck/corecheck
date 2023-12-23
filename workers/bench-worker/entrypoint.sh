@@ -3,6 +3,7 @@
 COMMIT=$1
 PR_NUM=$2
 IS_MASTER=$3
+BASE_COMMIT=$4
 
 # check if benchmark already exists
 if [ "$IS_MASTER" != "true" ]; then

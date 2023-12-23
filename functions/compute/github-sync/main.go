@@ -51,8 +51,9 @@ func checkMasterCoverage(c *github.Client) error {
 		log.Info("Master does not have coverage for latest commit, adding to queue")
 
 		report := &db.CoverageReport{
-			Commit:   master.GetCommit().GetSHA(),
-			IsMaster: true,
+			Commit:     master.GetCommit().GetSHA(),
+			IsMaster:   true,
+			BaseCommit: master.GetCommit().GetSHA(),
 		}
 
 		err := db.CreateCoverageReport(report)
@@ -63,9 +64,10 @@ func checkMasterCoverage(c *github.Client) error {
 
 		params := StateMachineInput{
 			Params: types.JobParams{
-				Commit:   master.GetCommit().GetSHA(),
-				IsMaster: "true",
-				PRNumber: "0",
+				Commit:     master.GetCommit().GetSHA(),
+				IsMaster:   "true",
+				PRNumber:   "0",
+				BaseCommit: master.GetCommit().GetSHA(),
 			},
 		}
 		paramsJson, err := json.Marshal(params)
@@ -127,11 +129,18 @@ func handlePullRequest(pr *github.PullRequest) error {
 			return err
 		}
 
+		masterReport, err := db.GetLatestMasterCoverageReport()
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
 		params := StateMachineInput{
 			Params: types.JobParams{
-				Commit:   dbPR.Head,
-				IsMaster: "false",
-				PRNumber: fmt.Sprint(dbPR.Number),
+				Commit:     dbPR.Head,
+				IsMaster:   "false",
+				PRNumber:   fmt.Sprint(dbPR.Number),
+				BaseCommit: masterReport.Commit,
 			},
 		}
 		paramsJson, err := json.Marshal(params)

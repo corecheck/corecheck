@@ -27,6 +27,29 @@ type CoverageData struct {
 	} `json:"files"`
 }
 
+type LineCoverage struct {
+	LineNumber int
+	Count      int
+}
+
+type CoverageMap map[string]map[int]LineCoverage
+
+func (c CoverageData) ToMap() CoverageMap {
+	m := make(CoverageMap)
+
+	for _, file := range c.Files {
+		m[file.File] = make(map[int]LineCoverage)
+		for _, l := range file.Lines {
+			m[file.File][l.LineNumber] = LineCoverage{
+				LineNumber: l.LineNumber,
+				Count:      l.Count,
+			}
+		}
+	}
+
+	return m
+}
+
 func GetCoverageData(prNum int, commit string) (*CoverageData, error) {
 	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
 }
@@ -66,25 +89,6 @@ func getCoverageData(url string) (*CoverageData, error) {
 	}
 
 	return &coverageData, nil
-}
-
-func ComputeCoverageRatio(lines []*db.CoverageLine, mustChange bool) *float64 {
-	var covered, total int
-	for _, line := range lines {
-		if line.Testable && ((mustChange && line.Changed) || !mustChange) {
-			if line.Covered {
-				covered++
-			}
-			total++
-		}
-	}
-
-	if total == 0 {
-		return nil
-	}
-
-	r := float64(covered) / float64(total)
-	return &r
 }
 
 func CreateCoverageFileHunks(lines []db.CoverageLine) []*db.CoverageFile {

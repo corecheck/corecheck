@@ -103,6 +103,7 @@ resource "aws_batch_job_definition" "coverage_job" {
       "Ref::commit",
       "Ref::pr_number",
       "Ref::is_master",
+      "Ref::base_commit",
     ]
 
     executionRoleArn = aws_iam_role.job_role.arn
