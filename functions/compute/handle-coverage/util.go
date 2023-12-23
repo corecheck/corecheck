@@ -74,6 +74,7 @@ func getSourceFile(filename string, commit string) (string, error) {
 func fetchAllFiles(files []string, commit string) map[string][]string {
 	var wg sync.WaitGroup
 	var filesMap = make(map[string][]string)
+	mut := sync.Mutex{}
 
 	wg.Add(len(files))
 	for _, file := range files {
@@ -84,7 +85,10 @@ func fetchAllFiles(files []string, commit string) map[string][]string {
 				log.Error(err)
 				return
 			}
+
+			mut.Lock()
 			filesMap[file] = strings.Split(sourceCodeFile, "\n")
+			mut.Unlock()
 		}(file)
 	}
 	wg.Wait()
