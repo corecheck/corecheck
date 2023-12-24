@@ -6,6 +6,11 @@ import (
 	"github.com/waigani/diffparser"
 )
 
+const (
+	CONTEXT_LINES = 3
+	MAX_GAP_LINES = 5
+)
+
 type CoverageLine struct {
 	File               string
 	OriginalLineNumber int
@@ -303,16 +308,16 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 	}
 
 	// Group lines if they are next to each other (max 5 lines apart)
-	groupedLines := groupLinesByGap(lines, 5)
+	groupedLines := groupLinesByGap(lines, MAX_GAP_LINES)
 
 	// For each group of lines, create a hunk with context
 	for _, group := range groupedLines {
-		startLine := group[0].NewLineNumber - 3
+		startLine := group[0].NewLineNumber - (CONTEXT_LINES + 1)
 		if startLine < 0 {
 			startLine = 0
 		}
 
-		endLine := group[len(group)-1].NewLineNumber + 3
+		endLine := group[len(group)-1].NewLineNumber + CONTEXT_LINES
 		if endLine > len(sourceCodeLines) {
 			endLine = len(sourceCodeLines)
 		}
