@@ -305,14 +305,14 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 	// Group lines if they are next to each other (max 5 lines apart)
 	groupedLines := groupLinesByGap(lines, 5)
 
-	// For each group of lines, create a hunk with context (5 lines before and after)
+	// For each group of lines, create a hunk with context
 	for _, group := range groupedLines {
-		startLine := group[0].NewLineNumber - 5
+		startLine := group[0].NewLineNumber - 3
 		if startLine < 0 {
 			startLine = 0
 		}
 
-		endLine := group[len(group)-1].NewLineNumber + 5
+		endLine := group[len(group)-1].NewLineNumber + 3
 		if endLine > len(sourceCodeLines) {
 			endLine = len(sourceCodeLines)
 		}
