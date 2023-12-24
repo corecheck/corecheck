@@ -2,6 +2,7 @@ locals {
   api_lambdas = [
     "get-pull",
     "list-pulls",
+    "get-report",
   ]
 }
 

@@ -13,6 +13,11 @@ resource "aws_api_gateway_resource" "get_pull" {
   parent_id   = aws_api_gateway_resource.pulls.id
   path_part   = "{id}"
 }
+resource "aws_api_gateway_resource" "get_report" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_resource.get_pull.id
+  path_part   = "report"
+}
 
 resource "aws_api_gateway_method" "get_pull" {
   authorization = "NONE"
@@ -25,6 +30,13 @@ resource "aws_api_gateway_method" "list_pulls" {
   authorization = "NONE"
   http_method   = "GET"
   resource_id   = aws_api_gateway_resource.pulls.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_method" "get_report" {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.get_report.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
 }
 
@@ -60,6 +72,15 @@ resource "aws_api_gateway_integration" "lambda_list" {
   uri                     = aws_lambda_function.lambda["list-pulls"].invoke_arn
 }
 
+resource "aws_api_gateway_integration" "lambda_report" {
+  http_method             = aws_api_gateway_method.get_report.http_method
+  resource_id             = aws_api_gateway_resource.get_report.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.lambda["get-report"].invoke_arn
+}
+
 resource "aws_api_gateway_deployment" "api" {
   rest_api_id       = aws_api_gateway_rest_api.api.id
   stage_name        = "api"
@@ -72,6 +93,7 @@ resource "aws_api_gateway_deployment" "api" {
   depends_on = [
     aws_api_gateway_method.get_pull,
     aws_api_gateway_method.list_pulls,
+    aws_api_gateway_method.get_report,
     aws_api_gateway_integration.lambda,
   ]
 }

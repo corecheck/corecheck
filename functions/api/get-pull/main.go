@@ -28,26 +28,6 @@ func getPull(c echo.Context) error {
 		return err
 	}
 
-	reports, err := db.GetPullCoverageReports(pullNumberInt)
-	if err != nil {
-		log.Errorf("Error getting coverage reports: %s", err)
-		return err
-	}
-
-	for i := range reports {
-		// reports[i].Coverage = CreateCoverageHunks(reports[i])
-		reports[i].BenchmarksGrouped = GroupBenchmarks(reports[i].Benchmarks)
-		reports[i].BaseReport, err = db.GetMasterCoverageReport(reports[i].BaseCommit)
-		reports[i].BaseReport.BenchmarksGrouped = GroupBenchmarks(reports[i].BaseReport.Benchmarks)
-
-		if err != nil {
-			log.Errorf("Error getting base report: %s", err)
-			continue
-		}
-	}
-
-	pull.Reports = reports
-
 	return c.JSON(200, pull)
 }
 
