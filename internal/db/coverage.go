@@ -165,7 +165,7 @@ func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 
 func GetLatestPullCoverageReport(prNum int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Benchmarks").Where("pr_number = ? AND status = ?", prNum, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("pr_number = ? AND status = ?", prNum, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
 	return &report, err
 }
 
