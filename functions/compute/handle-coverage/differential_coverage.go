@@ -412,8 +412,7 @@ func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport)
 
 func isBaselineHunk(coverageType string) bool {
 	switch coverageType {
-	case types.COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE:
-	case types.COVERAGE_TYPE_DELETED_UNCOVERED_BASELINE_CODE:
+	case types.COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE, types.COVERAGE_TYPE_DELETED_UNCOVERED_BASELINE_CODE:
 		return true
 	}
 
