@@ -274,30 +274,14 @@ func (pullCoverage *RawCoverageData) Diff(masterCoverage *RawCoverageData, diff 
 
 func groupLinesByGap(baseline bool, lines []CoverageLine, maxGap int) [][]CoverageLine {
 	var groupedLines [][]CoverageLine
-
 	currentGroup := []CoverageLine{}
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		if len(currentGroup) == 0 {
-			currentGroup = append(currentGroup, line)
-			continue
-		}
 
-		lastLine := currentGroup[len(currentGroup)-1]
-		if baseline {
-			if line.OriginalLineNumber-lastLine.OriginalLineNumber <= maxGap {
-				currentGroup = append(currentGroup, line)
-			} else {
-				groupedLines = append(groupedLines, currentGroup)
-				currentGroup = []CoverageLine{}
-			}
+	for _, line := range lines {
+		if len(currentGroup) == 0 || isWithinGap(baseline, line, currentGroup[len(currentGroup)-1], maxGap) {
+			currentGroup = append(currentGroup, line)
 		} else {
-			if line.NewLineNumber-lastLine.NewLineNumber <= maxGap {
-				currentGroup = append(currentGroup, line)
-			} else {
-				groupedLines = append(groupedLines, currentGroup)
-				currentGroup = []CoverageLine{}
-			}
+			groupedLines = append(groupedLines, currentGroup)
+			currentGroup = []CoverageLine{line}
 		}
 	}
 
@@ -306,6 +290,13 @@ func groupLinesByGap(baseline bool, lines []CoverageLine, maxGap int) [][]Covera
 	}
 
 	return groupedLines
+}
+
+func isWithinGap(baseline bool, currentLine, lastLine CoverageLine, maxGap int) bool {
+	if baseline {
+		return currentLine.OriginalLineNumber-lastLine.OriginalLineNumber <= maxGap
+	}
+	return currentLine.NewLineNumber-lastLine.NewLineNumber <= maxGap
 }
 
 // For each coverage type, for each file, fetch the source file and create hunks
