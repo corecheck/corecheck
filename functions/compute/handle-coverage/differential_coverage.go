@@ -272,7 +272,7 @@ func (pullCoverage *RawCoverageData) Diff(masterCoverage *RawCoverageData, diff 
 	return &diffCoverage
 }
 
-func groupLinesByGap(lines []CoverageLine, maxGap int) [][]CoverageLine {
+func groupLinesByGap(baseline bool, lines []CoverageLine, maxGap int) [][]CoverageLine {
 	var groupedLines [][]CoverageLine
 
 	currentGroup := []CoverageLine{}
@@ -284,11 +284,20 @@ func groupLinesByGap(lines []CoverageLine, maxGap int) [][]CoverageLine {
 		}
 
 		lastLine := currentGroup[len(currentGroup)-1]
-		if line.NewLineNumber-lastLine.NewLineNumber <= maxGap {
-			currentGroup = append(currentGroup, line)
+		if baseline {
+			if line.OriginalLineNumber-lastLine.OriginalLineNumber <= maxGap {
+				currentGroup = append(currentGroup, line)
+			} else {
+				groupedLines = append(groupedLines, currentGroup)
+				currentGroup = []CoverageLine{}
+			}
 		} else {
-			groupedLines = append(groupedLines, currentGroup)
-			currentGroup = []CoverageLine{}
+			if line.NewLineNumber-lastLine.NewLineNumber <= maxGap {
+				currentGroup = append(currentGroup, line)
+			} else {
+				groupedLines = append(groupedLines, currentGroup)
+				currentGroup = []CoverageLine{}
+			}
 		}
 	}
 
@@ -300,7 +309,7 @@ func groupLinesByGap(lines []CoverageLine, maxGap int) [][]CoverageLine {
 }
 
 // For each coverage type, for each file, fetch the source file and create hunks
-func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []string, filename string, commit string, lines []CoverageLine) []*db.CoverageFileHunk {
+func (diffCoverage *DifferentialCoverage) createFileHunks(baseline bool, sourceCodeLines []string, filename string, commit string, lines []CoverageLine) []*db.CoverageFileHunk {
 	var fileHunks []*db.CoverageFileHunk
 
 	currentHunk := &db.CoverageFileHunk{
@@ -308,33 +317,39 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 	}
 
 	// Group lines if they are next to each other (max 5 lines apart)
-	groupedLines := groupLinesByGap(lines, MAX_GAP_LINES)
+	groupedLines := groupLinesByGap(baseline, lines, MAX_GAP_LINES)
 
 	// For each group of lines, create a hunk with context
 	for _, group := range groupedLines {
-		startLine := group[0].NewLineNumber - (CONTEXT_LINES + 1)
+		startLine := group[0].OriginalLineNumber - (CONTEXT_LINES + 1)
+		if !baseline {
+			startLine = group[0].NewLineNumber - (CONTEXT_LINES + 1)
+		}
 		if startLine < 0 {
 			startLine = 0
 		}
 
-		endLine := group[len(group)-1].NewLineNumber + CONTEXT_LINES
+		endLine := group[len(group)-1].OriginalLineNumber + CONTEXT_LINES
+		if !baseline {
+			endLine = group[len(group)-1].NewLineNumber + CONTEXT_LINES
+		}
 		if endLine > len(sourceCodeLines) {
 			endLine = len(sourceCodeLines)
 		}
 
 		for i := startLine; i < endLine; i++ {
 			highlight := false
-			if containsLine(group, i+1) {
+			if containsLine(baseline, group, i+1) {
 				highlight = true
 			}
 
 			currentHunk.Lines = append(currentHunk.Lines, db.CoverageFileHunkLine{
-				NewLineNumber: i + 1,
-				Content:       sourceCodeLines[i],
-				Highlight:     highlight,
-				Context:       isContextLine(i+1, group),
-				Covered:       diffCoverage.Coverage.IsCovered(filename, i+1),
-				Tested:        diffCoverage.Coverage.IsTested(filename, i+1),
+				LineNumber: i + 1,
+				Content:    sourceCodeLines[i],
+				Highlight:  highlight,
+				Context:    isContextLine(baseline, i+1, group),
+				Covered:    diffCoverage.Coverage.IsCovered(filename, i+1),
+				Tested:     diffCoverage.Coverage.IsTested(filename, i+1),
 			})
 		}
 
@@ -349,18 +364,24 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(sourceCodeLines []stri
 	return fileHunks
 }
 
-func containsLine(lines []CoverageLine, lineNumber int) bool {
+func containsLine(baseline bool, lines []CoverageLine, lineNumber int) bool {
 	for _, line := range lines {
-		if line.NewLineNumber == lineNumber {
+		if baseline && line.OriginalLineNumber == lineNumber {
+			return true
+		}
+		if !baseline && line.NewLineNumber == lineNumber {
 			return true
 		}
 	}
 	return false
 }
 
-func isContextLine(lineNumber int, lines []CoverageLine) bool {
+func isContextLine(baseline bool, lineNumber int, lines []CoverageLine) bool {
 	for _, line := range lines {
-		if line.NewLineNumber == lineNumber {
+		if baseline && line.OriginalLineNumber == lineNumber {
+			return false
+		}
+		if !baseline && line.NewLineNumber == lineNumber {
 			return false
 		}
 	}
@@ -368,12 +389,19 @@ func isContextLine(lineNumber int, lines []CoverageLine) bool {
 }
 
 func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport) []*db.CoverageFileHunk {
-	sourceFiles := fetchAllFiles(diffCoverage.Coverage.ListFiles(), report.Commit)
+	pullSourceFiles := fetchAllFiles(diffCoverage.Coverage.ListFiles(), report.Commit)
+	masterSourceFiles := fetchAllFiles(diffCoverage.BaseCoverage.ListFiles(), report.BaseCommit)
 
 	var coverageHunks []*db.CoverageFileHunk
 	for coverageType, files := range diffCoverage.Results {
+		isBaseLine := isBaselineHunk(coverageType)
 		for filename, lines := range files {
-			hunks := diffCoverage.createFileHunks(sourceFiles[filename], filename, report.Commit, lines)
+			var hunks []*db.CoverageFileHunk
+			if isBaseLine {
+				hunks = diffCoverage.createFileHunks(isBaseLine, masterSourceFiles[filename], filename, report.BaseCommit, lines)
+			} else {
+				hunks = diffCoverage.createFileHunks(isBaseLine, pullSourceFiles[filename], filename, report.Commit, lines)
+			}
 			for _, hunk := range hunks {
 				hunk.CoverageType = coverageType
 				hunk.CoverageReportID = report.ID
@@ -383,4 +411,14 @@ func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport)
 	}
 
 	return coverageHunks
+}
+
+func isBaselineHunk(coverageType string) bool {
+	switch coverageType {
+	case types.COVERAGE_TYPE_DELETED_COVERED_BASELINE_CODE:
+	case types.COVERAGE_TYPE_DELETED_UNCOVERED_BASELINE_CODE:
+		return true
+	}
+
+	return false
 }

@@ -31,8 +31,7 @@ type CoverageReport struct {
 type CoverageFileHunkLine struct {
 	ID                 int    `json:"id,omitempty" gorm:"primaryKey"`
 	CoverageFileHunkID int    `json:"hunk_id"`
-	OriginalLineNumber int    `json:"original_line_number"`
-	NewLineNumber      int    `json:"new_line_number"`
+	LineNumber         int    `json:"line_number"`
 	Content            string `json:"content"`
 	Highlight          bool   `json:"highlight"`
 	Context            bool   `json:"context"`
