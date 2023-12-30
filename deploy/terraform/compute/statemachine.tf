@@ -67,6 +67,7 @@ locals {
           DATABASE_NAME     = var.db_database
 
           BENCH_ARRAY_SIZE = local.bench_array_size
+          BUCKET_DATA_URL = var.corecheck_data_bucket_url
         }
       }
     }
