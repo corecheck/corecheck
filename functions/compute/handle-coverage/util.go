@@ -112,27 +112,33 @@ func fetchPullFiles(files []string, commit string, baseCommit string) (map[strin
 	log.Info("Fetching commit " + commit)
 	cmd := exec.Command("git", "fetch", "origin", commit)
 	cmd.Dir = "/tmp/bitcoin"
-	err = cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info(string(output))
 
 	// Checkout commit
 	log.Info("Checking out commit " + commit)
 	cmd = exec.Command("git", "checkout", commit)
 	cmd.Dir = "/tmp/bitcoin"
-	err = cmd.Run()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
 
+	log.Info(string(output))
+
 	log.Info("Rebasing on " + baseCommit)
 	cmd = exec.Command("git", "rebase", baseCommit)
 	cmd.Dir = "/tmp/bitcoin"
-	err = cmd.Run()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info(string(output))
 
 	log.Info("Getting files")
 	var filesMap = make(map[string][]string)
