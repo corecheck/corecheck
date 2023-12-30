@@ -12,8 +12,6 @@ import (
 	"sync"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/waigani/diffparser"
 )
 
@@ -111,36 +109,35 @@ func fetchPullFiles(files []string, commit string, baseCommit string) (map[strin
 	}
 
 	// git fetch origin {commit}
-	err = r.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{
-			config.RefSpec(commit),
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	w, err := r.Worktree()
-	if err != nil {
-		return nil, err
-	}
-
-	err = w.Checkout(&git.CheckoutOptions{
-		Hash: plumbing.NewHash(commit),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command("git", "rebase", baseCommit)
+	log.Info("Fetching commit " + commit)
+	cmd := exec.Command("git", "fetch", "origin", commit)
 	cmd.Dir = "/tmp/bitcoin"
 	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
 
+	// Checkout commit
+	log.Info("Checking out commit " + commit)
+	cmd = exec.Command("git", "checkout", commit)
+	cmd.Dir = "/tmp/bitcoin"
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Rebasing on " + baseCommit)
+	cmd = exec.Command("git", "rebase", baseCommit)
+	cmd.Dir = "/tmp/bitcoin"
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Getting files")
 	var filesMap = make(map[string][]string)
 	for _, file := range files {
+		log.Info("Getting file " + file)
 		fileContent, err := os.ReadFile("/tmp/bitcoin/" + file)
 		if err != nil {
 			return nil, err
