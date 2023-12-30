@@ -107,6 +107,19 @@ func FilterFlakyCoverageHunks(coverage map[string]map[string][]db.CoverageFileHu
 		for file, hunks := range coverage[hunkType] {
 			coverage[hunkType][file] = filterCoverage(hunks)
 		}
+
+		for file, hunks := range coverage[hunkType] {
+			if len(hunks) == 0 {
+				delete(coverage[hunkType], file)
+			}
+		}
+	}
+
+	// delete empty coverage types
+	for hunkType, files := range coverage {
+		if len(files) == 0 {
+			delete(coverage, hunkType)
+		}
 	}
 
 	return coverage
