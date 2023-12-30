@@ -73,5 +73,5 @@ set -e
 
 if [ "$src_exists" == "" ]; then
     rm -rf src/qt src/leveldb src/test wallet/test
-    aws s3 cp -r src $S3_SRC_PATH
+    aws s3 sync src $S3_SRC_PATH
 fi
