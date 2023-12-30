@@ -23,6 +23,11 @@ const (
 )
 
 func CreateBenchmarkResults(reportID int, results []*BenchmarkResult) error {
+	err := DB.Where("coverage_report_id = ?", reportID).Delete(&BenchmarkResult{}).Error
+	if err != nil {
+		return err
+	}
+
 	for _, result := range results {
 		result.CoverageReportID = reportID
 
