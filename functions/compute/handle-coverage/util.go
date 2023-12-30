@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/waigani/diffparser"
 )
 
@@ -94,4 +99,54 @@ func fetchAllFiles(files []string, commit string) map[string][]string {
 	wg.Wait()
 
 	return filesMap
+}
+
+func fetchPullFiles(files []string, commit string, baseCommit string) (map[string][]string, error) {
+	r, err := git.PlainClone("/tmp/bitcoin", false, &git.CloneOptions{
+		URL: "https://github.com/bitcoin/bitcoin.git",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// git fetch origin {commit}
+	err = r.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(commit),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	w, err := r.Worktree()
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Checkout(&git.CheckoutOptions{
+		Hash: plumbing.NewHash(commit),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command("git", "rebase", baseCommit)
+	cmd.Dir = "/tmp/bitcoin"
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	var filesMap = make(map[string][]string)
+	for _, file := range files {
+		fileContent, err := os.ReadFile("/tmp/bitcoin/" + file)
+		if err != nil {
+			return nil, err
+		}
+
+		filesMap[file] = strings.Split(string(fileContent), "\n")
+	}
+
+	return filesMap, nil
 }
