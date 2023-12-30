@@ -20,6 +20,7 @@ module "compute" {
 
   github_token          = var.github_token
   corecheck_data_bucket = aws_s3_bucket.bitcoin-coverage-data.id
+  corecheck_data_bucket_url = "https://${aws_s3_bucket.bitcoin-coverage-data.id}.s3.${aws_s3_bucket.bitcoin-coverage-data.region}.amazonaws.com"
 
   aws_access_key_id     = var.aws_access_key_id
   aws_secret_access_key = var.aws_secret_access_key

@@ -33,6 +33,11 @@ variable "corecheck_data_bucket" {
   description = "corecheck data bucket"
 }
 
+variable "corecheck_data_bucket_url" {
+  type        = string
+  description = "corecheck data bucket url"
+}
+
 variable "aws_access_key_id" {
   type        = string
   description = "aws access key id"

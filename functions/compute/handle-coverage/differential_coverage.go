@@ -393,12 +393,8 @@ func isContextLine(baseline bool, lineNumber int, lines []CoverageLine) bool {
 }
 
 func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport) []*db.CoverageFileHunk {
-	pullSourceFiles, err := fetchPullFiles(diffCoverage.Coverage.ListFiles(), report.Commit, report.BaseCommit)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-	masterSourceFiles := fetchAllFiles(diffCoverage.BaseCoverage.ListFiles(), report.BaseCommit)
+	pullSourceFiles := fetchAllFiles(report.PRNumber, diffCoverage.Coverage.ListFiles(), report.Commit)
+	masterSourceFiles := fetchAllFilesMaster(diffCoverage.BaseCoverage.ListFiles(), report.BaseCommit)
 
 	var coverageHunks []*db.CoverageFileHunk
 	for coverageType, files := range diffCoverage.Results {

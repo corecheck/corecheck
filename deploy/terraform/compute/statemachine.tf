@@ -50,6 +50,8 @@ locals {
           DATABASE_NAME     = var.db_database
 
           GITHUB_ACCESS_TOKEN = var.github_token
+
+          BUCKET_DATA_URL = var.corecheck_data_bucket_url
         }
       }
     },

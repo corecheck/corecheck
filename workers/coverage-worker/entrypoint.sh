@@ -22,10 +22,12 @@ if [ "$IS_MASTER" != "true" ]; then
     git rebase $BASE_COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
+    S3_SRC_PATH=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/src
 else
     git checkout $COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/master/$COMMIT/bench_bitcoin
+    S3_SRC_PATH=s3://$S3_BUCKET_DATA/master/$COMMIT/src
 fi
 
 set +e
@@ -61,4 +63,14 @@ else
     make clean
     time make -j$(nproc)
     aws s3 cp src/bench/bench_bitcoin $S3_BENCH_FILE
+fi
+
+# store src folder if it doesn't exist
+set +e
+src_exists=$(aws s3 ls $S3_SRC_PATH)
+set -e
+
+if [ "$src_exists" == "" ]; then
+    rm -rf src/qt src/leveldb src/test wallet/test
+    aws s3 cp -r src $S3_SRC_PATH
 fi

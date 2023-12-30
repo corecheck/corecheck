@@ -6,21 +6,19 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/waigani/diffparser"
 )
 
 func GetCoverageData(prNum int, commit string) (*RawCoverageData, error) {
-	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
+	return getCoverageData(os.Getenv("BUCKET_DATA_URL") + "/" + strconv.Itoa(prNum) + "/" + commit + "/coverage.json")
 }
 
 func GetCoverageDataMaster(commit string) (*RawCoverageData, error) {
-	return getCoverageData("https://bitcoin-coverage-data-default.s3.eu-west-3.amazonaws.com/master/" + commit + "/coverage.json")
+	return getCoverageData(os.Getenv("BUCKET_DATA_URL") + "/master/" + commit + "/coverage.json")
 }
 
 func getCoverageData(url string) (*RawCoverageData, error) {
@@ -59,8 +57,9 @@ func GetPullDiff(prNum int) (*diffparser.Diff, error) {
 
 	return diffparser.Parse(string(data))
 }
-func getSourceFile(filename string, commit string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/bitcoin/bitcoin/%s/%s", commit, filename))
+
+func getSourceFileMaster(filename string, commit string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf(os.Getenv("BUCKET_DATA_URL")+"/master/%s/%s", commit, filename))
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +73,24 @@ func getSourceFile(filename string, commit string) (string, error) {
 
 	return string(body), nil
 }
-func fetchAllFiles(files []string, commit string) map[string][]string {
+
+func getSourceFilePull(pullNumber int, filename string, commit string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf(os.Getenv("BUCKET_DATA_URL")+"/%d/%s/%s", pullNumber, commit, filename))
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func fetchAllFiles(pullNumber int, files []string, commit string) map[string][]string {
 	var wg sync.WaitGroup
 	var filesMap = make(map[string][]string)
 	mut := sync.Mutex{}
@@ -83,7 +99,7 @@ func fetchAllFiles(files []string, commit string) map[string][]string {
 	for _, file := range files {
 		go func(file string) {
 			defer wg.Done()
-			sourceCodeFile, err := getSourceFile(file, commit)
+			sourceCodeFile, err := getSourceFilePull(pullNumber, file, commit)
 			if err != nil {
 				log.Error(err)
 				return
@@ -99,58 +115,27 @@ func fetchAllFiles(files []string, commit string) map[string][]string {
 	return filesMap
 }
 
-func fetchPullFiles(files []string, commit string, baseCommit string) (map[string][]string, error) {
-	_, err := git.PlainClone("/tmp/bitcoin", false, &git.CloneOptions{
-		URL:      "https://github.com/bitcoin/bitcoin.git",
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// git fetch origin {commit}
-	log.Info("Fetching commit " + commit)
-	cmd := exec.Command("git", "fetch", "origin", commit)
-	cmd.Dir = "/tmp/bitcoin"
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info(string(output))
-
-	// Checkout commit
-	log.Info("Checking out commit " + commit)
-	cmd = exec.Command("git", "checkout", commit)
-	cmd.Dir = "/tmp/bitcoin"
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info(string(output))
-
-	log.Info("Rebasing on " + baseCommit)
-	cmd = exec.Command("git", "rebase", baseCommit)
-	cmd.Dir = "/tmp/bitcoin"
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info(string(output))
-
-	log.Info("Getting files")
+func fetchAllFilesMaster(files []string, commit string) map[string][]string {
+	var wg sync.WaitGroup
 	var filesMap = make(map[string][]string)
+	mut := sync.Mutex{}
+
+	wg.Add(len(files))
 	for _, file := range files {
-		log.Info("Getting file " + file)
-		fileContent, err := os.ReadFile("/tmp/bitcoin/" + file)
-		if err != nil {
-			return nil, err
-		}
+		go func(file string) {
+			defer wg.Done()
+			sourceCodeFile, err := getSourceFileMaster(file, commit)
+			if err != nil {
+				log.Error(err)
+				return
+			}
 
-		filesMap[file] = strings.Split(string(fileContent), "\n")
+			mut.Lock()
+			filesMap[file] = strings.Split(sourceCodeFile, "\n")
+			mut.Unlock()
+		}(file)
 	}
+	wg.Wait()
 
-	return filesMap, nil
+	return filesMap
 }
