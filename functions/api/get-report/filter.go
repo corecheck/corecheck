@@ -88,6 +88,155 @@ var hunkFilters = []HunkFilter{
             // With SCRIPT_VERIFY_CONST_SCRIPTCODE, OP_CODESEPARATOR in non-segwit script is rejected even in an unexecuted branch
             if (opcode == OP_CODESEPARATOR && sigversion == SigVersion::BASE && (flags & SCRIPT_VERIFY_CONST_SCRIPTCODE))`),
 	},
+	{
+		File: "src/net_processing.cpp",
+		Content: normalizeHunkContent(`LOCK(cs_main);
+        const CNodeState* state = State(nodeid);
+        if (state == nullptr)
+            return false;
+        stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
+        stats.nCommonHeight = state->pindexLastCommonBlock ? state->pindexLastCommonBlock->nHeight : -1;
+        for (const QueuedBlock& queue : state->vBlocksInFlight) {`),
+	},
+	{
+		File: "src/policy/fees.cpp",
+		Content: normalizeHunkContent(`if (doubleEst > median) {
+        median = doubleEst;
+        if (feeCalc) {
+            feeCalc->est = tempResult;
+            feeCalc->reason = FeeReason::DOUBLE_ESTIMATE;
+        }
+    }`),
+	},
+	{
+		File: "src/rpc/mining.cpp",
+		Content: normalizeHunkContent(`--max_tries;
+    }
+    if (max_tries == 0 || chainman.m_interrupt) {
+        return false;
+    }
+    if (block.nNonce == std::numeric_limits<uint32_t>::max()) {
+        return true;`),
+	},
+	{
+		File: "src/rpc/mining.cpp",
+		Content: normalizeHunkContent(`std::shared_ptr<const CBlock> block_out;
+        if (!GenerateBlock(chainman, pblocktemplate->block, nMaxTries, block_out, /*process_new_block=*/true)) {
+            break;
+        }
+        if (block_out) {`),
+	},
+	{
+		File: "src/rpc/net.cpp",
+		Content: normalizeHunkContent(`// peer got disconnected in between the GetNodeStats() and the GetNodeStateStats()
+        // calls. In this case, the peer doesn't need to be reported here.
+        if (!fStateStats) {
+            continue;
+        }
+        obj.pushKV("id", stats.nodeid);
+        obj.pushKV("addr", stats.m_addr_name);`),
+	},
+	{
+		File: "src/sync.h",
+		Content: normalizeHunkContent(`if (Base::try_lock()) {
+            return true;
+        }
+        LeaveCritical();
+        return false;
+    }
+public:`),
+	},
+	{
+		File: "src/wallet/wallet.cpp",
+		Content: normalizeHunkContent(`{
+        WAIT_LOCK(g_wallet_release_mutex, lock);
+        while (g_unloading_wallet_set.count(name) == 1) {
+            g_wallet_release_cv.wait(lock);
+        }
+    }
+}`),
+	},
+	{
+		File: "src/init.cpp",
+		Content: normalizeHunkContent(`}
+    if (ShutdownRequested(node)) {
+        return false;
+    }
+    // ********************************************************* Step 12: start node`),
+	},
+	{
+		File: "src/net_processing.cpp",
+		Content: normalizeHunkContent(`const bool processed_orphan = ProcessOrphanTx(*peer);
+    if (pfrom->fDisconnect)
+        return false;
+    if (processed_orphan) return true;`),
+	},
+	{
+		File: "src/net_processing.cpp",
+		Content: normalizeHunkContent(`if (msg_type == NetMsgType::VERACK) {
+        if (pfrom.fSuccessfullyConnected) {
+            LogPrint(BCLog::NET, "ignoring redundant verack message from peer=%d\n", pfrom.GetId());
+            return;
+        }
+        // Log successful connections unconditionally for outbound, but not for inbound as those`),
+	},
+	{
+		File: "src/net_processing.cpp",
+		Content: normalizeHunkContent(`// This should be very rare and could be optimized out.
+                    // Just log for now.
+                    if (m_chainman.ActiveChain()[pindex->nHeight] != pindex) {
+                        LogPrint(BCLog::NET, "Announcing block %s not on main chain (tip=%s)\n",
+                            hashToAnnounce.ToString(), m_chainman.ActiveChain().Tip()->GetBlockHash().ToString());
+                    }`),
+	},
+	{
+		File: "src/wallet/walletdb.cpp",
+		Content: normalizeHunkContent(`it++;
+        }
+        if (it == vTxHashIn.end()) {
+            break;
+        }
+        else if ((*it) == hash) {
+            if(!EraseTx(hash)) {`),
+	},
+	{
+		File: "src/serialize.h",
+		Content: normalizeHunkContent(`throw std::ios_base::failure("non-canonical ReadCompactSize()");
+    }
+    if (range_check && nSizeRet > MAX_SIZE) {
+        throw std::ios_base::failure("ReadCompactSize(): size too large");
+    }
+    return nSizeRet;
+}`),
+	},
+	{
+		File: "src/tinyformat.h",
+		Content: normalizeHunkContent(`if (value > 0 && value <= numArgs)
+                argIndex = value - 1;
+            else
+                TINYFORMAT_ERROR("tinyformat: Positional argument out of range");
+            ++c;
+            positionalMode = true;
+        }`),
+	},
+	{
+		File: "src/wallet/wallet.cpp",
+		Content: normalizeHunkContent(`pMasterKey.second.nDeriveIterations = (pMasterKey.second.nDeriveIterations + static_cast<unsigned int>(pMasterKey.second.nDeriveIterations * target / (SteadyClock::now() - start))) / 2;
+                if (pMasterKey.second.nDeriveIterations < 25000)
+                    pMasterKey.second.nDeriveIterations = 25000;
+                WalletLogPrintf("Wallet passphrase changed to an nDeriveIterations of %i\n", pMasterKey.second.nDeriveIterations);`),
+	},
+	{
+		File: "src/node/miner.cpp",
+		Content: normalizeHunkContent(`++nConsecutiveFailed;
+            if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && nBlockWeight >
+                    m_options.nBlockMaxWeight - 4000) {
+                // Give up if we're close to full and haven't succeeded in a while
+                break;
+            }
+            continue;
+        }`),
+	},
 }
 
 func FilterFlakyCoverageHunks(coverage map[string]map[string][]db.CoverageFileHunk) map[string]map[string][]db.CoverageFileHunk {
