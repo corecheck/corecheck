@@ -5,7 +5,6 @@ import (
 
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/types"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/waigani/diffparser"
 )
 
@@ -312,8 +311,6 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(baseline bool, sourceC
 
 	// Group lines if they are next to each other (max 5 lines apart)
 	groupedLines := groupLinesByGap(baseline, lines, MAX_GAP_LINES)
-
-	spew.Dump("grouped lines", groupedLines)
 
 	// For each group of lines, create a hunk with context
 	for _, group := range groupedLines {
