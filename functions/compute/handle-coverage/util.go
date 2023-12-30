@@ -103,7 +103,8 @@ func fetchAllFiles(files []string, commit string) map[string][]string {
 
 func fetchPullFiles(files []string, commit string, baseCommit string) (map[string][]string, error) {
 	r, err := git.PlainClone("/tmp/bitcoin", false, &git.CloneOptions{
-		URL: "https://github.com/bitcoin/bitcoin.git",
+		URL:      "https://github.com/bitcoin/bitcoin.git",
+		Progress: os.Stdout,
 	})
 	if err != nil {
 		return nil, err
