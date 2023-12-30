@@ -339,14 +339,22 @@ func (diffCoverage *DifferentialCoverage) createFileHunks(baseline bool, sourceC
 				highlight = true
 			}
 
-			currentHunk.Lines = append(currentHunk.Lines, db.CoverageFileHunkLine{
+			line := db.CoverageFileHunkLine{
 				LineNumber: i + 1,
 				Content:    sourceCodeLines[i],
 				Highlight:  highlight,
 				Context:    isContextLine(baseline, i+1, group),
-				Covered:    diffCoverage.Coverage.IsCovered(filename, i+1),
-				Tested:     diffCoverage.Coverage.IsTested(filename, i+1),
-			})
+			}
+
+			if baseline {
+				line.Covered = diffCoverage.BaseCoverage.IsCovered(filename, i+1)
+				line.Tested = diffCoverage.BaseCoverage.IsTested(filename, i+1)
+			} else {
+				line.Covered = diffCoverage.Coverage.IsCovered(filename, i+1)
+				line.Tested = diffCoverage.Coverage.IsTested(filename, i+1)
+			}
+
+			currentHunk.Lines = append(currentHunk.Lines, line)
 		}
 
 		if len(currentHunk.Lines) > 0 {
