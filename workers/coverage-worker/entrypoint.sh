@@ -72,7 +72,7 @@ src_exists=$(aws s3 ls $S3_SRC_PATH)
 set -e
 
 if [ "$src_exists" == "" ]; then
-    make clean
+    make clean || true
     rm -rf src/qt src/leveldb src/test wallet/test
     aws s3 rm --recursive $S3_SRC_PATH
     aws s3 sync src $S3_SRC_PATH
