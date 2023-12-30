@@ -80,7 +80,7 @@ func UpdateOrCreatePR(pr *github.PullRequest) error {
 
 func GetPR(number int) (*PR, error) {
 	var pr PR
-	err := DB.Preload("Reports").Where("number = ?", number).First(&pr).Error
+	err := DB.Where("number = ?", number).First(&pr).Error
 	return &pr, err
 }
 
