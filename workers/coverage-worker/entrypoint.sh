@@ -59,6 +59,7 @@ set -e
 if [ "$bench_exists" != "" ]; then
     echo "Bench binary already exists for this commit"
 else
+    ./autogen.sh
     ./configure --enable-bench --disable-tests --disable-gui --disable-zmq --disable-fuzz --enable-fuzz-binary=no BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include"
     make clean
     time make -j$(nproc)
