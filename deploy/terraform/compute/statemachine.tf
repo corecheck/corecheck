@@ -39,7 +39,7 @@ locals {
       }
     },
     "handle-coverage" = {
-      timeout     = 900
+      timeout     = 300
       memory_size = 512
       environment = {
         variables = {
