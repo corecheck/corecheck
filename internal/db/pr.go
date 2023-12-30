@@ -20,7 +20,7 @@ type PR struct {
 	HeadRepo  string     `json:"head_repo"`
 	HeadRef   string     `json:"head_ref"`
 
-	Reports []*CoverageReport `json:"reports" gorm:"foreignKey:PRNumber;constraint:OnDelete:CASCADE"`
+	Reports []*CoverageReport `json:"reports" gorm:"-"`
 }
 
 func GetLatestPRUpdate() (time.Time, error) {

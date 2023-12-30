@@ -28,6 +28,12 @@ func getPull(c echo.Context) error {
 		return err
 	}
 
+	pull.Reports, err = db.GetPullReports(pullNumberInt)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
 	return c.JSON(200, pull)
 }
 

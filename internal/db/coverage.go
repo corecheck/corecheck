@@ -48,12 +48,6 @@ type CoverageFileHunk struct {
 	Lines        []CoverageFileHunkLine `json:"lines" gorm:"foreignKey:CoverageFileHunkID;constraint:OnDelete:CASCADE"`
 }
 
-func GetPullCoverageReports(prNum int) ([]*CoverageReport, error) {
-	var reports []*CoverageReport
-	err := DB.Where("pr_number = ? AND (status = ? OR status = ?)", prNum, COVERAGE_REPORT_STATUS_PENDING, COVERAGE_REPORT_STATUS_SUCCESS).Preload(clause.Associations).Preload("Hunks.Lines").Order("created_at desc").Find(&reports).Error
-	return reports, err
-}
-
 func CreateCoverageReport(report *CoverageReport) error {
 	return DB.Create(report).Error
 }
@@ -172,4 +166,10 @@ func GetMasterCoverageReport(commit string) (*CoverageReport, error) {
 	var report CoverageReport
 	err := DB.Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
 	return &report, err
+}
+
+func GetPullReports(number int) ([]*CoverageReport, error) {
+	var reports []*CoverageReport
+	err := DB.Where("pr_number = ?", number).Order("created_at desc").Find(&reports).Error
+	return reports, err
 }
