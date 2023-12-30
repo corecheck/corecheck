@@ -40,7 +40,7 @@ locals {
     },
     "handle-coverage" = {
       timeout     = 900
-      memory_size = 256
+      memory_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
