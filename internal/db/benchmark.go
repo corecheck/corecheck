@@ -28,13 +28,13 @@ func CreateBenchmarkResults(reportID int, results []*BenchmarkResult) error {
 		return err
 	}
 
-	for _, result := range results {
-		result.CoverageReportID = reportID
+	for i := range results {
+		results[i].CoverageReportID = reportID
+	}
 
-		err := DB.Create(result).Error
-		if err != nil {
-			return err
-		}
+	err = DB.CreateInBatches(&results, 500).Error
+	if err != nil {
+		return err
 	}
 
 	return nil
