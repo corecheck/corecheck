@@ -38,8 +38,8 @@ func getCoverageData(url string) (*RawCoverageData, error) {
 	return &coverageData, nil
 }
 
-func GetPullDiff(prNum int) (*diffparser.Diff, error) {
-	resp, err := http.Get("https://patch-diff.githubusercontent.com/raw/bitcoin/bitcoin/pull/" + strconv.Itoa(prNum) + ".diff")
+func GetPullDiff(baseCommit string, commit string) (*diffparser.Diff, error) {
+	resp, err := http.Get(fmt.Sprintf("https://github.com/bitcoin/bitcoin/compare/%s..%s.diff", baseCommit, commit))
 	if err != nil {
 		return nil, err
 	}

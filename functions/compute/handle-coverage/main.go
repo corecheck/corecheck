@@ -52,7 +52,7 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		return err
 	}
 	log.Debugf("Getting diff for PR %d", job.PRNumber)
-	diff, err := GetPullDiff(job.GetPRNumber())
+	diff, err := GetPullDiff(job.BaseCommit, job.Commit)
 	if err != nil {
 		return err
 	}
