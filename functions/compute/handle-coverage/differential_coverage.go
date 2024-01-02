@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/types"
 	"github.com/waigani/diffparser"
@@ -398,7 +396,6 @@ func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport)
 		isBaseLine := isBaselineHunk(coverageType)
 		for filename, lines := range files {
 			var hunks []*db.CoverageFileHunk
-			fmt.Println(coverageType, isBaseLine)
 			if isBaseLine {
 				hunks = diffCoverage.createFileHunks(isBaseLine, masterSourceFiles[filename], filename, report.BaseCommit, lines)
 			} else {

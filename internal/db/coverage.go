@@ -98,8 +98,9 @@ func GetOrCreateCoverageReportByCommitMaster(commit string) (*CoverageReport, er
 	if err != nil {
 		if err.Error() == "record not found" {
 			report = &CoverageReport{
-				Commit:   commit,
-				IsMaster: true,
+				Commit:     commit,
+				BaseCommit: commit,
+				IsMaster:   true,
 			}
 
 			err = CreateCoverageReport(report)
