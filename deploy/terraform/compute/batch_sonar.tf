@@ -3,7 +3,7 @@ resource "aws_batch_compute_environment" "sonar_compute" {
   compute_environment_name_prefix = "sonar-${terraform.workspace}-"
 
   compute_resources {
-    max_vcpus          = 1024
+    max_vcpus          = 128
     security_group_ids = [data.aws_security_group.compute_security_group.id]
 
     subnets = [
