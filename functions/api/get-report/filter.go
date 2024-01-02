@@ -533,6 +533,46 @@ var hunkFilters = []HunkFilter{
 		Line:   898,
 		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
 	},
+	{
+		File:   "src/net.cpp",
+		Line:   2847,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/script/interpreter.cpp",
+		Line:   403,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/wallet.cpp",
+		Line:   3282,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/scriptpubkeyman.cpp",
+		Line:   245,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/scriptpubkeyman.cpp",
+		Line:   246,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/crypter.cpp",
+		Line:   63,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/crypter.cpp",
+		Line:   124,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/crypter.cpp",
+		Line:   132,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
 }
 
 func FilterFlakyCoverageHunks(commit string, coverage map[string]map[string][]db.CoverageFileHunk) map[string]map[string][]db.CoverageFileHunk {
