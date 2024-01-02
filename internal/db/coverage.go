@@ -144,7 +144,7 @@ func CreateCoverageHunks(reportID int, hunks []*CoverageFileHunk) error {
 
 func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Benchmarks").Where("is_master = ? AND status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+	err := DB.Preload("Benchmarks").Where("is_master = ? AND status = ? AND benchmark_status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS, BENCHMARK_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
 	return &report, err
 }
 
