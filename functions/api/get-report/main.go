@@ -55,7 +55,7 @@ func getReport(c echo.Context) error {
 	report.BenchmarksGrouped = GroupBenchmarks(report.Benchmarks)
 	report.BaseReport.BenchmarksGrouped = GroupBenchmarks(report.BaseReport.Benchmarks)
 	report.Coverage = GroupCoverageHunks(report.Hunks)
-	report.Coverage = FilterFlakyCoverageHunks(report.Coverage)
+	report.Coverage = FilterFlakyCoverageHunks(report.BaseCommit, report.Coverage)
 
 	return c.JSON(200, report)
 }
