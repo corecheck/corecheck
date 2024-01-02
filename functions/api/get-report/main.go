@@ -31,6 +31,9 @@ func getReport(c echo.Context) error {
 		report, err = db.GetLatestPullCoverageReport(pullNumberInt)
 		if err != nil {
 			log.Error(err)
+			if err.Error() == "record not found" {
+				return c.JSON(404, "report not found")
+			}
 			return err
 		}
 	} else {
@@ -42,6 +45,9 @@ func getReport(c echo.Context) error {
 		report, err = db.GetCoverageReport(i)
 		if err != nil {
 			log.Error(err)
+			if err.Error() == "record not found" {
+				return c.JSON(404, "report not found")
+			}
 			return err
 		}
 	}
