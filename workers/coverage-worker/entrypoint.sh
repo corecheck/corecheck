@@ -77,3 +77,15 @@ if [ "$src_exists" == "" ]; then
     aws s3 rm --recursive $S3_SRC_PATH
     aws s3 sync src $S3_SRC_PATH
 fi
+
+# store diff if it doesn't exist (only for PRs)
+if [ "$IS_MASTER" != "true" ]; then
+    set +e
+    diff_exists=$(aws s3 ls s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch)
+    set -e
+
+    if [ "$diff_exists" == "" ]; then
+        git diff $BASE_COMMIT > diff.patch
+        aws s3 cp diff.patch s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch
+    fi
+fi
