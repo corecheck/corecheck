@@ -7,7 +7,6 @@ import (
 
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/types"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/waigani/diffparser"
 )
 
@@ -651,9 +650,6 @@ func filterCoverage(hunks []db.CoverageFileHunk, diffs map[string]*diffparser.Di
 			newLineCoverage = append(newLineCoverage, hunk)
 			continue
 		}
-
-		log.Infof("Removed hunk")
-		spew.Dump(hunk)
 	}
 
 	return newLineCoverage

@@ -64,7 +64,6 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	}
 
 	differentialCoverage := coverage.Diff(coverageMaster, diff)
-	spew.Dump(differentialCoverage.Results[types.COVERAGE_TYPE_GAINED_COVERAGE_NEW_CODE])
 	hunks := differentialCoverage.CreateHunks(report)
 
 	log.Info(fmt.Sprintf("Found %d hunks", len(hunks)))
