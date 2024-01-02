@@ -8,7 +8,7 @@ BASE_COMMIT=$4
 if [ "$IS_MASTER" != "true" ]; then
     # https://sonarcloud.io/api/navigation/component?component=aureleoules_bitcoin&branch=XXXX
     BRANCH_EXISTS=$(curl -s "https://sonarcloud.io/api/navigation/component?component=aureleoules_bitcoin&branch=$PR_NUM-$COMMIT" | jq -r '.branch')
-    if [ "$BRANCH_EXISTS" == "$PR_NUM" ]; then
+    if [ "$BRANCH_EXISTS" == "$PR_NUM-$COMMIT" ]; then
         echo "Branch $PR_NUM already exists on sonarcloud"
         exit 0
     fi
