@@ -55,11 +55,11 @@ func getReport(c echo.Context) error {
 	report.BaseReport, err = db.GetMasterCoverageReport(report.BaseCommit)
 	if err != nil {
 		log.Errorf("Error getting base report: %s", err)
-		return err
+	} else {
+		report.BaseReport.BenchmarksGrouped = GroupBenchmarks(report.BaseReport.Benchmarks)
 	}
 
 	report.BenchmarksGrouped = GroupBenchmarks(report.Benchmarks)
-	report.BaseReport.BenchmarksGrouped = GroupBenchmarks(report.BaseReport.Benchmarks)
 	report.Coverage = GroupCoverageHunks(report.Hunks)
 	report.Coverage = FilterFlakyCoverageHunks(report.BaseCommit, report.Coverage)
 
