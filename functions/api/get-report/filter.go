@@ -573,6 +573,26 @@ var hunkFilters = []HunkFilter{
 		Line:   132,
 		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
 	},
+	{
+		File:   "src/wallet/scriptpubkeyman.cpp",
+		Line:   262,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/wallet/wallet.cpp",
+		Line:   3382,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/random.cpp",
+		Line:   212,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
+	{
+		File:   "src/pubkey.cpp",
+		Line:   73,
+		Commit: "4b1196a9855dcd188a24f393aa2fa21e2d61f061",
+	},
 }
 
 func FilterFlakyCoverageHunks(commit string, coverage map[string]map[string][]db.CoverageFileHunk) map[string]map[string][]db.CoverageFileHunk {
