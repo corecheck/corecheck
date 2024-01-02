@@ -83,7 +83,8 @@ locals {
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
 
-          BUCKET_DATA_URL = var.corecheck_data_bucket_url
+          BUCKET_DATA = var.corecheck_data_bucket
+          BUCKET_DATA_REGION = var.corecheck_data_bucket_region
           STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
         }
       }

@@ -41,7 +41,11 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 
 	sess := session.Must(session.NewSession())
 	stateMachine = sfn.New(sess)
-	s3sess := s3.New(sess)
+
+	s3sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(os.Getenv("BUCKET_DATA_REGION")),
+	}))
+	_s3 := s3.New(s3sess)
 
 	pulls, err := db.ListAllPulls()
 	if err != nil {
@@ -53,11 +57,11 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 		report, err := db.GetLatestPullCoverageReport(pull.Number)
 		if err != nil {
 			log.Error(err)
-			return "", err
+			continue
 		}
 
-		res, err := s3sess.ListObjectsV2(&s3.ListObjectsV2Input{
-			Bucket: aws.String(os.Getenv("BUCKET_DATA_URL")),
+		res, err := _s3.ListObjectsV2(&s3.ListObjectsV2Input{
+			Bucket: aws.String(os.Getenv("BUCKET_DATA")),
 			Prefix: aws.String(fmt.Sprintf("%d/%s/coverage.json", pull.Number, report.Commit)),
 		})
 

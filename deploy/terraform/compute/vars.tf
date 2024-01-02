@@ -32,6 +32,10 @@ variable "corecheck_data_bucket" {
   type        = string
   description = "corecheck data bucket"
 }
+variable "corecheck_data_bucket_region" {
+  type        = string
+  description = "corecheck data bucket"
+}
 
 variable "corecheck_data_bucket_url" {
   type        = string
