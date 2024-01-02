@@ -3,7 +3,7 @@ resource "aws_batch_compute_environment" "coverage_compute" {
   compute_environment_name_prefix = "coverage-${terraform.workspace}-"
 
   compute_resources {
-    max_vcpus          = 128
+    max_vcpus          = 256
     security_group_ids = [data.aws_security_group.compute_security_group.id]
 
     subnets = [

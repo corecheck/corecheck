@@ -163,7 +163,7 @@ resource "aws_batch_compute_environment" "bench" {
   compute_environment_name_prefix = "bench-${terraform.workspace}-"
 
   compute_resources {
-    max_vcpus          = 32
+    max_vcpus          = 256
     security_group_ids = [data.aws_security_group.compute_security_group.id]
     ec2_configuration {
       image_id_override = tolist(aws_imagebuilder_image.bitcoin-coverage-ami.output_resources[0].amis)[0].image
