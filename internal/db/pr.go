@@ -97,6 +97,12 @@ func ListPulls(opts SearchPRsOptions) ([]PR, error) {
 	return prs, err
 }
 
+func ListAllPulls() ([]PR, error) {
+	var prs []PR
+	err := DB.Where("state = ?", "open").Order("updated_at desc").Find(&prs).Error
+	return prs, err
+}
+
 func UpdatePR(pr *PR) error {
 	return DB.Save(pr).Error
 }

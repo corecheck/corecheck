@@ -6,6 +6,7 @@ locals {
     "migrate",
     "handle-coverage",
     "handle-benchmarks",
+    "rerun-all",
   ]
   # create a map of lambdas and their environment variables
   lambda_overrides = {
@@ -70,7 +71,23 @@ locals {
           BUCKET_DATA_URL = var.corecheck_data_bucket_url
         }
       }
-    }
+    },
+    "rerun-all" = {
+      timeout     = 900
+      memory_size = 128
+      environment = {
+        variables = {
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+
+          BUCKET_DATA_URL = var.corecheck_data_bucket_url
+          STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
+        }
+      }
+    },
   }
 }
 
