@@ -117,21 +117,21 @@ func handlePullRequest(pr *github.PullRequest) error {
 
 		log.Info("PR does not have coverage for latest commit, triggering coverage job")
 
+		masterReport, err := db.GetLatestMasterCoverageReport()
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 		report := &db.CoverageReport{
-			Commit:   dbPR.Head,
-			IsMaster: false,
-			PRNumber: dbPR.Number,
+			Commit:     dbPR.Head,
+			IsMaster:   false,
+			PRNumber:   dbPR.Number,
+			BaseCommit: masterReport.Commit,
 		}
 
 		err = db.CreateCoverageReport(report)
 		if err != nil {
 			log.Errorf("Error creating coverage report: %s", err)
-			return err
-		}
-
-		masterReport, err := db.GetLatestMasterCoverageReport()
-		if err != nil {
-			log.Error(err)
 			return err
 		}
 
