@@ -602,6 +602,16 @@ var hunkFilters = []HunkFilter{
 		Line:   137,
 		Commit: "fcdb39d3ee17015776c0759e4742334a962219db",
 	},
+	{
+		File:   "src/net.cpp",
+		Line:   2841,
+		Commit: "c3038bf95a4b9926001abb8a172f3d734f8e17ba",
+	},
+	{
+		File:   "src/net.cpp",
+		Line:   2919,
+		Commit: "c3038bf95a4b9926001abb8a172f3d734f8e17ba",
+	},
 }
 
 func FilterFlakyCoverageHunks(commit string, coverage map[string]map[string][]db.CoverageFileHunk) map[string]map[string][]db.CoverageFileHunk {
