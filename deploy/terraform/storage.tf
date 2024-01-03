@@ -43,7 +43,6 @@ resource "aws_s3_bucket_policy" "bitcoin-coverage-data-public" {
   })
 }
 
-# remove objects after 30days
 resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
   bucket = aws_s3_bucket.bitcoin-coverage-data.id
 
@@ -51,7 +50,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
     id     = "bitcoin-coverage-data"
     status = "Enabled"
     expiration {
-      days = 60
+      days = 180
     }
   }
 }
