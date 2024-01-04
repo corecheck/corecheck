@@ -54,7 +54,7 @@ func CreateCoverageReport(report *CoverageReport) error {
 
 func GetCoverageReport(id int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Hunks").Preload("Benchmarks").Where("id = ?", id).First(&report).Error
+	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("id = ?", id).First(&report).Error
 	return &report, err
 }
 
