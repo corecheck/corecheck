@@ -1,5 +1,5 @@
 locals {
-  bench_array_size = 5
+  bench_array_size = 10
 
   state_machine_lambdas = [
     "github-sync",
