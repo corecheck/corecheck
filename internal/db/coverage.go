@@ -22,7 +22,7 @@ type CoverageReport struct {
 	BaseCommit        string                                   `json:"base_commit"`
 	BaseReport        *CoverageReport                          `json:"base_report" gorm:"-"`
 	Benchmarks        []BenchmarkResult                        `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	BenchmarksGrouped map[string][]BenchmarkResult             `json:"benchmarks_grouped" gorm:"-"`
+	BenchmarksGrouped map[string]*BenchmarkResult              `json:"benchmarks_grouped" gorm:"-"`
 	Hunks             []CoverageFileHunk                       `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	Coverage          map[string]map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
 	CreatedAt         time.Time                                `json:"created_at"`
