@@ -25,7 +25,7 @@ fi
 BENCH_DURATION=1000
 # set perf max sample rate to 1
 echo 1 | tee /proc/sys/kernel/perf_event_max_sample_rate
-./src/bench/bench_bitcoin -min-time=$BENCH_DURATION -output-json=bench.json
+./bench_bitcoin -min-time=$BENCH_DURATION -output-json=bench.json
 
 if [ "$IS_MASTER" != "true" ]; then
     aws s3 cp bench.json "s3://$S3_BUCKET_DATA/$PR_NUM/$COMMIT/bench/bench-$AWS_BATCH_JOB_ARRAY_INDEX.json"
