@@ -4,16 +4,30 @@ type BenchmarkResult struct {
 	ID               int `json:"id,omitempty" gorm:"primaryKey"`
 	CoverageReportID int `json:"coverage_report_id"`
 
-	Name string  `json:"name"`
-	Ir   float64 `json:"Ir"`
-	I1mr float64 `json:"I1mr"`
-	ILmr float64 `json:"ILmr"`
-	Dr   float64 `json:"Dr"`
-	D1mr float64 `json:"D1mr"`
-	DLmr float64 `json:"DLmr"`
-	Dw   float64 `json:"Dw"`
-	D1mw float64 `json:"D1mw"`
-	DLmw float64 `json:"DLmw"`
+	Name                                   string  `json:"name"`
+	Title                                  string  `json:"title"`
+	Unit                                   string  `json:"unit"`
+	Batch                                  float64 `json:"batch"`
+	ComplexityN                            float64 `json:"complexityN"`
+	Epochs                                 float64 `json:"epochs"`
+	ClockResolution                        float64 `json:"clockResolution"`
+	ClockResolutionMultiple                float64 `json:"clockResolutionMultiple"`
+	MaxEpochTime                           float64 `json:"maxEpochTime"`
+	MinEpochTime                           float64 `json:"minEpochTime"`
+	MinEpochIterations                     float64 `json:"minEpochIterations"`
+	EpochIterations                        float64 `json:"epochIterations"`
+	Warmup                                 float64 `json:"warmup"`
+	Relative                               float64 `json:"relative"`
+	MedianElapsed                          float64 `json:"median(elapsed)"`
+	MedianAbsolutePercentErrorElapsed      float64 `json:"medianAbsolutePercentError(elapsed)"`
+	MedianInstructions                     float64 `json:"median(instructions)"`
+	MedianAbsolutePercentErrorInstructions float64 `json:"medianAbsolutePercentError(instructions)"`
+	MedianCpucycles                        float64 `json:"median(cpucycles)"`
+	MedianContextswitches                  float64 `json:"median(contextswitches)"`
+	MedianPagefaults                       float64 `json:"median(pagefaults)"`
+	MedianBranchinstructions               float64 `json:"median(branchinstructions)"`
+	MedianBranchmisses                     float64 `json:"median(branchmisses)"`
+	TotalTime                              float64 `json:"totalTime"`
 }
 
 const (

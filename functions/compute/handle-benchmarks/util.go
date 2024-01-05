@@ -18,6 +18,9 @@ func GetBenchDataMaster(commit string, n int) ([]*db.BenchmarkResult, error) {
 }
 
 func getBenchData(url string) ([]*db.BenchmarkResult, error) {
+	type benchData struct {
+		Results []*db.BenchmarkResult `json:"results"`
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -25,11 +28,11 @@ func getBenchData(url string) ([]*db.BenchmarkResult, error) {
 
 	defer resp.Body.Close()
 
-	var benchResults []*db.BenchmarkResult
+	var benchResults benchData
 	err = json.NewDecoder(resp.Body).Decode(&benchResults)
 	if err != nil {
 		return nil, err
 	}
 
-	return benchResults, nil
+	return benchResults.Results, nil
 }
