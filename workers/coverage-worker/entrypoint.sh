@@ -73,7 +73,8 @@ set -e
 
 if [ "$src_exists" == "" ]; then
     make clean || true
-    rm -rf src/qt src/leveldb src/test wallet/test
+    rm -rf src/qt src/leveldb src/test src/wallet/test src/test src/univalue src/minisketch/ src/secp256k1 src/crc32c
+    find . -name .deps -type d -exec rm -rf {} +
     aws s3 rm --recursive $S3_SRC_PATH
     aws s3 sync src $S3_SRC_PATH
 fi
