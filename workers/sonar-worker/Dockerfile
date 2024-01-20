@@ -16,10 +16,10 @@ RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.4/sccache-v0.
     rm -rf sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz sccache-v0.7.4-x86_64-unknown-linux-musl
 RUN ln -s /usr/bin/sccache /usr/bin/ccache
 
-RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip && \
-    unzip sonar-scanner-cli-4.7.0.2747-linux.zip && \
-    mv sonar-scanner-4.7.0.2747-linux /usr/lib/sonar-scanner && \
-    rm -rf sonar-scanner-cli-4.7.0.2747-linux.zip
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip && \
+    unzip sonar-scanner-cli-5.0.1.3006-linux.zip && \
+    mv sonar-scanner-5.0.1.3006-linux /usr/lib/sonar-scanner && \
+    rm -rf sonar-scanner-cli-5.0.1.3006-linux.zip sonar-scanner-5.0.1.3006-linux
 
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
