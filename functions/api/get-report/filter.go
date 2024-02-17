@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/types"
@@ -616,30 +617,43 @@ var hunkFilters = []HunkFilter{
 
 func FilterFlakyCoverageHunks(commit string, coverage map[string]map[string][]db.CoverageFileHunk) map[string]map[string][]db.CoverageFileHunk {
 	var diffs = make(map[string]*diffparser.Diff)
+	var diffsMutex = &sync.Mutex{} // Mutex for protecting the diffs map
+	var wg sync.WaitGroup
 	for _, filter := range hunkFilters {
-		_, ok := diffs[filter.Commit]
-		if !ok {
-			diffData, err := http.Get(fmt.Sprintf("https://github.com/bitcoin/bitcoin/compare/%s..%s.diff", filter.Commit, commit))
-			if err != nil {
-				log.Errorf("Error getting diff: %s", err)
-				continue
-			}
+		wg.Add(1)
+		go func(filter HunkFilter) {
+			defer wg.Done()
+			diffsMutex.Lock() // Lock the mutex before accessing the map
+			_, ok := diffs[filter.Commit]
+			diffsMutex.Unlock() // Unlock the mutex after accessing the map
+			if !ok {
+				diffData, err := http.Get(fmt.Sprintf("https://github.com/bitcoin/bitcoin/compare/%s..%s.diff", filter.Commit, commit))
+				if err != nil {
+					log.Errorf("Error getting diff: %s", err)
+					return
+				}
 
-			defer diffData.Body.Close()
+				defer diffData.Body.Close()
 
-			bodyBytes, err := io.ReadAll(diffData.Body)
-			if err != nil {
-				log.Errorf("Error reading diff: %s", err)
-				continue
-			}
+				bodyBytes, err := io.ReadAll(diffData.Body)
+				if err != nil {
+					log.Errorf("Error reading diff: %s", err)
+					return
+				}
 
-			diffs[filter.Commit], err = diffparser.Parse(string(bodyBytes))
-			if err != nil {
-				log.Errorf("Error parsing diff: %s", err)
-				continue
+				parsedDiff, err := diffparser.Parse(string(bodyBytes))
+				if err != nil {
+					log.Errorf("Error parsing diff: %s", err)
+					return
+				}
+
+				diffsMutex.Lock() // Lock the mutex before modifying the map
+				diffs[filter.Commit] = parsedDiff
+				diffsMutex.Unlock() // Unlock the mutex after modifying the map
 			}
-		}
+		}(filter)
 	}
+	wg.Wait()
 
 	for _, hunkType := range []string{types.COVERAGE_TYPE_GAINED_BASELINE_COVERAGE, types.COVERAGE_TYPE_LOST_BASELINE_COVERAGE} {
 		for file, hunks := range coverage[hunkType] {
