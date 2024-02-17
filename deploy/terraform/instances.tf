@@ -72,7 +72,7 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_instance" "db" {
-  instance_type = "t4g.nano"
+  instance_type = "t4g.micro"
 
   availability_zone = "eu-west-3a"
   ami               = data.aws_ami.ubuntu_22_04.id
