@@ -22,8 +22,8 @@ data "aws_ami" "ubuntu_22_04" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "ci-${terraform.workspace}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGuel3J5BthPQnrAjrOqt8lY0X+mU+sx/rUgbB54FVw9 aureleoules@nuflap"
+  key_name   = "aureleoules-${terraform.workspace}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEM79mi/xHOtZw+bUfOH8soMjCyO5qOdpLls1tXnR2AD aurele@oules.com"
 }
 
 resource "aws_eip" "lb" {
