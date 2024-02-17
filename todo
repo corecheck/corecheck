@@ -1,0 +1,5 @@
+Create a new statemachine to run a batch of 5 (TBD) workers to compute regular test coverage on the latest master commit every day
+have a function compute the results to detect non-deterministic coverage and store the results (file:line_num) in the database along with its corresponding commit
+
+
+in the handle-coverage lambda, check if any baseline coverage change is due to undeterminstic tests, using by LineNumber translator of the diff between the base_commit of the PR and the commit of the determinstic thingy
