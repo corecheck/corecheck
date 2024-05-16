@@ -2,392 +2,158 @@ package main
 
 import (
 	"bitcoin-stats-datadog/types"
-	"encoding/json"
-	"os"
-	"path/filepath"
+
+	ddlambda "github.com/DataDog/datadog-lambda-go"
 )
 
-//func (bc *BitcoinCoreData) GetNumberOfPulls() (total int, open int, closed int, merged int) {
-//	dir, err := os.ReadDir(filepath.Join(bc.Path, "pulls"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	total = len(dir)
-//	for _, entry := range dir {
-//		pullRaw, err := os.ReadFile(filepath.Join(bc.Path, "pulls", entry.Name()))
-//		if err != nil {
-//			panic(err)
-//		}
-//		pull := types.Pull{}
-//		err = json.Unmarshal(pullRaw, &pull)
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		if pull.Pull.State == "open" {
-//			open++
-//		}
-//
-//		if pull.Pull.State == "closed" {
-//			closed++
-//		}
-//
-//		if !pull.Pull.MergedAt.IsZero() {
-//			merged++
-//		}
-//	}
-//
-//	return total, open, closed, merged
-//}
-//
-//func (bc *BitcoinCoreData) GetUniqueUsers() []string {
-//	dir, err := os.ReadDir(filepath.Join(bc.Path, "pulls"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	users := make(map[string]struct{})
-//
-//	for _, entry := range dir {
-//		pullRaw, err := os.ReadFile(filepath.Join(bc.Path, "pulls", entry.Name()))
-//		if err != nil {
-//			panic(err)
-//		}
-//		pull := types.Pull{}
-//		err = json.Unmarshal(pullRaw, &pull)
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		users[pull.Pull.User.Login] = struct{}{}
-//	}
-//
-//	var uniqueUsers []string
-//	for user := range users {
-//		uniqueUsers = append(uniqueUsers, user)
-//	}
-//
-//	return uniqueUsers
-//}
-//
-//func (bc *BitcoinCoreData) GetPullsByUser() (open map[string]int, closed map[string]int, merged map[string]int) {
-//	dir, err := os.ReadDir(filepath.Join(bc.Path, "pulls"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	open = make(map[string]int)
-//	closed = make(map[string]int)
-//	merged = make(map[string]int)
-//
-//	uniqueUsers := bc.GetUniqueUsers()
-//	for _, user := range uniqueUsers {
-//		open[user] = 0
-//		closed[user] = 0
-//		merged[user] = 0
-//	}
-//
-//	for _, entry := range dir {
-//		pullRaw, err := os.ReadFile(filepath.Join(bc.Path, "pulls", entry.Name()))
-//		if err != nil {
-//			panic(err)
-//		}
-//		pull := types.Pull{}
-//		err = json.Unmarshal(pullRaw, &pull)
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		if pull.Pull.State == "open" {
-//			open[pull.Pull.User.Login]++
-//		}
-//
-//		if pull.Pull.State == "closed" {
-//			closed[pull.Pull.User.Login]++
-//		}
-//
-//		if !pull.Pull.MergedAt.IsZero() {
-//			merged[pull.Pull.User.Login]++
-//		}
-//	}
-//
-//	return open, closed, merged
-//}
-//
-//func (bc *BitcoinCoreData) getUniqueLabels() []string {
-//	dir, err := os.ReadDir(filepath.Join(bc.Path, "pulls"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	labels := make(map[string]struct{})
-//
-//	for _, entry := range dir {
-//		pullRaw, err := os.ReadFile(filepath.Join(bc.Path, "pulls", entry.Name()))
-//		if err != nil {
-//			panic(err)
-//		}
-//		pull := types.Pull{}
-//		err = json.Unmarshal(pullRaw, &pull)
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		for _, label := range pull.Pull.Labels {
-//			labels[label.Name] = struct{}{}
-//		}
-//	}
-//
-//	var uniqueLabels []string
-//	for label := range labels {
-//		uniqueLabels = append(uniqueLabels, label)
-//	}
-//
-//	return uniqueLabels
-//}
-//
-//func (bc *BitcoinCoreData) GetPullsByLabel() (open map[string]int, closed map[string]int, merged map[string]int) {
-//	dir, err := os.ReadDir(filepath.Join(bc.Path, "pulls"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	open = make(map[string]int)
-//	closed = make(map[string]int)
-//	merged = make(map[string]int)
-//
-//	uniqueLabels := bc.getUniqueLabels()
-//	for _, label := range uniqueLabels {
-//		open[label] = 0
-//		closed[label] = 0
-//		merged[label] = 0
-//	}
-//
-//	for _, entry := range dir {
-//		pullRaw, err := os.ReadFile(filepath.Join(bc.Path, "pulls", entry.Name()))
-//		if err != nil {
-//			panic(err)
-//		}
-//		pull := types.Pull{}
-//		err = json.Unmarshal(pullRaw, &pull)
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		for _, label := range pull.Pull.Labels {
-//			if pull.Pull.State == "open" {
-//				open[label.Name]++
-//			}
-//
-//			if pull.Pull.State == "closed" {
-//				closed[label.Name]++
-//			}
-//
-//			if !pull.Pull.MergedAt.IsZero() {
-//				merged[label.Name]++
-//			}
-//		}
-//	}
-//
-//	return open, closed, merged
-//}
+type NumberOfIssuesConsumer struct {
+	Total  float64
+	Open   float64
+	Closed float64
+}
 
-func (bc *BitcoinCoreData) GetNumberOfIssues() (total float64, open float64, closed float64) {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
+func (c *NumberOfIssuesConsumer) Init() {}
+
+func (c *NumberOfIssuesConsumer) ProcessPull(pull *types.Pull) {}
+
+func (c *NumberOfIssuesConsumer) ProcessIssue(issue *types.Issue) {
+	if issue.Issue.State == "open" {
+		c.Open++
 	}
 
-	total = float64(len(dir))
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
+	if issue.Issue.State == "closed" {
+		c.Closed++
+	}
+
+	c.Total++
+}
+
+func (c *NumberOfIssuesConsumer) SendMetrics() {
+	ddlambda.Metric("bitcoin.bitcoin.issues.open", c.Open)
+	ddlambda.Metric("bitcoin.bitcoin.issues.closed", c.Closed)
+	ddlambda.Metric("bitcoin.bitcoin.issues.total", c.Total)
+}
+
+type UniqueIssueUsersConsumer struct {
+	Users map[string]struct{}
+}
+
+func (c *UniqueIssueUsersConsumer) Init() {
+	c.Users = make(map[string]struct{})
+}
+
+func (c *UniqueIssueUsersConsumer) ProcessPull(pull *types.Pull) {}
+
+func (c *UniqueIssueUsersConsumer) ProcessIssue(issue *types.Issue) {
+	c.Users[issue.Issue.User.Login] = struct{}{}
+}
+
+func (c *UniqueIssueUsersConsumer) SendMetrics() {
+	ddlambda.Metric("bitcoin.bitcoin.issues.unique_users", float64(len(c.Users)))
+}
+
+type IssuesByUserConsumer struct {
+	Open   map[string]float64
+	Closed map[string]float64
+}
+
+func (c *IssuesByUserConsumer) Init() {
+	c.Open = make(map[string]float64)
+	c.Closed = make(map[string]float64)
+}
+
+func (c *IssuesByUserConsumer) ProcessPull(pull *types.Pull) {}
+
+func (c *IssuesByUserConsumer) ProcessIssue(issue *types.Issue) {
+	if _, ok := c.Open[issue.Issue.User.Login]; !ok {
+		c.Open[issue.Issue.User.Login] = 0
+	}
+	if _, ok := c.Closed[issue.Issue.User.Login]; !ok {
+		c.Closed[issue.Issue.User.Login] = 0
+	}
+
+	if issue.Issue.State == "open" {
+		c.Open[issue.Issue.User.Login]++
+	}
+
+	if issue.Issue.State == "closed" {
+		c.Closed[issue.Issue.User.Login]++
+	}
+}
+
+func (c *IssuesByUserConsumer) SendMetrics() {
+	for user, count := range c.Open {
+		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_user", count, "user:"+user)
+	}
+
+	for user, count := range c.Closed {
+		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_user", count, "user:"+user)
+	}
+}
+
+type IssuesByLabelConsumer struct {
+	Open   map[string]float64
+	Closed map[string]float64
+}
+
+func (c *IssuesByLabelConsumer) Init() {
+	c.Open = make(map[string]float64)
+	c.Closed = make(map[string]float64)
+}
+
+func (c *IssuesByLabelConsumer) ProcessPull(pull *types.Pull) {}
+
+func (c *IssuesByLabelConsumer) ProcessIssue(issue *types.Issue) {
+	for _, label := range issue.Issue.Labels {
+		if _, ok := c.Open[label.Name]; !ok {
+			c.Open[label.Name] = 0
 		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
+		if _, ok := c.Closed[label.Name]; !ok {
+			c.Closed[label.Name] = 0
 		}
 
 		if issue.Issue.State == "open" {
-			open++
+			c.Open[label.Name]++
 		}
 
 		if issue.Issue.State == "closed" {
-			closed++
+			c.Closed[label.Name]++
 		}
 	}
-
-	return total, open, closed
 }
 
-func (bc *BitcoinCoreData) GetUniqueIssueUsers() []string {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
+func (c *IssuesByLabelConsumer) SendMetrics() {
+	for label, count := range c.Open {
+		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_label", count, "label:"+label)
 	}
 
-	users := make(map[string]struct{})
-
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
-		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
-		}
-
-		users[issue.Issue.User.Login] = struct{}{}
+	for label, count := range c.Closed {
+		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_label", count, "label:"+label)
 	}
-
-	var uniqueUsers []string
-	for user := range users {
-		uniqueUsers = append(uniqueUsers, user)
-	}
-
-	return uniqueUsers
 }
 
-func (bc *BitcoinCoreData) GetIssuesByUser() (open map[string]float64, closed map[string]float64) {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
-	}
-
-	open = make(map[string]float64)
-	closed = make(map[string]float64)
-
-	uniqueUsers := bc.GetUniqueIssueUsers()
-	for _, user := range uniqueUsers {
-		open[user] = 0
-		closed[user] = 0
-	}
-
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
-		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
-		}
-
-		if issue.Issue.State == "open" {
-			open[issue.Issue.User.Login]++
-		}
-
-		if issue.Issue.State == "closed" {
-			closed[issue.Issue.User.Login]++
-		}
-	}
-
-	return open, closed
+type TotalCommentsIssueConsumer struct {
+	Comments map[int]int
 }
 
-func (bc *BitcoinCoreData) GetUniqueIssueLabels() []string {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
-	}
-
-	labels := make(map[string]struct{})
-
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
-		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, label := range issue.Issue.Labels {
-			labels[label.Name] = struct{}{}
-		}
-	}
-
-	var uniqueLabels []string
-	for label := range labels {
-		uniqueLabels = append(uniqueLabels, label)
-	}
-
-	return uniqueLabels
+func (c *TotalCommentsIssueConsumer) Init() {
+	c.Comments = make(map[int]int)
 }
 
-func (bc *BitcoinCoreData) GetIssuesByLabel() (open map[string]float64, closed map[string]float64) {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
-	}
+func (c *TotalCommentsIssueConsumer) ProcessPull(pull *types.Pull) {}
 
-	open = make(map[string]float64)
-	closed = make(map[string]float64)
-
-	uniqueLabels := bc.GetUniqueIssueLabels()
-	for _, label := range uniqueLabels {
-		open[label] = 0
-		closed[label] = 0
-	}
-
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
-		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, label := range issue.Issue.Labels {
-			if issue.Issue.State == "open" {
-				open[label.Name]++
-			}
-
-			if issue.Issue.State == "closed" {
-				closed[label.Name]++
-			}
+func (c *TotalCommentsIssueConsumer) ProcessIssue(issue *types.Issue) {
+	for _, event := range issue.Events {
+		if event.Event == "commented" {
+			c.Comments[issue.Issue.Number]++
 		}
 	}
-
-	return open, closed
 }
 
-func (bc *BitcoinCoreData) GetTotalCommentsByIssue() (comments map[int]int) {
-	dir, err := os.ReadDir(filepath.Join(bc.Path, "issues"))
-	if err != nil {
-		panic(err)
+func (c *TotalCommentsIssueConsumer) SendMetrics() {
+	for issue, count := range c.Comments {
+		ddlambda.Metric("bitcoin.bitcoin.issues.comments", float64(count), "issue:"+string(issue))
 	}
 
-	comments = make(map[int]int)
-
-	for _, entry := range dir {
-		issueRaw, err := os.ReadFile(filepath.Join(bc.Path, "issues", entry.Name()))
-		if err != nil {
-			panic(err)
-		}
-		issue := types.Issue{}
-		err = json.Unmarshal(issueRaw, &issue)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, event := range issue.Events {
-			if event.Event == "commented" {
-				comments[issue.Issue.Number]++
-			}
-		}
-	}
-
-	return comments
+	ddlambda.Metric("bitcoin.bitcoin.issues.comments.total", float64(len(c.Comments)))
 }
