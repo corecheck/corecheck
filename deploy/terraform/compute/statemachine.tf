@@ -97,7 +97,7 @@ locals {
     },
     "stats" = {
       timeout     = 900
-      memory_size = 128
+      memory_size = 1024
       ephemeral_storage_size = 10240
       
       environment = {
