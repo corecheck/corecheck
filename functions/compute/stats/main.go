@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/artdarek/go-unzip"
@@ -70,65 +71,109 @@ func handleMetrics(ctx context.Context) (string, error) {
 	}
 
 	bc := BitcoinCoreData{Path: dest + "/github-metadata-backup-bitcoin-bitcoin-master"}
-	total, open, closed, merged := bc.GetNumberOfPulls()
-	ddlambda.Metric("bitcoin.bitcoin.pulls.open", open)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.closed", closed)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.merged", merged)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.total", total)
 
-	total, open, closed = bc.GetNumberOfIssues()
-	ddlambda.Metric("bitcoin.bitcoin.issues.open", open)
-	ddlambda.Metric("bitcoin.bitcoin.issues.closed", closed)
-	ddlambda.Metric("bitcoin.bitcoin.issues.total", total)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		total, open, closed, merged := bc.GetNumberOfPulls()
+		ddlambda.Metric("bitcoin.bitcoin.pulls.open", open)
+		ddlambda.Metric("bitcoin.bitcoin.pulls.closed", closed)
+		ddlambda.Metric("bitcoin.bitcoin.pulls.merged", merged)
+		ddlambda.Metric("bitcoin.bitcoin.pulls.total", total)
 
-	openByLabels, closedByLabels, mergedByLabels := bc.GetPullsByLabel()
-	for label, count := range openByLabels {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_label", count, "label:"+label)
-	}
-	for label, count := range closedByLabels {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_label", count, "label:"+label)
-	}
-	for label, count := range mergedByLabels {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_label", count, "label:"+label)
-	}
+		wg.Done()
+	}()
 
-	openByLabels, closedByLabels = bc.GetIssuesByLabel()
-	for label, count := range openByLabels {
-		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_label", count, "label:"+label)
-	}
-	for label, count := range closedByLabels {
-		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_label", count, "label:"+label)
-	}
+	wg.Add(1)
+	go func() {
+		total, open, closed := bc.GetNumberOfIssues()
+		ddlambda.Metric("bitcoin.bitcoin.issues.open", open)
+		ddlambda.Metric("bitcoin.bitcoin.issues.closed", closed)
+		ddlambda.Metric("bitcoin.bitcoin.issues.total", total)
 
-	uniqueAuthors := bc.GetUniqueAuthors(true)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.unique_authors", float64(len(uniqueAuthors)))
+		wg.Done()
+	}()
 
-	comments, reviews := bc.GetTotalCommentsAndReviewsByPull()
-	for pull, count := range comments {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.comments", count, "pull:"+strconv.Itoa(pull))
-	}
-	for pull, count := range reviews {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.reviews", count, "pull:"+strconv.Itoa(pull))
-	}
+	wg.Add(1)
+	go func() {
+		openByLabels, closedByLabels, mergedByLabels := bc.GetPullsByLabel()
+		for label, count := range openByLabels {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_label", count, "label:"+label)
+		}
+		for label, count := range closedByLabels {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_label", count, "label:"+label)
+		}
+		for label, count := range mergedByLabels {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_label", count, "label:"+label)
+		}
 
-	openByUser, closedByUser, mergedByUser := bc.GetPullsByUser()
-	for user, count := range openByUser {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_user", count, "user:"+user)
-	}
-	for user, count := range closedByUser {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_user", count, "user:"+user)
-	}
-	for user, count := range mergedByUser {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_user", count, "user:"+user)
-	}
+		wg.Done()
+	}()
 
-	openByUser, closedByUser = bc.GetIssuesByUser()
-	for user, count := range openByUser {
-		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_user", count, "user:"+user)
-	}
-	for user, count := range closedByUser {
-		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_user", count, "user:"+user)
-	}
+	wg.Add(1)
+	go func() {
+		openByLabels, closedByLabels = bc.GetIssuesByLabel()
+		for label, count := range openByLabels {
+			ddlambda.Metric("bitcoin.bitcoin.issues.open.by_label", count, "label:"+label)
+		}
+		for label, count := range closedByLabels {
+			ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_label", count, "label:"+label)
+		}
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		uniqueAuthors := bc.GetUniqueAuthors(true)
+		ddlambda.Metric("bitcoin.bitcoin.pulls.unique_authors", float64(len(uniqueAuthors)))
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		comments, reviews := bc.GetTotalCommentsAndReviewsByPull()
+		for pull, count := range comments {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.comments", count, "pull:"+strconv.Itoa(pull))
+		}
+		for pull, count := range reviews {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.reviews", count, "pull:"+strconv.Itoa(pull))
+		}
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		openByUser, closedByUser, mergedByUser := bc.GetPullsByUser()
+		for user, count := range openByUser {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_user", count, "user:"+user)
+		}
+		for user, count := range closedByUser {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_user", count, "user:"+user)
+		}
+		for user, count := range mergedByUser {
+			ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_user", count, "user:"+user)
+		}
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		openByUser, closedByUser := bc.GetIssuesByUser()
+		for user, count := range openByUser {
+			ddlambda.Metric("bitcoin.bitcoin.issues.open.by_user", count, "user:"+user)
+		}
+		for user, count := range closedByUser {
+			ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_user", count, "user:"+user)
+		}
+
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	return "OK", nil
 }
