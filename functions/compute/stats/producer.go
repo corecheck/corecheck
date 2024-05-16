@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type StatsConsumer interface {
@@ -91,7 +92,17 @@ func (bc *BitcoinCoreData) sendMetrics() {
 
 func (bc *BitcoinCoreData) Run() {
 	bc.init()
-	bc.processPulls()
-	bc.processIssues()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		bc.processPulls()
+	}()
+	go func() {
+		defer wg.Done()
+		bc.processIssues()
+	}()
+
+	wg.Wait()
 	bc.sendMetrics()
 }
