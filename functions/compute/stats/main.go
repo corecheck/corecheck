@@ -15,7 +15,7 @@ import (
 
 const (
 	bitcoinDataURL = "https://github.com/bitcoin-data/github-metadata-backup-bitcoin-bitcoin/archive/refs/heads/master.zip"
-	dest           = "./data"
+	dest           = "/tmp/data"
 )
 
 type BitcoinCoreData struct {
@@ -23,13 +23,8 @@ type BitcoinCoreData struct {
 }
 
 func DownloadFile(url string) error {
-	if _, err := os.Stat("bitcoin-data.zip"); err == nil {
-		fmt.Println("File already exists")
-		return nil
-	}
-
 	// Get the data
-	out, err := os.Create("bitcoin-data.zip")
+	out, err := os.Create("/tmp/bitcoin-data.zip")
 	if err != nil {
 		return err
 	}
@@ -54,10 +49,6 @@ func DownloadFile(url string) error {
 }
 
 func Unzip(src string, dest string) error {
-	if _, err := os.Stat(dest); err == nil {
-		fmt.Println("Directory already exists")
-		return nil
-	}
 	uz := unzip.New(src, dest)
 	return uz.Extract()
 }
@@ -72,7 +63,7 @@ func handleMetrics(ctx context.Context) (string, error) {
 	}
 
 	// Unzip file
-	err = Unzip("bitcoin-data.zip", dest)
+	err = Unzip("/tmp/bitcoin-data.zip", dest)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
