@@ -61,3 +61,8 @@ variable "lambda_bucket" {
     type        = string
     description = "lambda bucket"
 }
+
+variable "datadog_api_key" {
+    type        = string
+    description = "datadog api key"
+}

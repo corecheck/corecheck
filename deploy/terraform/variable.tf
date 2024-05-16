@@ -9,3 +9,4 @@ variable "db_database" {
 }
 
 variable "github_token" {}
+variable "datadog_api_key" {}

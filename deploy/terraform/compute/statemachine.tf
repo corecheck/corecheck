@@ -7,12 +7,14 @@ locals {
     "handle-coverage",
     "handle-benchmarks",
     "rerun-all",
+    "stats",
   ]
   # create a map of lambdas and their environment variables
   lambda_overrides = {
     "github-sync" = {
       timeout     = 900
       memory_size = 128
+      ephemeral_storage_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
@@ -29,6 +31,7 @@ locals {
     "migrate" = {
       timeout     = 60
       memory_size = 128
+      ephemeral_storage_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
@@ -42,6 +45,7 @@ locals {
     "handle-coverage" = {
       timeout     = 300
       memory_size = 512
+      ephemeral_storage_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
@@ -59,6 +63,7 @@ locals {
     "handle-benchmarks" = {
       timeout     = 900
       memory_size = 128
+      ephemeral_storage_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
@@ -75,6 +80,7 @@ locals {
     "rerun-all" = {
       timeout     = 900
       memory_size = 128
+      ephemeral_storage_size = 512
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
@@ -89,6 +95,17 @@ locals {
         }
       }
     },
+    "stats" = {
+      timeout     = 900
+      memory_size = 128
+      ephemeral_storage_size = 10240
+      
+      environment = {
+        variables = {
+          DD_API_KEY = var.datadog_api_key
+        }
+      }
+    }
   }
 }
 
@@ -120,6 +137,9 @@ resource "aws_lambda_function" "function" {
   role          = aws_iam_role.lambda.arn
   handler       = "${each.value}-${terraform.workspace}"
   memory_size   = local.lambda_overrides[each.value].memory_size
+  ephemeral_storage {
+    size = local.lambda_overrides[each.value].ephemeral_storage_size
+  }
   architectures = ["arm64"]
   timeout       = local.lambda_overrides[each.value].timeout
 
@@ -163,6 +183,7 @@ resource "aws_cloudwatch_event_target" "github_sync" {
   arn       = aws_lambda_function.function["github-sync"].arn
 }
 
+
 resource "aws_lambda_permission" "allow_eventbridge" {
   provider = aws.compute_region
   statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
@@ -170,6 +191,31 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   function_name = "github-sync-${terraform.workspace}"
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.github_sync.arn
+}
+
+resource "aws_cloudwatch_event_rule" "stats" {
+  provider = aws.compute_region
+  name        = "stats-rule-${terraform.workspace}"
+  description = "stats"
+  schedule_expression = "rate(1 hour)"
+  is_enabled = terraform.workspace == "default"
+}
+
+# target
+resource "aws_cloudwatch_event_target" "stats" {
+  provider = aws.compute_region
+  rule      = aws_cloudwatch_event_rule.stats.name
+  target_id = "stats-${terraform.workspace}"
+  arn       = aws_lambda_function.function["stats"].arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_stats" {
+  provider = aws.compute_region
+  statement_id  = "AllowExecutionFromEventBridgeStats-${terraform.workspace}"
+  action        = "lambda:InvokeFunction"
+  function_name = "stats-${terraform.workspace}"
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.stats.arn
 }
 
 # state machine role

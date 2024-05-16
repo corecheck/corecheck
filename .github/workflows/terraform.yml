@@ -65,6 +65,7 @@ jobs:
       TF_VAR_aws_secret_access_key: ${{ secrets.TF_VAR_aws_secret_access_key }}
       TF_VAR_sonar_token: ${{ secrets.SONAR_TOKEN }}
       TF_VAR_github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+      TF_VAR_datadog_api_key: ${{ secrets.DATADOG_API_KEY }}
       TF_VAR_db_user: ${{ secrets.DB_USER }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 

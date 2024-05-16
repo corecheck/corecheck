@@ -27,6 +27,7 @@ module "compute" {
   aws_secret_access_key = var.aws_secret_access_key
 
   sonar_token = var.sonar_token
+  datadog_api_key = var.datadog_api_key
 
   lambda_bucket = aws_s3_bucket.corecheck-lambdas.id
   providers = {
