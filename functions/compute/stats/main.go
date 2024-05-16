@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/artdarek/go-unzip"
@@ -112,7 +113,7 @@ func handleMetrics(ctx context.Context) (string, error) {
 
 	wg.Add(1)
 	go func() {
-		openByLabels, closedByLabels = bc.GetIssuesByLabel()
+		openByLabels, closedByLabels := bc.GetIssuesByLabel()
 		for label, count := range openByLabels {
 			ddlambda.Metric("bitcoin.bitcoin.issues.open.by_label", count, "label:"+label)
 		}
@@ -180,7 +181,8 @@ func handleMetrics(ctx context.Context) (string, error) {
 
 func main() {
 	lambda.Start(ddlambda.WrapFunction(handleMetrics, &ddlambda.Config{
-		DebugLogging: true,
-		Site:         "datadoghq.eu",
+		DebugLogging:  true,
+		Site:          "datadoghq.eu",
+		BatchInterval: time.Millisecond * 500,
 	}))
 }
