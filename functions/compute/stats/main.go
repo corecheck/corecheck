@@ -181,8 +181,9 @@ func handleMetrics(ctx context.Context) (string, error) {
 
 func main() {
 	lambda.Start(ddlambda.WrapFunction(handleMetrics, &ddlambda.Config{
-		DebugLogging:  true,
-		Site:          "datadoghq.eu",
-		BatchInterval: time.Millisecond * 500,
+		DebugLogging:    true,
+		Site:            "datadoghq.eu",
+		BatchInterval:   time.Millisecond * 500,
+		EnhancedMetrics: true,
 	}))
 }
