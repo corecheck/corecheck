@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/corecheck/corecheck/internal/config"
 	"github.com/corecheck/corecheck/internal/db"
@@ -60,6 +61,44 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 		totalBenchmarks = append(totalBenchmarks, benchResults...)
 	}
 
+	if job.GetIsMaster() {
+		resultsByBenchmark := make(map[string][]*db.BenchmarkResult)
+		for _, result := range totalBenchmarks {
+			resultsByBenchmark[result.Name] = append(resultsByBenchmark[result.Name], result)
+		}
+
+		for name, results := range resultsByBenchmark {
+			log.Infof("Calculating benchmark stats for %s", name)
+			avg := db.GetAverageBenchmarkResults(results)
+
+			tags := []string{"benchmark_name:" + name, "commit:" + job.Commit}
+
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.batch", avg.Batch, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.complexity_n", avg.ComplexityN, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.epochs", avg.Epochs, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.clock_resolution", avg.ClockResolution, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.clock_resolution_multiple", avg.ClockResolutionMultiple, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.max_epoch_time", avg.MaxEpochTime, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.min_epoch_time", avg.MinEpochTime, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.min_epoch_iterations", avg.MinEpochIterations, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.epoch_iterations", avg.EpochIterations, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.warmup", avg.Warmup, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.relative", avg.Relative, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_elapsed", avg.MedianElapsed, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_elapsed", avg.MedianAbsolutePercentErrorElapsed, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_instructions", avg.MedianInstructions, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_instructions", avg.MedianAbsolutePercentErrorInstructions, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_cpucycles", avg.MedianCpucycles, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_contextswitches", avg.MedianContextswitches, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_pagefaults", avg.MedianPagefaults, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_branchinstructions", avg.MedianBranchinstructions, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_branchmisses", avg.MedianBranchmisses, tags...)
+			ddlambda.Metric("bitcoin.bitcoin.benchmarks.total_time", avg.TotalTime, tags...)
+		}
+
+		ddlambda.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)), "commit:"+job.Commit)
+	}
+
 	log.Info("Creating benchmark results")
 	err = db.CreateBenchmarkResults(report.ID, totalBenchmarks)
 	if err != nil {
@@ -104,5 +143,8 @@ func HandleRequest(ctx context.Context, event map[string]interface{}) (string, e
 }
 
 func main() {
-	lambda.Start(HandleRequest)
+	lambda.Start(ddlambda.WrapFunction(HandleRequest, &ddlambda.Config{
+		Site:            "datadoghq.eu",
+		EnhancedMetrics: true,
+	}))
 }
