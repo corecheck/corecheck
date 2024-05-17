@@ -16,6 +16,16 @@ RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.3/sccache-v0.
     rm -rf sccache-v0.7.3-aarch64-unknown-linux-musl.tar.gz sccache-v0.7.3-aarch64-unknown-linux-musl
 RUN ln -s /usr/bin/sccache /usr/bin/ccache
 
+RUN sh -c "echo 'deb [signed-by=/usr/share/keyrings/datadog-archive-keyring.gpg] https://apt.datadoghq.com/ stable 7' > /etc/apt/sources.list.d/datadog.list" && \
+    touch /usr/share/keyrings/datadog-archive-keyring.gpg && \
+    chmod a+r /usr/share/keyrings/datadog-archive-keyring.gpg && \
+    curl https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public | gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch && \
+    curl https://keys.datadoghq.com/DATADOG_APT_KEY_C0962C7D.public | gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch && \
+    curl https://keys.datadoghq.com/DATADOG_APT_KEY_F14F620E.public | gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch && \
+    curl https://keys.datadoghq.com/DATADOG_APT_KEY_382E94DE.public | gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch
+
+RUN apt update && apt install -y datadog-agent datadog-signing-keys
+
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
 RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_NATPMP=1 NO_UPNP=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)

@@ -6,6 +6,12 @@ IS_MASTER=$3
 BASE_COMMIT=$4
 
 set -e
+
+sh -c "sed \"s/api_key:.*/api_key: $DD_API_KEY/\" /etc/datadog-agent/datadog.yaml.example > /etc/datadog-agent/datadog.yaml"
+sh -c "sed -i 's/# site:.*/site: datadoghq.eu/' /etc/datadog-agent/datadog.yaml"
+sh -c "sed -i 's/# hostname:.*/hostname: $HOSTNAME/' /etc/datadog-agent/datadog.yaml"
+
+/etc/init.d/datadog-agent start
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
@@ -43,12 +49,23 @@ else
     
     ./autogen.sh && ./configure --disable-bench --disable-fuzz --enable-fuzz-binary=no --with-gui=no --disable-zmq BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include" --enable-lcov #--enable-extended-functional-tests
     time make -j$(nproc)
-
+    
     time ./src/test/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./src/test/test_bitcoin -t {} 2>&1
-    time python3 test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2
-
+    time python3 test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
+    
+    if [ "$IS_MASTER" == "true" ]; then
+        while IFS= read -r line; do
+            if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9])+[[:space:]]+s$ ]]; then
+                test_name="${BASH_REMATCH[1]}";
+                test_duration="${BASH_REMATCH[3]}";
+                echo -n "bitcoin.bitcoin.test.functional.duration:$test_duration|g|#test_name:$test_name,#commit:$COMMIT" >/dev/udp/localhost/8125
+                echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
+            fi; 
+        done < "functional-tests.log"
+    fi
+    
     time gcovr --json --gcov-ignore-errors=no_working_dir_found --gcov-ignore-parse-errors -e depends -e src/test -e src/leveldb -e src/bench -e src/qt -j $(nproc) > coverage.json
-
+    
     aws s3 cp coverage.json $S3_COVERAGE_FILE
 fi
 
@@ -84,7 +101,7 @@ if [ "$IS_MASTER" != "true" ]; then
     set +e
     diff_exists=$(aws s3 ls s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch)
     set -e
-
+    
     if [ "$diff_exists" == "" ]; then
         git diff $BASE_COMMIT > diff.patch
         aws s3 cp diff.patch s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch
