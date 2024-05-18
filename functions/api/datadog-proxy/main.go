@@ -68,6 +68,7 @@ var ginLambda *ginadapter.GinLambda
 
 func init() {
 	r := gin.Default()
+	r.RedirectTrailingSlash = false
 	r.Use(cors.Default())
 	r.Any("/static/*proxyPath", staticProxy)
 	r.Any("/:route/*proxyPath", proxy)
