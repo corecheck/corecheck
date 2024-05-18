@@ -72,6 +72,7 @@ func init() {
 	r.Use(cors.Default())
 	r.Any("/static/*proxyPath", staticProxy)
 	r.Any("/:route/*proxyPath", proxy)
+	r.Any("/:route", proxy)
 	ginLambda = ginadapter.New(r)
 }
 
