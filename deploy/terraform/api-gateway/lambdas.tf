@@ -3,6 +3,7 @@ locals {
     "get-pull",
     "list-pulls",
     "get-report",
+    "datadog-proxy",
   ]
 }
 
