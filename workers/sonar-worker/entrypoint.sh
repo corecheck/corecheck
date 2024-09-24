@@ -38,18 +38,18 @@ fi
 
 ./test/get_previous_releases.py -b
 
-./autogen.sh && ./configure --disable-fuzz --enable-fuzz-binary=no --with-gui=no --disable-zmq BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include"
-time compiledb make -j$(nproc)
+time cmake -B build -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+time cmake --build build -j$(nproc)
 
 if [ "$IS_MASTER" != "true" ]; then
     echo "Updating $PR_NUM branch on sonarcloud"
     time /usr/lib/sonar-scanner/bin/sonar-scanner \
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
-    -Dsonar.sources=. \
+    -Dsonar.sources=./build \
     -Dsonar.cfamily.compile-commands=compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/src/crc32c/**, build/src/crypto/ctaes/**, build/src/leveldb/**, build/src/minisketch/**, build/src/secp256k1/**, build/src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=$PR_NUM-$COMMIT \
     -Dsonar.cfamily.analysisCache.mode=server \
@@ -59,10 +59,10 @@ else
     time /usr/lib/sonar-scanner/bin/sonar-scanner \
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
-    -Dsonar.sources=. \
+    -Dsonar.sources=./build \
     -Dsonar.cfamily.compile-commands=compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/src/crc32c/**, build/src/crypto/ctaes/**, build/src/leveldb/**, build/src/minisketch/**, build/src/secp256k1/**, build/src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=master \
     -Dsonar.cfamily.analysisCache.mode=server

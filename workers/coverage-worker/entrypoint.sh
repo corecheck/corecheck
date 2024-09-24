@@ -47,11 +47,11 @@ else
     
     NPROC_2=$(expr $(nproc) \* 2)
     
-    ./autogen.sh && ./configure --disable-bench --disable-fuzz --enable-fuzz-binary=no --with-gui=no --disable-zmq BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include" --enable-lcov #--enable-extended-functional-tests
-    time make -j$(nproc)
+    time cmake -B build -DCMAKE_BUILD_TYPE=Coverage -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    time cmake --build build -j$(nproc)
     
-    time ./src/test/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./src/test/test_bitcoin -t {} 2>&1
-    time python3 test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
+    time ./build/src/test/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/src/test/test_bitcoin -t {} 2>&1
+    time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
         while IFS= read -r line; do
@@ -76,10 +76,8 @@ set -e
 if [ "$bench_exists" != "" ]; then
     echo "Bench binary already exists for this commit"
 else
-    ./autogen.sh
-    ./configure --enable-bench --disable-tests --disable-gui --disable-zmq --disable-fuzz --enable-fuzz-binary=no BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" BDB_CFLAGS="-I${BDB_PREFIX}/include"
-    make clean
-    time make -j$(nproc)
+    rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON -DBUILD_TESTS=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    time cmake --build build -j$(nproc)
     aws s3 cp src/bench/bench_bitcoin $S3_BENCH_FILE
 fi
 
