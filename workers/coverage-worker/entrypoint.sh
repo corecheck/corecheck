@@ -76,7 +76,7 @@ set -e
 if [ "$bench_exists" != "" ]; then
     echo "Bench binary already exists for this commit"
 else
-    rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON -DBUILD_TESTS=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
     time cmake --build build -j$(nproc)
     aws s3 cp src/bench/bench_bitcoin $S3_BENCH_FILE
 fi
