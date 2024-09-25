@@ -64,7 +64,7 @@ else
         done < "functional-tests.log"
     fi
     
-    time gcovr --json --gcov-ignore-errors=no_working_dir_found --gcov-ignore-parse-errors -e depends -e src/test -e src/leveldb -e src/bench -e src/qt -j $(nproc) > coverage.json
+    time gcovr --json --merge-mode-functions=merge-use-line-min --gcov-ignore-errors=no_working_dir_found --gcov-ignore-parse-errors -e depends -e src/test -e src/leveldb -e src/bench -e src/qt -j $(nproc) > coverage.json
     
     aws s3 cp coverage.json $S3_COVERAGE_FILE
 fi
