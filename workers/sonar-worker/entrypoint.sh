@@ -49,7 +49,7 @@ if [ "$IS_MASTER" != "true" ]; then
     -Dsonar.sources=. \
     -Dsonar.cfamily.compile-commands=build/compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='build/**', 'src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/**, src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=$PR_NUM-$COMMIT \
     -Dsonar.cfamily.analysisCache.mode=server \
@@ -62,7 +62,7 @@ else
     -Dsonar.sources=. \
     -Dsonar.cfamily.compile-commands=build/compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='build/**', 'src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/**, src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=master \
     -Dsonar.cfamily.analysisCache.mode=server
