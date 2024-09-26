@@ -38,7 +38,7 @@ fi
 
 ./test/get_previous_releases.py -b
 
-time cmake -B build -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+time cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
 time cmake --build build -j$(nproc)
 
 if [ "$IS_MASTER" != "true" ]; then
@@ -47,9 +47,9 @@ if [ "$IS_MASTER" != "true" ]; then
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
     -Dsonar.sources=. \
-    -Dsonar.cfamily.compile-commands=compile_commands.json \
+    -Dsonar.cfamily.compile-commands=build/compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/**', 'src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=$PR_NUM-$COMMIT \
     -Dsonar.cfamily.analysisCache.mode=server \
@@ -60,9 +60,9 @@ else
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
     -Dsonar.sources=. \
-    -Dsonar.cfamily.compile-commands=compile_commands.json \
+    -Dsonar.cfamily.compile-commands=build/compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
+    -Dsonar.exclusions='build/**', 'src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=master \
     -Dsonar.cfamily.analysisCache.mode=server
