@@ -46,10 +46,10 @@ if [ "$IS_MASTER" != "true" ]; then
     time /usr/lib/sonar-scanner/bin/sonar-scanner \
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
-    -Dsonar.sources=./build \
+    -Dsonar.sources=. \
     -Dsonar.cfamily.compile-commands=compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='build/src/crc32c/**, build/src/crypto/ctaes/**, build/src/leveldb/**, build/src/minisketch/**, build/src/secp256k1/**, build/src/univalue/**' \
+    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=$PR_NUM-$COMMIT \
     -Dsonar.cfamily.analysisCache.mode=server \
@@ -59,10 +59,10 @@ else
     time /usr/lib/sonar-scanner/bin/sonar-scanner \
     -Dsonar.organization=aureleoules \
     -Dsonar.projectKey=aureleoules_bitcoin \
-    -Dsonar.sources=./build \
+    -Dsonar.sources=. \
     -Dsonar.cfamily.compile-commands=compile_commands.json \
     -Dsonar.host.url=https://sonarcloud.io \
-    -Dsonar.exclusions='build/src/crc32c/**, build/src/crypto/ctaes/**, build/src/leveldb/**, build/src/minisketch/**, build/src/secp256k1/**, build/src/univalue/**' \
+    -Dsonar.exclusions='src/crc32c/**, src/crypto/ctaes/**, src/leveldb/**, src/minisketch/**, src/secp256k1/**, src/univalue/**' \
     -Dsonar.cfamily.threads=$(nproc) \
     -Dsonar.branch.name=master \
     -Dsonar.cfamily.analysisCache.mode=server
