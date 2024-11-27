@@ -1,0 +1,134 @@
+.schema-field-header {
+    $minHeight: 42px;
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: $minHeight;
+    gap: 5px;
+    padding: 0 5px;
+    align-items: center;
+    justify-content: stretch;
+    background: var(--baseAlt1Color);
+    border-radius: var(--baseRadius);
+    transition: border-radius var(--baseAnimationSpeed);
+    .form-field {
+        margin: 0;
+        .form-field-addon.prefix {
+            left: 10px;
+            ~ %input {
+                padding-left: 37px;
+            }
+        }
+    }
+    .options-trigger {
+        padding: 2px;
+        margin: 0 3px;
+        i {
+            transition: transform var(--baseAnimationSpeed);
+        }
+    }
+    .separator {
+        flex-shrink: 0;
+        width: 1px;
+        height: $minHeight;
+        background: rgba(#000, 0.05);
+    }
+    .drag-handle-wrapper {
+        position: absolute;
+        top: 0;
+        left: auto;
+        right: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+    .drag-handle {
+        padding: 0 5px;
+        transform: translateX(5px);
+        @include hide();
+    }
+    .form-field-single-multiple-select {
+        width: 100px;
+        flex-shrink: 0;
+        .dropdown {
+            min-width: 0;
+        }
+    }
+
+    // markers
+    .markers {
+        position: absolute;
+        z-index: 1;
+        left: 4px;
+        top: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        .marker {
+            $size: 4px;
+            display: block;
+            width: $size;
+            height: $size;
+            border-radius: $size;
+            background: var(--baseAlt4Color);
+        }
+    }
+}
+
+.schema-field-options {
+    background: #fff;
+    padding: var(--xsSpacing);
+    border-bottom-left-radius: var(--baseRadius);
+    border-bottom-right-radius: var(--baseRadius);
+}
+
+.schema-field {
+    @extend %block;
+    position: relative;
+    margin: 0 0 var(--xsSpacing);
+    border-radius: var(--baseRadius);
+    background: var(--baseAlt1Color);
+    transition: border var(--baseAnimationSpeed),
+                box-shadow var(--baseAnimationSpeed);
+    border: 2px solid var(--baseAlt1Color);
+    // states
+    &:not(.deleted):hover {
+        .drag-handle {
+            transform: translateX(0px);
+            @include show();
+        }
+    }
+    .dragover &,
+    &.dragover {
+        opacity: 0.5;
+    }
+    &.expanded {
+        @include shadowize();
+        border-color: var(--baseAlt2Color);
+        .schema-field-header {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            .options-trigger {
+                i {
+                    transform: rotate(-60deg);
+                }
+            }
+        }
+        .schema-field-options {
+            border-top: 2px solid var(--baseAlt2Color);
+        }
+    }
+    &.deleted {
+        .schema-field-header {
+            background: var(--bodyColor);
+        }
+        .markers,
+        .separator {
+            opacity: 0.5;
+        }
+        %input {
+            background: none;
+            box-shadow: none;
+        }
+    }
+}
