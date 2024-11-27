@@ -2,3 +2,15 @@ credentials.json
 terraform.tfstate
 .terraform
 terraform.tfstate.backup
+.DS_Store
+node_modules
+/frontend/build
+/frontend/.svelte-kit
+/frontend/package
+.env
+.env.*
+!.env.example
+.vercel
+.output
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
