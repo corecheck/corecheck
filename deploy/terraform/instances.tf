@@ -22,7 +22,7 @@ data "aws_ami" "ubuntu_22_04" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "aureleoules-${terraform.workspace}"
+  key_name   = "max-${terraform.workspace}"
   public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILTurm2ONYlzVmFhscmeSHPI4o4JZWM2yL+mYA87uotY max@corecheck"
 }
 
