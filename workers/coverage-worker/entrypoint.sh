@@ -54,13 +54,15 @@ else
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
+        binary_size=$(stat -c %s ./build/src/bitcoind)
+        echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
                 test_name="${BASH_REMATCH[1]}";
                 test_duration="${BASH_REMATCH[3]}";
                 echo -n "bitcoin.bitcoin.test.functional.duration:$test_duration|g|#test_name:$test_name,#commit:$COMMIT" >/dev/udp/localhost/8125
                 echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
-            fi; 
+            fi;
         done < "functional-tests.log"
     fi
     
