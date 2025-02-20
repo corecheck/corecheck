@@ -318,7 +318,7 @@ resource "aws_sfn_state_machine" "state_machine" {
   definition = <<EOF
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Start coverage",
+  "StartAt": "BothCovAndMutation",
   "States": {
     "BothCovAndMutation": {
       "Type": "Parallel",
