@@ -31,7 +31,7 @@ func getLatestMutation(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(200, data)
+	return c.JSON(200, string(data))
 }
 
 func getMutationJSONFromS3(commit string) ([]byte, error) {
