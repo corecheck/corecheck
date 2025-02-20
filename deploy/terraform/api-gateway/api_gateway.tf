@@ -13,10 +13,17 @@ resource "aws_api_gateway_resource" "get_pull" {
   parent_id   = aws_api_gateway_resource.pulls.id
   path_part   = "{id}"
 }
+
 resource "aws_api_gateway_resource" "get_report" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_resource.get_pull.id
   path_part   = "report"
+}
+
+resource "aws_api_gateway_resource" "mutations" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "mutations"
 }
 
 resource "aws_api_gateway_method" "get_pull" {
@@ -37,6 +44,13 @@ resource "aws_api_gateway_method" "get_report" {
   authorization = "NONE"
   http_method   = "GET"
   resource_id   = aws_api_gateway_resource.get_report.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_method" "get_mutation" {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.mutations.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
 }
 
@@ -81,6 +95,15 @@ resource "aws_api_gateway_integration" "lambda_report" {
   uri                     = aws_lambda_function.lambda["get-report"].invoke_arn
 }
 
+resource "aws_api_gateway_integration" "lambda_mutation" {
+  http_method             = aws_api_gateway_method.get_mutation.http_method
+  resource_id             = aws_api_gateway_resource.mutations.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.lambda["get-mutation"].invoke_arn
+}
+
 resource "aws_api_gateway_deployment" "api" {
   rest_api_id       = aws_api_gateway_rest_api.api.id
   stage_name        = "api"
@@ -94,6 +117,7 @@ resource "aws_api_gateway_deployment" "api" {
     aws_api_gateway_method.get_pull,
     aws_api_gateway_method.list_pulls,
     aws_api_gateway_method.get_report,
+    aws_api_gateway_method.get_mutation,
     aws_api_gateway_integration.lambda,
   ]
 }
