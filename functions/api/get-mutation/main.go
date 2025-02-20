@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 
@@ -25,41 +24,18 @@ func getLatestMutation(c echo.Context) error {
 		return err
 	}
 
-	data, err := getMutationJSONFromS3(commit)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return c.JSON(200, string(data))
-}
-
-func getMutationJSONFromS3(commit string) ([]byte, error) {
 	url := os.Getenv("BUCKET_DATA_URL") + "/master/" + commit + "/mutation.json"
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch JSON: %w", err)
+		return fmt.Errorf("failed to fetch JSON: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch JSON, status: %d", resp.StatusCode)
+		return fmt.Errorf("failed to fetch JSON, status: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	log.Warn(string(body))
-
-	return body, nil
-
-	// var data interface{}
-	// if err := json.Unmarshal(body, &data); err != nil {
-	// 	return nil, fmt.Errorf("failed to decode JSON: %w", err)
-	// }
-	//
-	// return json.Marshal(data)
+	return c.Stream(200, "application/json", resp.Body)
 }
 
 func main() {
