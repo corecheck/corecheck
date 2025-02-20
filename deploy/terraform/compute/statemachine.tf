@@ -79,7 +79,7 @@ locals {
         }
       }
     },
-    "handle-benchmarks" = {
+    "handle-mutation" = {
       timeout     = 300
       memory_size = 128
       ephemeral_storage_size = 512
