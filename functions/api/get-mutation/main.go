@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,6 +50,7 @@ func getMutationJSONFromS3(commit string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
+	log.warn(string(body))
 
 	return body, nil
 
