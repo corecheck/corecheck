@@ -119,6 +119,7 @@ resource "aws_api_gateway_deployment" "api" {
     aws_api_gateway_method.get_report,
     aws_api_gateway_method.get_mutation,
     aws_api_gateway_integration.lambda,
+    aws_api_gateway_integration.lambda_mutation,
   ]
 }
 
