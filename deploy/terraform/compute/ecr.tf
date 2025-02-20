@@ -16,3 +16,8 @@ resource "aws_ecrpublic_repository" "corecheck-sonar-worker" {
   force_destroy = true
 }
 
+resource "aws_ecrpublic_repository" "corecheck-mutation-worker" {
+  provider        = aws.us_east_1
+  repository_name = "corecheck-mutation-worker-${terraform.workspace}"
+  force_destroy = true
+}
