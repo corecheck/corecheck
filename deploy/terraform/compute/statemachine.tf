@@ -6,6 +6,7 @@ locals {
     "migrate",
     "handle-coverage",
     "handle-benchmarks",
+    "hangle-mutation",
     "rerun-all",
     "stats",
   ]
@@ -75,6 +76,20 @@ locals {
           BENCH_ARRAY_SIZE = local.bench_array_size
           BUCKET_DATA_URL = var.corecheck_data_bucket_url
           DD_API_KEY = var.datadog_api_key
+        }
+      }
+    },
+    "handle-benchmarks" = {
+      timeout     = 300
+      memory_size = 128
+      ephemeral_storage_size = 512
+      environment = {
+        variables = {
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
         }
       }
     },
@@ -305,75 +320,113 @@ resource "aws_sfn_state_machine" "state_machine" {
   "Comment": "A description of my state machine",
   "StartAt": "Start coverage",
   "States": {
-    "Start coverage": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::batch:submitJob.sync",
-      "Parameters": {
-        "Parameters.$": "$.params",
-        "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
-        "JobName": "coverage",
-        "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
-      },
-      "Next": "Handle coverage",
-      "ResultPath": "$.coverage_job"
-    },
-    "Handle coverage": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "Parameters": {
-        "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
-        "Payload.$": "$"
-      },
-      "Next": "Parallel",
-      "ResultPath": "$.coverage_result"
-    },
-    "Parallel": {
+    "BothCovAndMutation": {
       "Type": "Parallel",
       "End": true,
       "Branches": [
         {
-          "StartAt": "Start Sonarcloud",
+          "StartAt": "Start mutation",
           "States": {
-            "Start Sonarcloud": {
+            "Start mutation": {
               "Type": "Task",
               "Resource": "arn:aws:states:::batch:submitJob.sync",
               "Parameters": {
                 "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
-                "JobName": "sonar",
-                "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
+                "JobDefinition": "${aws_batch_job_definition.mutation_job.arn}",
+                "JobName": "mutation",
+                "JobQueue": "${aws_batch_job_queue.mutation_queue.arn}"
               },
-              "ResultPath": "$.sonar_job",
-              "End": true
-            }
-          }
-        },
-        {
-          "StartAt": "Start Benchmarks",
-          "States": {
-            "Start Benchmarks": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::batch:submitJob.sync",
-              "Parameters": {
-                "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
-                "JobName": "benchmarks",
-                "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
-                "ArrayProperties": {
-                  "Size": ${local.bench_array_size}
-                }
-              },
-              "ResultPath": "$.benchmarks_job",
-              "Next": "Handle Benchmarks"
+              "Next": "Handle mutation",
+              "ResultPath": "$.mutation_job"
             },
-            "Handle Benchmarks": {
+            "Handle mutation": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
-                "FunctionName": "handle-benchmarks-${terraform.workspace}:$LATEST",
+                "FunctionName": "handle-mutation-${terraform.workspace}:$LATEST",
                 "Payload.$": "$"
               },
-              "End": true
+              "End": true,
+              "ResultPath": "$.mutation_result"
+            },
+          }
+        },
+        {
+          "StartAt": "Start coverage",
+          "States": {
+            "Start coverage": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::batch:submitJob.sync",
+              "Parameters": {
+                "Parameters.$": "$.params",
+                "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
+                "JobName": "coverage",
+                "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
+              },
+              "Next": "Handle coverage",
+              "ResultPath": "$.coverage_job"
+            },
+            "Handle coverage": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
+                "Payload.$": "$"
+              },
+              "Next": "Parallel",
+              "ResultPath": "$.coverage_result"
+            },
+            "Parallel": {
+              "Type": "Parallel",
+              "End": true,
+              "Branches": [
+                {
+                  "StartAt": "Start Sonarcloud",
+                  "States": {
+                    "Start Sonarcloud": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::batch:submitJob.sync",
+                      "Parameters": {
+                        "Parameters.$": "$.params",
+                        "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
+                        "JobName": "sonar",
+                        "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
+                      },
+                      "ResultPath": "$.sonar_job",
+                      "End": true
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Start Benchmarks",
+                  "States": {
+                    "Start Benchmarks": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::batch:submitJob.sync",
+                      "Parameters": {
+                        "Parameters.$": "$.params",
+                        "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
+                        "JobName": "benchmarks",
+                        "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
+                        "ArrayProperties": {
+                          "Size": ${local.bench_array_size}
+                        }
+                      },
+                      "ResultPath": "$.benchmarks_job",
+                      "Next": "Handle Benchmarks"
+                    },
+                    "Handle Benchmarks": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Parameters": {
+                        "FunctionName": "handle-benchmarks-${terraform.workspace}:$LATEST",
+                        "Payload.$": "$"
+                      },
+                      "End": true
+                    }
+                  }
+                }
+              ]
             }
           }
         }
