@@ -23,7 +23,7 @@ else
 
     time cmake -B build -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
 
-    mutation-core mutate -f="src/wallet/coinselection.cpp" -r 1 100 --one_mutant=1
+    mutation-core mutate -f="src/wallet/coinselection.cpp" -r 1 101 --one_mutant=1
     # mutation-core mutate -f="src/script/interpreter.cpp"
     # mutation-core mutate -f="src/consensus/tx_verify.cpp"
     # mutation-core mutate -f="src/consensus/tx_check.cpp"
