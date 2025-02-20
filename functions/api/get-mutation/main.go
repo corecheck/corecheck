@@ -72,6 +72,6 @@ func main() {
 	}
 
 	e := api.New()
-	e.GET("/latest-mutation", getLatestMutation)
+	e.GET("/mutations", getLatestMutation)
 	api.Start(e)
 }
