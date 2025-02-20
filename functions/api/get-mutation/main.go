@@ -52,12 +52,14 @@ func getMutationJSONFromS3(commit string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var data interface{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON: %w", err)
-	}
+	return body, nil
 
-	return json.Marshal(data)
+	// var data interface{}
+	// if err := json.Unmarshal(body, &data); err != nil {
+	// 	return nil, fmt.Errorf("failed to decode JSON: %w", err)
+	// }
+	//
+	// return json.Marshal(data)
 }
 
 func main() {
