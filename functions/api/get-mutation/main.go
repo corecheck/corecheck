@@ -50,7 +50,7 @@ func getMutationJSONFromS3(commit string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	log.warn(string(body))
+	log.Warn(string(body))
 
 	return body, nil
 
