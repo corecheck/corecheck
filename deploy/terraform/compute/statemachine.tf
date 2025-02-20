@@ -6,7 +6,7 @@ locals {
     "migrate",
     "handle-coverage",
     "handle-benchmarks",
-    "hangle-mutation",
+    "handle-mutation",
     "rerun-all",
     "stats",
   ]
