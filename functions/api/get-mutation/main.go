@@ -38,6 +38,16 @@ func getLatestMutation(c echo.Context) error {
 	return c.Stream(200, "application/json", resp.Body)
 }
 
+func getLatestMutationMeta(c echo.Context) error {
+	result, err := db.GetLatestMutationResult()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return c.JSON(200, result)
+}
+
 func main() {
 	log.Debug("Loading config...")
 	if err := config.Load(&cfg); err != nil {
@@ -51,5 +61,6 @@ func main() {
 
 	e := api.New()
 	e.GET("/mutations", getLatestMutation)
+	e.GET("/mutations/meta", getLatestMutationMeta)
 	api.Start(e)
 }
