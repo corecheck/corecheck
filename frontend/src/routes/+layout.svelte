@@ -49,7 +49,7 @@
                 <img
                     style="text-align: center"
                     height="25"
-                    alt="jobs"
+                    alt="Tests"
                     src="/icons/svg/ci.svg"
                 />
             </a>
@@ -64,8 +64,23 @@
                 <img
                     style="text-align: center"
                     height="25"
-                    alt="jobs"
+                    alt="Benchmarks"
                     src="/icons/svg/stats.svg"
+                />
+            </a>
+            <a
+                data-sveltekit-preload-code="eager"
+                href="/mutation"
+                class="menu-item"
+                aria-label="Mutation"
+                class:active={$page.url.pathname.includes("/mutation")}
+                use:tooltip={{ text: "Mutation", position: "right" }}
+            >
+                <img
+                    style="text-align: center"
+                    height="25"
+                    alt="Mutations"
+                    src="/icons/png/mutation.png"
                 />
             </a>
             <a

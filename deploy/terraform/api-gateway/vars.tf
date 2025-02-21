@@ -27,3 +27,8 @@ variable "s3_bucket" {
     type        = string
     description = "s3 bucket"
 }
+
+variable "corecheck_data_bucket_url" {
+  type        = string
+  description = "corecheck data bucket url"
+}
