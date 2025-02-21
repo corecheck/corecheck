@@ -14,8 +14,8 @@ func CreateMutationResult(result *MutationResult) error {
 	return DB.Create(result).Error
 }
 
-func GetLatestMutationResultCommit() (string, error) {
+func GetLatestMutationResult() (*MutationResult, error) {
 	var result MutationResult
 	err := DB.Order("created_at desc").First(&result).Error
-	return result.Commit, err
+	return &result, err
 }

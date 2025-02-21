@@ -47,46 +47,71 @@ func checkMasterCoverage(c *github.Client) error {
 
 	if hasReport {
 		log.Info("Master has coverage for latest commit")
-	} else {
-		log.Info("Master does not have coverage for latest commit, adding to queue")
+		return nil
+	}
 
-		report := &db.CoverageReport{
+	log.Info("Master does not have coverage for latest commit, adding to queue")
+
+	report := &db.CoverageReport{
+		Commit:     master.GetCommit().GetSHA(),
+		IsMaster:   true,
+		BaseCommit: master.GetCommit().GetSHA(),
+	}
+
+	err = db.CreateCoverageReport(report)
+	if err != nil {
+		log.Errorf("Error creating coverage report: %s", err)
+		return err
+	}
+
+	params := StateMachineInput{
+		Params: types.JobParams{
 			Commit:     master.GetCommit().GetSHA(),
-			IsMaster:   true,
+			IsMaster:   "true",
+			PRNumber:   "0",
 			BaseCommit: master.GetCommit().GetSHA(),
-		}
+		},
+	}
+	paramsJson, err := json.Marshal(params)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
+		StateMachineArn: aws.String(cfg.StateMachineARN),
+		Input:           aws.String(string(paramsJson)),
+	})
 
-		err := db.CreateCoverageReport(report)
-		if err != nil {
-			log.Errorf("Error creating coverage report: %s", err)
-			return err
-		}
+	err, runMutations := isTimeToRunMutationsAgain()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 
-		params := StateMachineInput{
-			Params: types.JobParams{
-				Commit:     master.GetCommit().GetSHA(),
-				IsMaster:   "true",
-				PRNumber:   "0",
-				BaseCommit: master.GetCommit().GetSHA(),
-			},
-		}
-		paramsJson, err := json.Marshal(params)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
+	if runMutations {
 		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.StateMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
+	}
 
-		if err != nil {
-			log.Error(err)
-			return err
-		}
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	return nil
+}
+
+func isTimeToRunMutationsAgain() (error, bool) {
+	result, err := db.GetLatestMutationResult()
+	if err != nil {
+		log.Error(err)
+		return err, false
+	}
+
+	// run every 7 days
+	return nil, result.CreatedAt.Add(1 * time.Hour).Before(time.Now())
 }
 
 func handlePullRequest(pr *github.PullRequest) error {

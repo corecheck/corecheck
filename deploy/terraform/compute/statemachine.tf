@@ -26,6 +26,7 @@ locals {
 
           GITHUB_ACCESS_TOKEN = var.github_token
           STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
+          MUTATION_STATE_MACHINE_ARN = aws_sfn_state_machine.mutation_state_machine.arn
         }
       }
     },
@@ -431,6 +432,43 @@ resource "aws_sfn_state_machine" "state_machine" {
           }
         }
       ]
+    }
+  }
+}
+EOF
+}
+
+resource "aws_sfn_state_machine" "mutation_state_machine" {
+  name     = "start-mutation-jobs-${terraform.workspace}"
+  role_arn = aws_iam_role.state_machine_role.arn
+  provider = aws.compute_region
+
+  definition = <<EOF
+{
+  "Comment": "Starts mutation batch job and then handles success with handle mutation lambda",
+  "StartAt": "Start mutation",
+  "States": {
+    "Start mutation": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::batch:submitJob.sync",
+      "Parameters": {
+        "Parameters.$": "$.params",
+        "JobDefinition": "${aws_batch_job_definition.mutation_job.arn}",
+        "JobName": "mutation",
+        "JobQueue": "${aws_batch_job_queue.mutation_queue.arn}"
+      },
+      "Next": "Handle mutation",
+      "ResultPath": "$.mutation_job"
+    },
+    "Handle mutation": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "handle-mutation-${terraform.workspace}:$LATEST",
+        "Payload.$": "$"
+      },
+      "End": true,
+      "ResultPath": "$.mutation_result"
     }
   }
 }

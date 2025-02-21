@@ -18,13 +18,13 @@ var (
 )
 
 func getLatestMutation(c echo.Context) error {
-	commit, err := db.GetLatestMutationResultCommit()
+	result, err := db.GetLatestMutationResult()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	url := os.Getenv("BUCKET_DATA_URL") + "/master/" + commit + "/mutation.json"
+	url := os.Getenv("BUCKET_DATA_URL") + "/master/" + result.Commit + "/mutation.json"
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JSON: %w", err)
