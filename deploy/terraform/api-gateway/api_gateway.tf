@@ -28,7 +28,7 @@ resource "aws_api_gateway_resource" "mutations" {
 
 resource "aws_api_gateway_resource" "mutations_meta" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.mutations.id
+  parent_id   = aws_api_gateway_resource.mutations.id
   path_part   = "meta"
 }
 
