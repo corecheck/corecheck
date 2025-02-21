@@ -158,6 +158,42 @@
     {/each}
   </div>
 
+  {#if !selectedFile}
+    <div class="content">
+      <div class="">
+        <div class="shadow document" style="">
+          <div class="heading" style="">
+            <h2 class="">Mutation Testing</h2>
+          </div>
+
+          <div class="main-content">
+            <div>
+              <span>Last Ran: 2025-02-21 12:05</span>
+            </div>
+            <div>
+              <span>For Commit: 879569cab4e5b400350f3b95d7bee71b49636591</span>
+            </div>
+            <div>
+              Total unkilled mutants: 34
+            </div>
+            <div>
+              <a href="https://api-dev.corecheck.dev/mutations">Raw mutation-core output</a>
+            </div>
+            <div>
+              <br><br>
+              To view the mutants, select a file from the left.
+            </div>
+            <div>
+              <br><br>
+              To see the exact mutation-core commands that corecheck.dev ran, checkout the <a href="https://raw.githubusercontent.com/corecheck/corecheck/refs/heads/master/workers/mutation-worker/entrypoint.sh">entrypoint.sh</a> file for the mutation worker.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  {/if}
   <!-- Content View -->
   {#if selectedFile}
     <div class="content">
@@ -231,6 +267,9 @@
     padding: 1rem;
     background-color: white;
   }
+  .content a {
+    cursor: pointer;
+  }
 
   .directory {
     padding-left: 1.5rem;
@@ -254,6 +293,7 @@
   .main-content {
     padding: 1rem;
     background-color: rgba(249,250,251,1);
+    min-height: 100vh;
   }
   .line {
     color: rgba(5,150,105,1);
