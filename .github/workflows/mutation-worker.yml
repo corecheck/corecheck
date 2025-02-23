@@ -1,0 +1,37 @@
+name: Build Mutation Worker
+on:
+  push:
+    branches: [ "master" , "dev" ]
+    paths:
+      - 'workers/mutation-worker/**'
+  workflow_dispatch:
+
+jobs:
+  build_mutation_worker:
+    name: mutation-worker
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup env variables
+      run: |
+        if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
+          echo "MUTATION_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-mutation-worker-dev:latest" >> $GITHUB_ENV
+        else
+          echo "MUTATION_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-mutation-worker-default:latest" >> $GITHUB_ENV
+        fi
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Configure AWS CLI
+      run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
+    - name: Login to ECR
+      run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i3s2n0b6
+    - name: Build and push
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        context: workers/mutation-worker
+        push: true
+        platforms: linux/arm64
+        tags: ${{ env.MUTATION_IMAGE }}

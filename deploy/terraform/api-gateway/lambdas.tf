@@ -3,6 +3,7 @@ locals {
     "get-pull",
     "list-pulls",
     "get-report",
+    "get-mutation",
     "datadog-proxy",
   ]
 }
@@ -32,6 +33,7 @@ resource "aws_lambda_function" "lambda" {
       DATABASE_USER     = var.db_user
       DATABASE_PASSWORD = var.db_password
       DATABASE_NAME     = var.db_database
+      BUCKET_DATA_URL   = var.corecheck_data_bucket_url
     }
   }
 
