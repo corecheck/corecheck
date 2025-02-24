@@ -4,9 +4,8 @@
   let mutationData = {};
   let expandedLines = new Set();
   let expanded = new Set(['src', 'src/script', 'src/wallet']);
-  
+
   const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bitcoin/bitcoin/master';
-  
   const files = {
     'src': {
       'wallet': {
@@ -30,7 +29,6 @@
 
   async function handleFileSelect(file) {
     selectedFile = file;
-    
     try {
       // Fetch mutations from local public directory
       const mutationsResp = await fetch('https://api-dev.corecheck.dev/mutations');
@@ -326,9 +324,6 @@
   }
   .mutant-title {
     color: rgba(75,85,99,1);
-  }
-  mutant-block {
-    margin-bottom: 1rem;
   }
   .mutant-content {
     font-size: .875rem;
