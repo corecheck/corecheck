@@ -63,14 +63,13 @@
     selectedFile = file;
     
     try {
-      // Fetch mutations from local public directory
-      const mutationsResp = await fetch(env.PUBLIC_ENDPOINT + '/mutations');
-      const mutations = await mutationsResp.json();
-
+      console.log(file);
       const selected_mutations = mutations.filter(val => val.filename.includes(file));
 
       if(selected_mutations.length > 0 && 'diffs' in selected_mutations[0]) {
         mutationData = selected_mutations[0].diffs || {};
+      } else {
+        mutationData = {};
       }
 
       // Fetch file content from GitHub raw URL
