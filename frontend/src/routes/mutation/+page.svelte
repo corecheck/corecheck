@@ -199,7 +199,7 @@
 
           <div class="main-content">
             <div>
-              <span>Last Ran: {Date(mutationsMeta.created_at)}</span>
+              <span>Last Ran: {new Date(mutationsMeta.created_at)}</span>
             </div>
             <div>
               <span>For Commit: {mutationsMeta.commit}</span>
