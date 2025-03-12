@@ -55,14 +55,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
   }
 }
 
-resource "aws_s3_bucket" "corecheck-lambdas" {
-  bucket   = "corecheck-compute-lambdas-${terraform.workspace}"
-  provider = aws.compute_region
-}
-
 # enable versionning
 resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
-  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  bucket   = data.aws_s3_bucket.compute_lambdas.id
   provider = aws.compute_region
   versioning_configuration {
     status = "Enabled"
@@ -72,7 +67,7 @@ resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas" {
-  bucket   = aws_s3_bucket.corecheck-lambdas.id
+  bucket   = data.aws_s3_bucket.compute_lambdas.id
   provider = aws.compute_region
 
   rule {
@@ -86,13 +81,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas
 }
 
 
-resource "aws_s3_bucket" "corecheck-lambdas-api" {
-  bucket = "corecheck-api-lambdas-${terraform.workspace}"
-}
-
 # enable versionning
 resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
-  bucket = aws_s3_bucket.corecheck-lambdas-api.id
+  bucket = data.aws_s3_bucket.api_lambdas.id
   versioning_configuration {
     status = "Enabled"
   }
@@ -101,7 +92,7 @@ resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-api-lambdas" {
-  bucket = aws_s3_bucket.corecheck-lambdas-api.id
+  bucket = data.aws_s3_bucket.api_lambdas.id
   rule {
     id     = "corecheck-lambdas"
     status = "Enabled"
