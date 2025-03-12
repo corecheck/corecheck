@@ -1,13 +1,13 @@
 data "aws_route53_zone" "zone" {
-  name = "corecheck.dev"
+  name = var.dns_name
 }
 
 locals {
   api_name = terraform.workspace == "default" ? "api" : "api-${terraform.workspace}"
-  api_domain = "${local.api_name}.corecheck.dev"
+  api_domain = "${local.api_name}.${var.dns_name}"
 
   datadog_proxy_name = terraform.workspace == "default" ? "datadog-proxy" : "datadog-proxy-${terraform.workspace}"
-  datadog_proxy_domain = "${local.datadog_proxy_name}.corecheck.dev"
+  datadog_proxy_domain = "${local.datadog_proxy_name}.${var.dns_name}"
 }
 
 resource "aws_acm_certificate" "api_gw" {

@@ -8,6 +8,8 @@ module "api_gateway" {
   db_password = var.db_password
   db_database = var.db_database
 
+  dns_name = var.dns_name
+
   corecheck_data_bucket_url = "https://${aws_s3_bucket.bitcoin-coverage-data.id}.s3.${aws_s3_bucket.bitcoin-coverage-data.region}.amazonaws.com"
 }
 
