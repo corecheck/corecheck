@@ -9,5 +9,9 @@ variable "db_database" {
 }
 variable "ssh_pubkey" {}
 
+variable "dns_name" {
+  default = "corecheck.dev"
+}
+
 variable "github_token" {}
 variable "datadog_api_key" {}
