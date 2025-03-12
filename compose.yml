@@ -1,0 +1,29 @@
+services:
+  build-lambda:
+    image: golang:1.21.1
+    environment:
+      GOOS: linux
+      GOARCH: arm64
+      CGO_ENABLED: 0
+      GOFLAGS: "-trimpath"
+    volumes:
+      - ".:/app"
+    working_dir: /app
+
+  build-compute-stats-lambda:
+    image: golang:1.22.3
+    environment:
+      GOOS: linux
+      GOARCH: arm64
+      CGO_ENABLED: 0
+      GOFLAGS: "-trimpath"
+    volumes:
+      - ".:/app"
+    working_dir: /app
+
+  util:
+    build:
+      dockerfile: docker/Dockerfile.util
+    volumes:
+      - ".:/app"
+    working_dir: /app
