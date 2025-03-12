@@ -9,6 +9,10 @@ module "api_gateway" {
   db_database = var.db_database
 
   corecheck_data_bucket_url = "https://${aws_s3_bucket.bitcoin-coverage-data.id}.s3.${aws_s3_bucket.bitcoin-coverage-data.region}.amazonaws.com"
+
+  providers = {
+    aws.us_east_1 = aws.us_east_1
+  }
 }
 
 module "compute" {
@@ -33,6 +37,7 @@ module "compute" {
 
   lambda_bucket = aws_s3_bucket.corecheck-lambdas.id
   providers = {
+    aws.us_east_1 = aws.us_east_1
     aws.compute_region = aws.compute_region
   }
 }
