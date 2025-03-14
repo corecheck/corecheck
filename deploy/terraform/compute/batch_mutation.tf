@@ -106,6 +106,6 @@ resource "aws_batch_job_definition" "mutation_job" {
     jobRoleArn       = aws_iam_role.job_role.arn
   })
   timeout {
-    attempt_duration_seconds = 5400
+    attempt_duration_seconds = 100000
   }
 }
