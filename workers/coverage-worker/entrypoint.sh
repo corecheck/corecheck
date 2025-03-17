@@ -30,7 +30,7 @@ if [ "$IS_MASTER" != "true" ]; then
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/src
 else
-    git checkout $COMMIT
+   git checkout $COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/master/$COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/master/$COMMIT/src
@@ -50,7 +50,7 @@ else
     time cmake -B build -DCMAKE_BUILD_TYPE=Coverage -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
     time cmake --build build -j$(nproc)
     
-    time ./build/src/test/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/src/test/test_bitcoin -t {} 2>&1
+    time ./build/bin/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/bin/test_bitcoin -t {} 2>&1
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
