@@ -12,10 +12,9 @@ resource "aws_batch_compute_environment" "mutation_compute" {
       data.aws_subnets.batch_subnets.ids[2],
     ]
 
-    type                = "SPOT"
+    type                = "EC2"
     instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
     instance_type       = ["c7g.2xlarge"]
-    allocation_strategy = "SPOT_PRICE_CAPACITY_OPTIMIZED"
   }
   lifecycle {
     create_before_destroy = true
