@@ -7,6 +7,7 @@ variable "db_password" {}
 variable "db_database" {
   default = "corecheck"
 }
+variable "ssh_private_key_file" {}
 variable "ssh_pubkey" {}
 
 variable "dns_name" {

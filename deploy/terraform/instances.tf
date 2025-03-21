@@ -90,4 +90,35 @@ resource "aws_volume_attachment" "db" {
   device_name = "/dev/sdf"
   volume_id   = aws_ebs_volume.db.id
   instance_id = aws_instance.db.id
+
+  # Provision the DB instance using Ansible. Define instance provisioners here, instead of on
+  # the insance, so the EBS volume is guaranteed to be attached.
+
+  # This is a check to ensure SSH comes up before we run the local exec.
+  provisioner "remote-exec" {
+    inline = ["echo 'Hello World'"]
+
+    connection {
+      type = "ssh"
+      host = aws_eip.lb.public_ip
+      user = "ubuntu"
+      private_key = file(var.ssh_private_key_file)
+    }
+  }
+
+  provisioner "local-exec" {
+    command = <<EOF
+echo "db ansible_host=${aws_eip.lb.public_ip} ansible_ssh_user=ubuntu" > hosts.ini
+EOF
+    working_dir = "../ansible"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook playbooks/*.yml --private-key ${var.ssh_private_key_file} --ssh-common-args '-o IdentitiesOnly=yes'"
+    environment = {
+      DB_USER     = var.db_user
+      DB_PASSWORD = var.db_password
+    }
+    working_dir = "../ansible"
+  }
 }
