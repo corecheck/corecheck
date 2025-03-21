@@ -1,13 +1,13 @@
 data "aws_route53_zone" "zone" {
-  name = "corecheck.dev"
+  name = var.dns_name
 }
 
 locals {
   api_name = terraform.workspace == "default" ? "api" : "api-${terraform.workspace}"
-  api_domain = "${local.api_name}.corecheck.dev"
+  api_domain = "${local.api_name}.${var.dns_name}"
 
   datadog_proxy_name = terraform.workspace == "default" ? "datadog-proxy" : "datadog-proxy-${terraform.workspace}"
-  datadog_proxy_domain = "${local.datadog_proxy_name}.corecheck.dev"
+  datadog_proxy_domain = "${local.datadog_proxy_name}.${var.dns_name}"
 }
 
 resource "aws_acm_certificate" "api_gw" {
@@ -49,8 +49,10 @@ resource "aws_acm_certificate_validation" "api_gw" {
 
 resource "aws_api_gateway_domain_name" "api_gw" {
   domain_name = local.api_domain
-  certificate_arn = "${aws_acm_certificate.api_gw.arn}"
-  certificate_chain = "${aws_acm_certificate.api_gw.certificate_chain}"
+  certificate_arn = aws_acm_certificate.api_gw.arn
+  certificate_chain = aws_acm_certificate.api_gw.certificate_chain
+
+  depends_on = [ aws_acm_certificate_validation.api_gw ]
 }
 
 # custom domain name mapping
@@ -118,8 +120,10 @@ resource "aws_acm_certificate_validation" "datadog_proxy" {
 
 resource "aws_api_gateway_domain_name" "datadog_proxy" {
   domain_name = local.datadog_proxy_domain
-  certificate_arn = "${aws_acm_certificate.datadog_proxy.arn}"
-  certificate_chain = "${aws_acm_certificate.datadog_proxy.certificate_chain}"
+  certificate_arn = aws_acm_certificate.datadog_proxy.arn
+  certificate_chain = aws_acm_certificate.datadog_proxy.certificate_chain
+
+  depends_on = [ aws_acm_certificate_validation.datadog_proxy ]
 }
 
 # custom domain name mapping

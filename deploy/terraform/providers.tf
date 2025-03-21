@@ -39,7 +39,7 @@ provider "aws" {
 
 resource "local_file" "hosts" {
   content  = <<EOF
-db ansible_host=${aws_instance.db.public_ip} ansible_ssh_user=ubuntu 
+db ansible_host=${aws_eip.lb.public_ip} ansible_ssh_user=ubuntu
 EOF
   filename = "../ansible/hosts.ini"
 
