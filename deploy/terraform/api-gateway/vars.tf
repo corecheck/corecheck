@@ -23,6 +23,11 @@ variable "db_database" {
     description = "db database"
 }
 
+variable "dns_name" {
+    type        = string
+    description = "dns name"
+}
+
 variable "s3_bucket" {
     type        = string
     description = "s3 bucket"
