@@ -7,6 +7,7 @@ variable "db_password" {}
 variable "db_database" {
   default = "corecheck"
 }
+variable "ssh_pubkey" {}
 
 variable "github_token" {}
 variable "datadog_api_key" {}
