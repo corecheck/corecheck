@@ -39,16 +39,4 @@ build-compute-stats-lambda:
 build-shell:
 	docker compose run --remove-orphans --rm -it build-lambda bash
 
-# Requires AWS credentials set along with environment variables for
-#  - CORECHECK_S3_API_BUCKET
-#  - CORECHECK_S3_COMPUTE_BUCKET
-# set to the values consistent with the Terraform configuration for the deploy environment.
-deploy-lambdas:
-	docker compose run --remove-orphans --rm aws-cli \
-		s3 cp --recursive --exclude "*" --include "*.zip" \
-		deploy/lambdas/api/ s3://$${CORECHECK_S3_API_BUCKET}/
-	docker compose run --remove-orphans --rm aws-cli \
-		s3 cp --recursive --exclude "*" --include "*.zip" \
-		deploy/lambdas/compute/ s3://$${CORECHECK_S3_COMPUTE_BUCKET}/
-
-.PHONY: build-lambdas build-api-lambdas build-compute-lambdas build-compute-stats-lambda deploy-lambdas
+.PHONY: build-lambdas build-api-lambdas build-compute-lambdas build-compute-stats-lambda

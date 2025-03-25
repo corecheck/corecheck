@@ -126,10 +126,12 @@ locals {
   }
 }
 
-data "aws_s3_object" "lambda_statemachine_zip" {
-  provider = aws.compute_region
+resource "aws_s3_object" "lambda_statemachine_zip" {
   for_each = toset(local.state_machine_lambdas)
+
+  provider = aws.compute_region
   bucket   = var.lambda_bucket
+  source   = "${path.root}/../lambdas/compute/${each.value}.zip"
   key      = "${each.value}.zip"
 }
 
@@ -160,8 +162,8 @@ resource "aws_lambda_function" "function" {
   architectures = ["arm64"]
   timeout       = local.lambda_overrides[each.value].timeout
 
-  s3_key            = data.aws_s3_object.lambda_statemachine_zip[each.value].key
-  s3_object_version = data.aws_s3_object.lambda_statemachine_zip[each.value].version_id
+  s3_key            = aws_s3_object.lambda_statemachine_zip[each.value].key
+  s3_object_version = aws_s3_object.lambda_statemachine_zip[each.value].version_id
   s3_bucket         = var.lambda_bucket
 
   environment {
