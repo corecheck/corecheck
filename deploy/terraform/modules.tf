@@ -11,6 +11,15 @@ data "aws_s3_bucket" "compute_lambdas" {
   provider = aws.compute_region
 }
 
+resource "terraform_data" "build_lambdas" {
+  triggers_replace = local.function_file_hashes
+
+  provisioner "local-exec" {
+    command     = "make build-lambdas"
+    working_dir = "../../"
+  }
+}
+
 module "api_gateway" {
   source = "./api-gateway"
 
@@ -28,6 +37,8 @@ module "api_gateway" {
   providers = {
     aws.us_east_1 = aws.us_east_1
   }
+
+  depends_on = [ terraform_data.build_lambdas ]
 }
 
 module "compute" {
@@ -57,5 +68,8 @@ module "compute" {
   }
 
   # Wait for database to be provisioned.
-  depends_on = [ aws_volume_attachment.db ]
+  depends_on = [
+    aws_volume_attachment.db,
+    terraform_data.build_lambdas
+  ]
 }

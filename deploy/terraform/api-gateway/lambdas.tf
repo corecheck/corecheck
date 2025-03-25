@@ -8,9 +8,11 @@ locals {
   ]
 }
 
-data "aws_s3_object" "lambda_api_zip" {
+resource "aws_s3_object" "lambda_api_zip" {
   for_each = toset(local.api_lambdas)
+
   bucket   = var.s3_bucket
+  source   = "${path.root}/../lambdas/api/${each.value}.zip"
   key      = "${each.value}.zip"
 }
 
@@ -23,8 +25,8 @@ resource "aws_lambda_function" "lambda" {
   architectures = ["arm64"]
   timeout       = 30
 
-  s3_key            = data.aws_s3_object.lambda_api_zip[each.value].key
-  s3_object_version = data.aws_s3_object.lambda_api_zip[each.value].version_id
+  s3_key            = aws_s3_object.lambda_api_zip[each.value].key
+  s3_object_version = aws_s3_object.lambda_api_zip[each.value].version_id
   s3_bucket         = var.s3_bucket
   environment {
     variables = {
