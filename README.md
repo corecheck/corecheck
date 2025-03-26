@@ -35,10 +35,6 @@ terraform workspace new [developer-namespace]
 Build the Lambda artifacts (requires `docker` installed on the local machine).
 ```
 make build-lambdas
-
-export CORECHECK_S3_API_BUCKET=corecheck-api-lambdas-[developer-namespace]
-export CORECHECK_S3_COMPUTE_BUCKET=corecheck-compute-lambdas-[developer-namespace]
-make deploy-lambdas
 ```
 
 Deploy the infrastructure with `terraform apply`

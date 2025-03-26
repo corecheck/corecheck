@@ -55,9 +55,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
   }
 }
 
-# enable versionning
+# S3 bucket to store built compute Lambda functions
+resource "aws_s3_bucket" "compute_lambdas" {
+  bucket   = "corecheck-compute-lambdas-${terraform.workspace}"
+  provider = aws.compute_region
+
+  force_destroy = true
+}
+
+# enable versioning
 resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
-  bucket   = data.aws_s3_bucket.compute_lambdas.id
+  bucket   = aws_s3_bucket.compute_lambdas.id
   provider = aws.compute_region
   versioning_configuration {
     status = "Enabled"
@@ -67,7 +75,7 @@ resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas" {
-  bucket   = data.aws_s3_bucket.compute_lambdas.id
+  bucket   = aws_s3_bucket.compute_lambdas.id
   provider = aws.compute_region
 
   rule {
@@ -80,10 +88,15 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas
   }
 }
 
+# S3 bucket to store built API Gateway Lambda functions
+resource "aws_s3_bucket" "api_lambdas" {
+  bucket = "corecheck-api-lambdas-${terraform.workspace}"
+  force_destroy = true
+}
 
-# enable versionning
+# enable versioning
 resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
-  bucket = data.aws_s3_bucket.api_lambdas.id
+  bucket = aws_s3_bucket.api_lambdas.id
   versioning_configuration {
     status = "Enabled"
   }
@@ -92,7 +105,7 @@ resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-api-lambdas" {
-  bucket = data.aws_s3_bucket.api_lambdas.id
+  bucket = aws_s3_bucket.api_lambdas.id
   rule {
     id     = "corecheck-lambdas"
     status = "Enabled"
