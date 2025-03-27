@@ -14,6 +14,8 @@ resource "aws_s3_object" "lambda_api_zip" {
   bucket   = var.s3_bucket
   source   = "${path.root}/../lambdas/api/${each.value}.zip"
   key      = "${each.value}.zip"
+
+  source_hash = filemd5("${path.root}/../lambdas/api/${each.value}.zip")
 }
 
 resource "aws_lambda_function" "lambda" {

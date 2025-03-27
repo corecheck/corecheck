@@ -133,6 +133,8 @@ resource "aws_s3_object" "lambda_statemachine_zip" {
   bucket   = var.lambda_bucket
   source   = "${path.root}/../lambdas/compute/${each.value}.zip"
   key      = "${each.value}.zip"
+
+  source_hash = filemd5("${path.root}/../lambdas/compute/${each.value}.zip")
 }
 
 resource "aws_cloudwatch_log_group" "function_statemachine_logs" {

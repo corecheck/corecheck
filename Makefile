@@ -8,7 +8,7 @@ build-api-lambdas: ./functions/api/*
 			go build -modfile=../../../go.mod -mod=readonly -ldflags='-s -w' -o bootstrap && \
 			chmod 777 bootstrap" ; \
 		docker compose run --remove-orphans --rm util bash -c "\
-			zip -j deploy/lambdas/api/$${path}.zip functions/api/$${path}/bootstrap && \
+			zip -j -X deploy/lambdas/api/$${path}.zip functions/api/$${path}/bootstrap && \
 			rm functions/api/$${path}/bootstrap" ; \
 	done;
 
@@ -21,7 +21,7 @@ build-compute-lambdas: ./functions/compute/*
 			go build -modfile=../../../go.mod -mod=readonly -ldflags='-s -w' -o bootstrap && \
 			chmod 777 bootstrap" ; \
 		docker compose run --remove-orphans --rm util bash -c "\
-			zip -j deploy/lambdas/compute/$${path}.zip functions/compute/$${path}/bootstrap && \
+			zip -j -X deploy/lambdas/compute/$${path}.zip functions/compute/$${path}/bootstrap && \
 			rm functions/compute/$${path}/bootstrap" ; \
 	done;
 
@@ -33,7 +33,7 @@ build-compute-stats-lambda:
 		go build -mod=readonly -ldflags='-s -w' -o bootstrap && \
 		chmod 777 bootstrap"
 	docker compose run --remove-orphans --rm util bash -c "\
-		zip -j deploy/lambdas/compute/stats.zip functions/compute/stats/bootstrap && \
+		zip -j -X deploy/lambdas/compute/stats.zip functions/compute/stats/bootstrap && \
 		rm functions/compute/stats/bootstrap"
 
 build-shell:
