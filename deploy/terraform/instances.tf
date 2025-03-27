@@ -107,18 +107,12 @@ resource "aws_volume_attachment" "db" {
   }
 
   provisioner "local-exec" {
-    command = <<EOF
-echo "db ansible_host=${aws_eip.lb.public_ip} ansible_ssh_user=ubuntu" > hosts.ini
-EOF
+    command = "echo \"db ansible_host=${aws_eip.lb.public_ip} ansible_ssh_user=ubuntu\" > hosts.ini"
     working_dir = "../ansible"
   }
 
   provisioner "local-exec" {
-    command = "ansible-playbook playbooks/*.yml --private-key ${var.ssh_private_key_file} --ssh-common-args '-o IdentitiesOnly=yes'"
-    environment = {
-      DB_USER     = var.db_user
-      DB_PASSWORD = var.db_password
-    }
-    working_dir = "../ansible"
+    command = "docker compose run --remove-orphans --rm -e DB_USER=${var.db_user} -e DB_PASSWORD=${var.db_password} -v ${var.ssh_private_key_file}:/ssh-key -w /app/deploy/ansible util bash -c \"ansible-playbook playbooks/*.yml --private-key /ssh-key --ssh-common-args '-o IdentitiesOnly=yes'\""
+    working_dir = local.project_root_path
   }
 }

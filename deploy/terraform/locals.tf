@@ -1,4 +1,5 @@
 locals {
+  project_root_path = "${path.root}/../.."
   function_files = fileset("${local.project_root_path}/functions", "**")
   function_file_hashes = concat(
     [
