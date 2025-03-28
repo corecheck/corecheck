@@ -8,6 +8,7 @@ services:
       GOFLAGS: "-trimpath"
     volumes:
       - ".:/app"
+      - "gomodcache:/go/pkg/mod"
     working_dir: /app
 
   build-compute-stats-lambda:
@@ -19,6 +20,7 @@ services:
       GOFLAGS: "-trimpath"
     volumes:
       - ".:/app"
+      - "gomodcache:/go/pkg/mod"
     working_dir: /app
 
   aws-cli:
@@ -40,3 +42,6 @@ services:
     volumes:
       - ".:/app"
     working_dir: /app
+
+volumes:
+  gomodcache:
