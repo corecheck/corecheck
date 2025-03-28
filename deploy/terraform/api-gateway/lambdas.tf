@@ -24,7 +24,7 @@ resource "aws_s3_object" "lambda_api_zip" {
   source   = "${path.root}/../lambdas/api/${each.value}.zip"
   key      = "${each.value}.zip"
 
-  source_hash = filemd5("${path.root}/../lambdas/api/${each.value}.zip")
+  etag = fileexists("${path.root}/../lambdas/api/${each.value}.zip") ? filemd5("${path.root}/../lambdas/api/${each.value}.zip") : null
 
   depends_on = [ terraform_data.build_api_lambdas ]
 }

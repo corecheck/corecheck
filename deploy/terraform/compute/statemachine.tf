@@ -143,7 +143,7 @@ resource "aws_s3_object" "lambda_statemachine_zip" {
   source   = "${path.root}/../lambdas/compute/${each.value}.zip"
   key      = "${each.value}.zip"
 
-  source_hash = filemd5("${path.root}/../lambdas/compute/${each.value}.zip")
+  etag = fileexists("${path.root}/../lambdas/compute/${each.value}.zip") ? filemd5("${path.root}/../lambdas/compute/${each.value}.zip") : null
 
   depends_on = [ terraform_data.build_compute_lambdas ]
 }
