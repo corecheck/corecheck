@@ -2,7 +2,7 @@ name: 'Terraform'
 
 on:
   push:
-    branches: [ "master", "dev"]
+    branches: [ "master", "dev", "infra-lambda-build-terraform"]
     paths:
       - 'functions/**'
       - 'deploy/**'
@@ -17,49 +17,10 @@ permissions:
   contents: read
 
 jobs:
-  build_functions:
-    name: Build Lambdas
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Configure AWS CLI
-      run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
-    - name: Setup env variables
-      run: |
-        if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-          echo "S3_COMPUTE_BUCKET=corecheck-compute-lambdas-dev" >> $GITHUB_ENV
-          echo "S3_API_BUCKET=corecheck-api-lambdas-dev" >> $GITHUB_ENV
-        else
-          echo "S3_COMPUTE_BUCKET=corecheck-compute-lambdas-default" >> $GITHUB_ENV
-          echo "S3_API_BUCKET=corecheck-api-lambdas-default" >> $GITHUB_ENV
-        fi
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.21.1
-    - name: Build
-      run: |
-        cd functions/compute
-        for d in */ ; do
-          cd $d
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o bootstrap
-          zip $(basename $d).zip bootstrap
-          aws s3 cp $(basename $d).zip s3://$S3_COMPUTE_BUCKET/$(basename $d).zip
-          cd ..
-        done
-        cd ../api
-        for d in */ ; do
-          cd $d
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o bootstrap
-          zip $(basename $d).zip bootstrap
-          aws s3 cp $(basename $d).zip s3://$S3_API_BUCKET/$(basename $d).zip
-          cd ..
-        done
   terraform:
     name: 'Terraform'
     runs-on: ubuntu-latest
     environment: production
-    needs: build_functions
     env:
       TF_VAR_aws_access_key_id: ${{ secrets.TF_VAR_aws_access_key_id }}
       TF_VAR_aws_secret_access_key: ${{ secrets.TF_VAR_aws_secret_access_key }}
@@ -85,6 +46,12 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
 
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+
     - name: Aws configure
       run: |
         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -93,68 +60,12 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      # TODO: resolve backend config
+      run: terraform init -backend-config="bucket=bitcoin-coverage-state-corecheck"
 
     - name: Change workspace for dev
-      run: if [ "${{ github.ref }}" == "refs/heads/dev" ]; then terraform workspace select dev; else terraform workspace select default; fi
+      # TODO: resolve workspace
+      run: if [ "${{ github.ref }}" == "refs/heads/dev" ]; then terraform workspace select dev; else terraform workspace select corecheck; fi
 
     - name: Terraform Apply
-      run: terraform apply -auto-approve -input=false
-    - name: Upload hosts.ini
-      uses: actions/upload-artifact@v4
-      with:
-        name: hosts.ini
-        path: deploy/ansible/hosts.ini
-  ansible:
-    name: 'Ansible'
-    needs: terraform
-    runs-on: ubuntu-latest
-    environment: production
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./deploy/ansible
-
-    env:
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      PLAUSIBLE_DB_PASSWORD: ${{ secrets.PLAUSIBLE_DB_PASSWORD }}
-      PLAUSIBLE_SECRET_KEY_BASE: ${{ secrets.PLAUSIBLE_SECRET_KEY_BASE }}
-      
-      PYTHONUNBUFFERED: "1"
-
-    steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-
-    - name: Download a single artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: hosts.ini
-        path: deploy/ansible
-
-    - name: Install Ansible
-      run: |
-        sudo apt update
-        sudo apt install software-properties-common
-        sudo apt-add-repository --yes --update ppa:ansible/ansible
-        sudo apt install ansible
-
-    - name: Ansible Playbook
-      run: ansible-playbook playbooks/*.yml
-
+      run: terraform apply -auto-approve -input=false -var "ssh_private_key_file=~/.ssh/id_ed25519"
