@@ -5,7 +5,7 @@ services:
       GOOS: linux
       GOARCH: arm64
       CGO_ENABLED: 0
-      GOFLAGS: "-trimpath"
+      GOFLAGS: "-buildvcs=false -trimpath"
     volumes:
       - ".:/app"
       - "gomodcache:/go/pkg/mod"
@@ -17,7 +17,7 @@ services:
       GOOS: linux
       GOARCH: arm64
       CGO_ENABLED: 0
-      GOFLAGS: "-trimpath"
+      GOFLAGS: "-buildvcs=false -trimpath"
     volumes:
       - ".:/app"
       - "gomodcache:/go/pkg/mod"
