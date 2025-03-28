@@ -112,6 +112,8 @@ resource "aws_volume_attachment" "db" {
   }
 
   provisioner "local-exec" {
+    # db_password is a sensitive variable, so output log will be hidden. Flip that value to
+    # troubleshoot locally.
     command = "docker compose run --remove-orphans --rm -e DB_USER=${var.db_user} -e DB_PASSWORD=${var.db_password} -v ${var.ssh_private_key_file}:/ssh-key -w /app/deploy/ansible util bash -c \"ansible-playbook playbooks/*.yml --private-key /ssh-key --ssh-common-args '-o IdentitiesOnly=yes'\""
     working_dir = local.project_root_path
   }
