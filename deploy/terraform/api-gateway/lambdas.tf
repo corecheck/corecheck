@@ -8,6 +8,15 @@ locals {
   ]
 }
 
+resource "terraform_data" "build_api_lambdas" {
+  triggers_replace = local.function_file_hashes
+
+  provisioner "local-exec" {
+    command     = "make build-api-lambdas"
+    working_dir = "../../"
+  }
+}
+
 resource "aws_s3_object" "lambda_api_zip" {
   for_each = toset(local.api_lambdas)
 
@@ -16,6 +25,8 @@ resource "aws_s3_object" "lambda_api_zip" {
   key      = "${each.value}.zip"
 
   source_hash = filemd5("${path.root}/../lambdas/api/${each.value}.zip")
+
+  depends_on = [ terraform_data.build_api_lambdas ]
 }
 
 resource "aws_lambda_function" "lambda" {
