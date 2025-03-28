@@ -126,6 +126,15 @@ locals {
   }
 }
 
+resource "terraform_data" "build_compute_lambdas" {
+  triggers_replace = local.function_file_hashes
+
+  provisioner "local-exec" {
+    command     = "make build-compute-lambdas && make build-compute-stats-lambda"
+    working_dir = "../../"
+  }
+}
+
 resource "aws_s3_object" "lambda_statemachine_zip" {
   for_each = toset(local.state_machine_lambdas)
 
@@ -135,6 +144,8 @@ resource "aws_s3_object" "lambda_statemachine_zip" {
   key      = "${each.value}.zip"
 
   source_hash = filemd5("${path.root}/../lambdas/compute/${each.value}.zip")
+
+  depends_on = [ terraform_data.build_compute_lambdas ]
 }
 
 resource "aws_cloudwatch_log_group" "function_statemachine_logs" {
