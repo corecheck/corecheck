@@ -29,6 +29,7 @@ jobs:
       TF_VAR_datadog_api_key: ${{ secrets.DATADOG_API_KEY }}
       TF_VAR_db_user: ${{ secrets.DB_USER }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+      TF_VAR_dns_name: ${{ secrets.DNS_NAME }}
       TF_VAR_ssh_pubkey: ${{ secrets.SSH_PUBKEY }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
