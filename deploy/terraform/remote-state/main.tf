@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "bitcoin-coverage-state"
+  bucket = "bitcoin-coverage-state-${terraform.workspace}"
   lifecycle {
     prevent_destroy = true
   }

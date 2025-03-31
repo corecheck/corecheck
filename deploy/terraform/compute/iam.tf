@@ -39,10 +39,6 @@ data "aws_iam_policy_document" "batch_assume_role" {
   }
 }
 
-data "aws_iam_role" "aws_service_role_batch" {
-  name = "AWSServiceRoleForBatch"
-}
-
 resource "aws_iam_role" "ecs_task_execution_role" {
   name               = "task_execution_role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json

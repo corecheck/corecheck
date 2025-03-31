@@ -22,8 +22,8 @@ data "aws_ami" "ubuntu_22_04" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "max-${terraform.workspace}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILTurm2ONYlzVmFhscmeSHPI4o4JZWM2yL+mYA87uotY max@corecheck"
+  key_name   = "terraform-${terraform.workspace}"
+  public_key = var.ssh_pubkey
 }
 
 resource "aws_eip" "lb" {
@@ -90,4 +90,31 @@ resource "aws_volume_attachment" "db" {
   device_name = "/dev/sdf"
   volume_id   = aws_ebs_volume.db.id
   instance_id = aws_instance.db.id
+
+  # Provision the DB instance using Ansible. Define instance provisioners here, instead of on
+  # the insance, so the EBS volume is guaranteed to be attached.
+
+  # This is a check to ensure SSH comes up before we run the local exec.
+  provisioner "remote-exec" {
+    inline = ["echo 'Hello World'"]
+
+    connection {
+      type = "ssh"
+      host = aws_eip.lb.public_ip
+      user = "ubuntu"
+      private_key = file(var.ssh_private_key_file)
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "echo \"db ansible_host=${aws_eip.lb.public_ip} ansible_ssh_user=ubuntu\" > hosts.ini"
+    working_dir = "../ansible"
+  }
+
+  provisioner "local-exec" {
+    # db_password is a sensitive variable, so output log will be hidden. Flip that value to
+    # troubleshoot locally.
+    command = "docker compose run --remove-orphans --rm -e DB_USER=${var.db_user} -e DB_PASSWORD=${var.db_password} -v ${var.ssh_private_key_file}:/ssh-key -w /app/deploy/ansible util bash -c \"ansible-playbook playbooks/*.yml --private-key /ssh-key --ssh-common-args '-o IdentitiesOnly=yes'\""
+    working_dir = local.project_root_path
+  }
 }

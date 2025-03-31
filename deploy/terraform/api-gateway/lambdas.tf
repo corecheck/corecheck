@@ -8,10 +8,25 @@ locals {
   ]
 }
 
-data "aws_s3_object" "lambda_api_zip" {
+resource "terraform_data" "build_api_lambdas" {
+  triggers_replace = local.function_file_hashes
+
+  provisioner "local-exec" {
+    command     = "make build-api-lambdas"
+    working_dir = "../../"
+  }
+}
+
+resource "aws_s3_object" "lambda_api_zip" {
   for_each = toset(local.api_lambdas)
+
   bucket   = var.s3_bucket
+  source   = "${path.root}/../lambdas/api/${each.value}.zip"
   key      = "${each.value}.zip"
+
+  etag = fileexists("${path.root}/../lambdas/api/${each.value}.zip") ? filemd5("${path.root}/../lambdas/api/${each.value}.zip") : null
+
+  depends_on = [ terraform_data.build_api_lambdas ]
 }
 
 resource "aws_lambda_function" "lambda" {
@@ -23,8 +38,8 @@ resource "aws_lambda_function" "lambda" {
   architectures = ["arm64"]
   timeout       = 30
 
-  s3_key            = data.aws_s3_object.lambda_api_zip[each.value].key
-  s3_object_version = data.aws_s3_object.lambda_api_zip[each.value].version_id
+  s3_key            = aws_s3_object.lambda_api_zip[each.value].key
+  s3_object_version = aws_s3_object.lambda_api_zip[each.value].version_id
   s3_bucket         = var.s3_bucket
   environment {
     variables = {
