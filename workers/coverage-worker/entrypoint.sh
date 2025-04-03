@@ -54,7 +54,7 @@ else
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
-        binary_size=$(stat -c %s ./build/src/bitcoind)
+        binary_size=$(stat -c %s ./build/bin/bitcoind)
         echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
@@ -80,7 +80,7 @@ if [ "$bench_exists" != "" ]; then
 else
     rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
     time cmake --build build -j$(nproc)
-    aws s3 cp build/src/bench/bench_bitcoin $S3_BENCH_FILE
+    aws s3 cp build/bin/bench_bitcoin $S3_BENCH_FILE
 fi
 
 # store src folder if it doesn't exist
