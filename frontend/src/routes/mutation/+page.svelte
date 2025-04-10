@@ -1,4 +1,6 @@
 <script>
+  import { onMount } from "svelte";
+  import { env } from '$env/dynamic/public'
   let selectedFile = '';
   let fileContent = '';
   let mutationData = {};
@@ -6,6 +8,36 @@
   let expanded = new Set(['src', 'src/script', 'src/wallet']);
 
   const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bitcoin/bitcoin/master';
+
+  let mutationsMeta = {};
+  let mutations = [];
+  let countMutations = 0;
+
+  onMount(async () => {
+      try {
+          const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations/meta');
+          mutationsMeta = await response.json();
+      } catch (error) {
+          console.error("Failed to fetch mutation metadata:", error);
+      }
+
+      try {
+          const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations');
+          mutations = await response.json();
+      } catch (error) {
+          console.error("Failed to fetch mutations:", error);
+      }
+      
+      function countDiffs(jsonData) {
+          return jsonData.reduce((total, file) => {
+              return total + Object.values(file.diffs).reduce((sum, diffArray) => sum + diffArray.length, 0);
+          }, 0);
+      }
+
+      countMutations = countDiffs(mutations);
+  });
+
+
   const files = {
     'src': {
       'wallet': {
@@ -30,13 +62,13 @@
   async function handleFileSelect(file) {
     selectedFile = file;
     try {
-      // Fetch mutations from local public directory
-      const mutationsResp = await fetch('https://api-dev.corecheck.dev/mutations');
-      const mutations = await mutationsResp.json();
+      console.log(file);
       const selected_mutations = mutations.filter(val => val.filename.includes(file));
 
       if(selected_mutations.length > 0 && 'diffs' in selected_mutations[0]) {
         mutationData = selected_mutations[0].diffs || {};
+      } else {
+        mutationData = {};
       }
 
       // Fetch file content from GitHub raw URL
@@ -166,16 +198,16 @@
 
           <div class="main-content">
             <div>
-              <span>Last Ran: 2025-02-21 12:05</span>
+              <span>Last Ran: {new Date(mutationsMeta.created_at)}</span>
             </div>
             <div>
-              <span>For Commit: 879569cab4e5b400350f3b95d7bee71b49636591</span>
+              <span>For Commit: {mutationsMeta.commit}</span>
             </div>
             <div>
-              Total unkilled mutants: 34
+              Total unkilled mutants: {countMutations}
             </div>
             <div>
-              <a href="https://api-dev.corecheck.dev/mutations">Raw mutation-core output</a>
+              <a href="{env.PUBLIC_ENDPOINT}/mutations">Raw mutation-core output</a>
             </div>
             <div>
               <br><br>
