@@ -111,7 +111,7 @@ func isTimeToRunMutationsAgain() (error, bool) {
 	}
 
 	// run every 7 days
-	return nil, result.CreatedAt.Add(1 * time.Hour).Before(time.Now())
+	return nil, result.CreatedAt.Add(7 * 24 * time.Hour).Before(time.Now())
 }
 
 func handlePullRequest(pr *github.PullRequest) error {
