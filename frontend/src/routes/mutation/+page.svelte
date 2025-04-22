@@ -6,7 +6,7 @@
   let mutationData = {};
   let expandedLines = new Set();
   let expanded = new Set(['src', 'src/script', 'src/wallet']);
-  
+
   const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bitcoin/bitcoin/master';
 
   let mutationsMeta = {};
@@ -61,7 +61,6 @@
 
   async function handleFileSelect(file) {
     selectedFile = file;
-    
     try {
       console.log(file);
       const selected_mutations = mutations.filter(val => val.filename.includes(file));
@@ -234,7 +233,8 @@
             <h2 class="">{selectedFile}</h2>
           </div>
 
-          <div class="main-content">
+          <div class="main-content code-container">
+            <div class="code-scroll-wrapper">
               {#each fileContent.split('\n') as line, index}
                 {@const lineNumber = index + 1}
                 {@const hasMutants = mutationData[lineNumber]}
@@ -275,6 +275,7 @@
                   {/if}
                 </div>
               {/each}
+            </div>
           </div>
         </div>
       </div>
@@ -291,6 +292,22 @@
     background: #f8f9fa;
     padding: 1rem;
     border-right: 1px solid #dee2e6;
+    z-index: 10;
+  }
+
+  @media (max-width: 768px) {
+    .file-tree {
+      width: 100%;
+      height: auto;
+      max-height: 50vh;
+      position: relative;
+      border-right: none;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .content {
+      margin-left: 0 !important;
+    }
   }
 
   .content {
@@ -316,9 +333,9 @@
     border-color: rgba(229, 231, 235, 1);
   }
   .document {
-    max-width: 72rem;
+    max-width: 100%;
     margin-right: auto;
-    margin-left: 50px;
+    margin-left: auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   .main-content {
@@ -329,19 +346,47 @@
   .line {
     color: rgba(5,150,105,1);
     flex: 1 1 0%;
-    overflow: hidden;
     display: flex;
+    white-space: nowrap;
   }
+
+  /* Container for the code with horizontal scrollbar */
+  .code-container {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .code-scroll-wrapper {
+    min-width: min-content;
+    white-space: nowrap;
+  }
+
+  .code-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .code-container::-webkit-scrollbar-track {
+    background: #edf2f7;
+  }
+
+  .code-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 4px;
+  }
+
   .lineno {
     color: rgba(107,114,128,1);
     width: 3rem;
+    flex-shrink: 0;
   }
   .line-wrapper {
     display: flex;
     align-items: flex-start;
+    width: 100%;
   }
   .chevron {
     margin-right: 0.5rem;
+    flex-shrink: 0;
   }
   .red {
     background-color: rgba(254,226,226,1);
@@ -354,12 +399,10 @@
     margin-left: 3rem;
     margin-bottom: .5rem;
     margin-top: .5rem;
+    width: calc(100% - 3rem);
   }
   .mutant-title {
     color: rgba(75,85,99,1);
-  }
-  mutant-block {
-    margin-bottom: 1rem;
   }
   .mutant-content {
     font-size: .875rem;
@@ -367,5 +410,16 @@
     padding: 0.5rem;
     background-color: rgba(243,244,246,1);
     overflow: hidden;
+  }
+
+  @media (max-width: 480px) {
+    .lineno {
+      width: 2rem;
+    }
+
+    .mutant-container {
+      margin-left: 2rem;
+      width: calc(100% - 2rem);
+    }
   }
 </style>

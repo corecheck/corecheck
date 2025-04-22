@@ -23,7 +23,7 @@ module "api_gateway" {
 
   dns_name = var.dns_name
 
-  corecheck_data_bucket_url = "https://${data.aws_s3_bucket.api_lambdas.id}.s3.${data.aws_s3_bucket.api_lambdas.region}.amazonaws.com"
+  corecheck_data_bucket_url = "https://${aws_s3_bucket.bitcoin-coverage-data.id}.s3.${aws_s3_bucket.bitcoin-coverage-data.region}.amazonaws.com"
 
   providers = {
     aws.us_east_1 = aws.us_east_1
