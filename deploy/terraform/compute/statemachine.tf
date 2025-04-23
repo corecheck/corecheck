@@ -319,115 +319,77 @@ resource "aws_sfn_state_machine" "state_machine" {
   definition = <<EOF
 {
   "Comment": "A description of my state machine",
-  "StartAt": "BothCovAndMutation",
+  "StartAt": "Start coverage",
   "States": {
-    "BothCovAndMutation": {
+    "Start coverage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::batch:submitJob.sync",
+      "Parameters": {
+        "Parameters.$": "$.params",
+        "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
+        "JobName": "coverage",
+        "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
+      },
+      "Next": "Handle coverage",
+      "ResultPath": "$.coverage_job"
+    },
+    "Handle coverage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
+        "Payload.$": "$"
+      },
+      "Next": "Parallel",
+      "ResultPath": "$.coverage_result"
+    },
+    "Parallel": {
       "Type": "Parallel",
       "End": true,
       "Branches": [
         {
-          "StartAt": "Start mutation",
+          "StartAt": "Start Sonarcloud",
           "States": {
-            "Start mutation": {
+            "Start Sonarcloud": {
               "Type": "Task",
               "Resource": "arn:aws:states:::batch:submitJob.sync",
               "Parameters": {
                 "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.mutation_job.arn}",
-                "JobName": "mutation",
-                "JobQueue": "${aws_batch_job_queue.mutation_queue.arn}"
+                "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
+                "JobName": "sonar",
+                "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
               },
-              "Next": "Handle mutation",
-              "ResultPath": "$.mutation_job"
-            },
-            "Handle mutation": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "FunctionName": "handle-mutation-${terraform.workspace}:$LATEST",
-                "Payload.$": "$"
-              },
-              "End": true,
-              "ResultPath": "$.mutation_result"
+              "ResultPath": "$.sonar_job",
+              "End": true
             }
           }
         },
         {
-          "StartAt": "Start coverage",
+          "StartAt": "Start Benchmarks",
           "States": {
-            "Start coverage": {
+            "Start Benchmarks": {
               "Type": "Task",
               "Resource": "arn:aws:states:::batch:submitJob.sync",
               "Parameters": {
                 "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
-                "JobName": "coverage",
-                "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
+                "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
+                "JobName": "benchmarks",
+                "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
+                "ArrayProperties": {
+                  "Size": ${local.bench_array_size}
+                }
               },
-              "Next": "Handle coverage",
-              "ResultPath": "$.coverage_job"
+              "ResultPath": "$.benchmarks_job",
+              "Next": "Handle Benchmarks"
             },
-            "Handle coverage": {
+            "Handle Benchmarks": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
-                "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
+                "FunctionName": "handle-benchmarks-${terraform.workspace}:$LATEST",
                 "Payload.$": "$"
               },
-              "Next": "Parallel",
-              "ResultPath": "$.coverage_result"
-            },
-            "Parallel": {
-              "Type": "Parallel",
-              "End": true,
-              "Branches": [
-                {
-                  "StartAt": "Start Sonarcloud",
-                  "States": {
-                    "Start Sonarcloud": {
-                      "Type": "Task",
-                      "Resource": "arn:aws:states:::batch:submitJob.sync",
-                      "Parameters": {
-                        "Parameters.$": "$.params",
-                        "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
-                        "JobName": "sonar",
-                        "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
-                      },
-                      "ResultPath": "$.sonar_job",
-                      "End": true
-                    }
-                  }
-                },
-                {
-                  "StartAt": "Start Benchmarks",
-                  "States": {
-                    "Start Benchmarks": {
-                      "Type": "Task",
-                      "Resource": "arn:aws:states:::batch:submitJob.sync",
-                      "Parameters": {
-                        "Parameters.$": "$.params",
-                        "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
-                        "JobName": "benchmarks",
-                        "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
-                        "ArrayProperties": {
-                          "Size": ${local.bench_array_size}
-                        }
-                      },
-                      "ResultPath": "$.benchmarks_job",
-                      "Next": "Handle Benchmarks"
-                    },
-                    "Handle Benchmarks": {
-                      "Type": "Task",
-                      "Resource": "arn:aws:states:::lambda:invoke",
-                      "Parameters": {
-                        "FunctionName": "handle-benchmarks-${terraform.workspace}:$LATEST",
-                        "Payload.$": "$"
-                      },
-                      "End": true
-                    }
-                  }
-                }
-              ]
+              "End": true
             }
           }
         }
