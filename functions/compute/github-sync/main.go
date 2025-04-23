@@ -93,13 +93,33 @@ func checkMasterCoverage(c *github.Client) error {
 			StateMachineArn: aws.String(cfg.StateMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		err = createPendingMutationResult(params.Params.Commit)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 
+	return nil
+}
+
+func createPendingMutationResult(commit string) error {
+	mutation := db.MutationResult{
+		Commit: commit,
+		State:  db.StatusStarted,
+	}
+
+	err := db.CreateMutationResult(&mutation)
 	if err != nil {
-		log.Error(err)
+		log.Error("Error creating mutation result", err)
 		return err
 	}
 
+	log.Infof("Pending mutation result created for commit %s", commit)
 	return nil
 }
 
@@ -110,7 +130,12 @@ func isTimeToRunMutationsAgain() (error, bool) {
 		return err, false
 	}
 
-	// run every 7 days
+	if result.State == db.StatusStarted {
+		// re run after 24 hours
+		return nil, result.CreatedAt.Add(24 * time.Hour).Before(time.Now())
+	}
+
+	// last one was completed successfully so delay next run by 7 days
 	return nil, result.CreatedAt.Add(7 * 24 * time.Hour).Before(time.Now())
 }
 
