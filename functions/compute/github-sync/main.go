@@ -89,8 +89,10 @@ func checkMasterCoverage(c *github.Client) error {
 	}
 
 	if runMutations {
+		log.Info("Time to run mutations again")
+
 		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
-			StateMachineArn: aws.String(cfg.StateMachineARN),
+			StateMachineArn: aws.String(cfg.MutationMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
 		if err != nil {
@@ -129,6 +131,8 @@ func isTimeToRunMutationsAgain() (error, bool) {
 		log.Error(err)
 		return err, false
 	}
+
+	log.Info("Time of latest mutation result: %s", result.CreatedAt.Format(time.RFC3339))
 
 	if result.State == db.StatusStarted {
 		// re run after 24 hours
