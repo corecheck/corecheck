@@ -55,6 +55,7 @@ data "aws_iam_policy_document" "allow_lambda_invoke" {
 
     resources = [
       aws_sfn_state_machine.state_machine.arn,
+      aws_sfn_state_machine.mutation_state_machine.arn,
     ]
   }
 }
