@@ -136,8 +136,8 @@ func isTimeToRunMutationsAgain() (error, bool) {
 
 	if result.State == db.StatusStarted {
 		// re run after 24 hours
-		log.Info("It's been 24 hours since mutation run that didn't finish, try again")
-		return nil, result.CreatedAt.Add(24 * time.Hour).Before(time.Now())
+		log.Info("It's been 36 hours since mutation run that didn't finish, try again")
+		return nil, result.CreatedAt.Add(36 * time.Hour).Before(time.Now())
 	}
 
 	// last one was completed successfully so delay next run by 7 days
