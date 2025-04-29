@@ -89,39 +89,17 @@ func checkMasterCoverage(c *github.Client) error {
 	}
 
 	if runMutations {
-		log.Info("Time to run mutations again")
-
 		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
-			StateMachineArn: aws.String(cfg.MutationMachineARN),
+			StateMachineArn: aws.String(cfg.StateMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		err = createPendingMutationResult(params.Params.Commit)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
 	}
 
-	return nil
-}
-
-func createPendingMutationResult(commit string) error {
-	mutation := db.MutationResult{
-		Commit: commit,
-		State:  db.StatusStarted,
-	}
-
-	err := db.CreateMutationResult(&mutation)
 	if err != nil {
-		log.Error("Error creating mutation result", err)
+		log.Error(err)
 		return err
 	}
 
-	log.Infof("Pending mutation result created for commit %s", commit)
 	return nil
 }
 
@@ -132,17 +110,8 @@ func isTimeToRunMutationsAgain() (error, bool) {
 		return err, false
 	}
 
-	log.Info("Time of latest mutation result: %s", result.CreatedAt.Format(time.RFC3339))
-
-	if result.State == db.StatusStarted {
-		// re run after 24 hours
-		log.Info("It's been 36 hours since mutation run that didn't finish, try again")
-		return nil, result.CreatedAt.Add(36 * time.Hour).Before(time.Now())
-	}
-
-	// last one was completed successfully so delay next run by 7 days
-	log.Info("It's been 7 days since the last successful mutation run. Run another one.")
-	return nil, result.CreatedAt.Add(7 * 24 * time.Hour).Before(time.Now())
+	// run every 7 days
+	return nil, result.CreatedAt.Add(1 * time.Hour).Before(time.Now())
 }
 
 func handlePullRequest(pr *github.PullRequest) error {
