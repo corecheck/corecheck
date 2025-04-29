@@ -30,7 +30,7 @@ func handleMutationSuccess(job *types.JobParams) error {
 		return err
 	}
 
-	log.Infof("Mutation result created for %s", job.Commit)
+	log.Infof("Mutation result created for: %s", job.Commit)
 	return nil
 }
 
