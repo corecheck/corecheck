@@ -18,7 +18,7 @@ var (
 )
 
 func getLatestMutation(c echo.Context) error {
-	result, err := db.GetLatestCompletedMutationResult()
+	result, err := db.GetLatestMutationResult()
 	if err != nil {
 		log.Error(err)
 		return err
@@ -39,7 +39,7 @@ func getLatestMutation(c echo.Context) error {
 }
 
 func getLatestMutationMeta(c echo.Context) error {
-	result, err := db.GetLatestCompletedMutationResult()
+	result, err := db.GetLatestMutationResult()
 	if err != nil {
 		log.Error(err)
 		return err

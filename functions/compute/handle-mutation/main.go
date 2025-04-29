@@ -21,7 +21,6 @@ func handleMutationSuccess(job *types.JobParams) error {
 
 	mutation := db.MutationResult{
 		Commit: job.Commit,
-		State:  db.StatusCompleted,
 	}
 
 	err := db.CreateMutationResult(&mutation)
@@ -30,7 +29,7 @@ func handleMutationSuccess(job *types.JobParams) error {
 		return err
 	}
 
-	log.Infof("Mutation result created for: %s", job.Commit)
+	log.Infof("Coverage for PR %d updated", job.PRNumber)
 	return nil
 }
 
