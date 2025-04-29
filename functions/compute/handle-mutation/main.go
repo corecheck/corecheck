@@ -21,7 +21,7 @@ func handleMutationSuccess(job *types.JobParams) error {
 
 	mutation := db.MutationResult{
 		Commit: job.Commit,
-		State:  "completed",
+		State:  db.StatusCompleted,
 	}
 
 	err := db.CreateMutationResult(&mutation)
