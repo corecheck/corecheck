@@ -26,7 +26,7 @@ resource "aws_batch_compute_environment" "mutation_compute" {
 resource "aws_batch_job_queue" "mutation_queue" {
   name     = "mutation-queue-${terraform.workspace}"
   provider = aws.compute_region
-  state    = "DISABLED"
+  state    = "ENABLED"
   priority = 1
   compute_environments = [
     aws_batch_compute_environment.mutation_compute.arn
@@ -105,6 +105,6 @@ resource "aws_batch_job_definition" "mutation_job" {
     jobRoleArn       = aws_iam_role.job_role.arn
   })
   timeout {
-    attempt_duration_seconds = 1800
+    attempt_duration_seconds = 129600 # 36 hours - mutation job at time of writing takes ~24 hours
   }
 }
