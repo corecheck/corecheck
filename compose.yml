@@ -1,0 +1,47 @@
+services:
+  build-lambda:
+    image: golang:1.21.1
+    environment:
+      GOOS: linux
+      GOARCH: arm64
+      CGO_ENABLED: 0
+      GOFLAGS: "-buildvcs=false -trimpath"
+    volumes:
+      - ".:/app"
+      - "gomodcache:/go/pkg/mod"
+    working_dir: /app
+
+  build-compute-stats-lambda:
+    image: golang:1.22.3
+    environment:
+      GOOS: linux
+      GOARCH: arm64
+      CGO_ENABLED: 0
+      GOFLAGS: "-buildvcs=false -trimpath"
+    volumes:
+      - ".:/app"
+      - "gomodcache:/go/pkg/mod"
+    working_dir: /app
+
+  aws-cli:
+    image: amazon/aws-cli:2.11.20
+    environment:
+      # support for aws-vault: https://github.com/99designs/aws-vault
+      - AWS_VAULT
+      - AWS_DEFAULT_REGION
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    volumes:
+      - ".:/aws"
+      - "~/.aws:/root/.aws"
+
+  util:
+    build:
+      dockerfile: docker/Dockerfile.util
+    volumes:
+      - ".:/app"
+    working_dir: /app
+
+volumes:
+  gomodcache:

@@ -1,8 +1,8 @@
 module "api_gateway" {
   source = "./api-gateway"
 
-  s3_bucket   = aws_s3_bucket.corecheck-lambdas-api.id
-  db_host     = aws_instance.db.public_ip
+  s3_bucket   = aws_s3_bucket.api_lambdas.id
+  db_host     = aws_eip.lb.public_ip
   db_port     = 5432
   db_user     = var.db_user
   db_password = var.db_password
@@ -10,7 +10,7 @@ module "api_gateway" {
 
   dns_name = var.dns_name
 
-  corecheck_data_bucket_url = "https://${aws_s3_bucket.bitcoin-coverage-data.id}.s3.${aws_s3_bucket.bitcoin-coverage-data.region}.amazonaws.com"
+  corecheck_data_bucket_url = "https://${aws_s3_bucket.api_lambdas.id}.s3.${aws_s3_bucket.api_lambdas.region}.amazonaws.com"
 
   providers = {
     aws.us_east_1 = aws.us_east_1
@@ -20,7 +20,7 @@ module "api_gateway" {
 module "compute" {
   source = "./compute"
 
-  db_host     = aws_instance.db.public_ip
+  db_host     = aws_eip.lb.public_ip
   db_port     = 5432
   db_user     = var.db_user
   db_password = var.db_password
@@ -37,9 +37,14 @@ module "compute" {
   sonar_token = var.sonar_token
   datadog_api_key = var.datadog_api_key
 
-  lambda_bucket = aws_s3_bucket.corecheck-lambdas.id
+  lambda_bucket = aws_s3_bucket.compute_lambdas.id
   providers = {
     aws.us_east_1 = aws.us_east_1
     aws.compute_region = aws.compute_region
   }
+
+  # Wait for database to be provisioned.
+  depends_on = [
+    aws_volume_attachment.db
+  ]
 }
