@@ -61,8 +61,7 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      # TODO: resolve backend config
-      run: terraform init -backend-config="bucket=bitcoin-coverage-state-corecheck"
+      run: terraform init
 
     - name: Change workspace for dev
       # TODO: resolve workspace
