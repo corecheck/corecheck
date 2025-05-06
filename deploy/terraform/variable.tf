@@ -20,10 +20,6 @@ variable "dns_name" {
   default = "corecheck.dev"
 }
 
-variable "dns_name" {
-  default = "corecheck.dev"
-}
-
 variable "github_token" {}
 variable "datadog_api_key" {
   sensitive = true
