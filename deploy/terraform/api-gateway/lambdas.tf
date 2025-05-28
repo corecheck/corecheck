@@ -9,7 +9,8 @@ locals {
 }
 
 resource "terraform_data" "build_api_lambdas" {
-  triggers_replace = local.function_file_hashes
+  # Remove temporarily because Lambda build is not triggered in CI environment.
+  # triggers_replace = local.function_file_hashes
 
   provisioner "local-exec" {
     command     = "make build-api-lambdas"
