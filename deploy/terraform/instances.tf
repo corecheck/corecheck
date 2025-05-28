@@ -117,4 +117,7 @@ resource "aws_volume_attachment" "db" {
     command = "docker compose run --remove-orphans --rm -e DB_USER=${var.db_user} -e DB_PASSWORD=${var.db_password} -v ${var.ssh_private_key_file}:/ssh-key -w /app/deploy/ansible util bash -c \"ansible-playbook playbooks/*.yml --private-key /ssh-key --ssh-common-args '-o IdentitiesOnly=yes'\""
     working_dir = local.project_root_path
   }
+
+  # Try to avoid error when instance needs to get replaced on dev.
+  stop_instance_before_detaching = true
 }
