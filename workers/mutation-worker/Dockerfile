@@ -34,7 +34,7 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv
     ./aws/install && \
     rm -rf awscliv2.zip aws
 
-RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.3/sccache-v0.7.3-aarch64-unknown-linux-musl.tar.gz && \ 
+RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.3/sccache-v0.7.3-aarch64-unknown-linux-musl.tar.gz && \
     tar -xvf sccache-v0.7.3-aarch64-unknown-linux-musl.tar.gz && \
     mv sccache-v0.7.3-aarch64-unknown-linux-musl/sccache /usr/bin/sccache && \
     chmod +x /usr/bin/sccache && \
@@ -43,7 +43,7 @@ RUN ln -s /usr/bin/sccache /usr/bin/ccache
 
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
-RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_NATPMP=1 NO_UPNP=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
+RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
 ENV BDB_PREFIX=/tmp/bitcoin/depends/aarch64-unknown-linux-gnu
 RUN mkdir -p /tmp/bitcoin/releases && ./test/get_previous_releases.py -b
 
