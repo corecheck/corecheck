@@ -8,7 +8,6 @@ RUN apt update && apt install -y \
     libevent-dev \
     libboost-dev \
     libsqlite3-dev \
-    libminiupnpc-dev \
     libzmq3-dev \
     curl \
     wget \

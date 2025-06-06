@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y git \
     libevent-dev \
     libboost-dev \
     libsqlite3-dev \
-    libminiupnpc-dev \
     libzmq3-dev \
     lcov \
     build-essential \
