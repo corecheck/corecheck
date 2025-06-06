@@ -21,7 +21,7 @@ else
 
     NPROC_2=$(expr $(nproc) \* 2)
 
-    time cmake -B build -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    time cmake -B build
 
     mutation-core mutate -f="src/wallet/coinselection.cpp"
     mutation-core mutate -f="src/script/interpreter.cpp"
