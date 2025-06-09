@@ -9,7 +9,7 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv
     ./aws/install && \
     rm -rf awscliv2.zip aws
 
-RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.4/sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz && \ 
+RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.4/sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz && \
     tar -xvf sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz && \
     mv sccache-v0.7.4-x86_64-unknown-linux-musl/sccache /usr/bin/sccache && \
     chmod +x /usr/bin/sccache && \
@@ -23,7 +23,9 @@ RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-s
 
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
-RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_NATPMP=1 NO_UPNP=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
+
+RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
+
 RUN mkdir -p /tmp/bitcoin/releases && ./test/get_previous_releases.py -b
 
 RUN git config --global user.email "ci@corecheck.dev"
