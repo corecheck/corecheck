@@ -8,7 +8,6 @@ python3-zmq \
 libevent-dev \
 libboost-dev \
 libsqlite3-dev \
-libminiupnpc-dev \
 libzmq3-dev \
 build-essential \
 libtool \
