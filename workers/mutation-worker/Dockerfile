@@ -7,7 +7,6 @@ git \
 python3-zmq \
 libevent-dev \
 libboost-dev \
-libdb5.3++-dev \
 libsqlite3-dev \
 libminiupnpc-dev \
 libzmq3-dev \
@@ -43,8 +42,9 @@ RUN ln -s /usr/bin/sccache /usr/bin/ccache
 
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
+
 RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
-ENV BDB_PREFIX=/tmp/bitcoin/depends/aarch64-unknown-linux-gnu
+
 RUN mkdir -p /tmp/bitcoin/releases && ./test/get_previous_releases.py -b
 
 RUN git config --global user.email "ci@corecheck.dev"
