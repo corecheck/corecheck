@@ -47,7 +47,7 @@ else
     
     NPROC_2=$(expr $(nproc) \* 2)
     
-    time cmake -B build -DCMAKE_BUILD_TYPE=Coverage -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    time cmake -B build -DCMAKE_BUILD_TYPE=Coverage
     time cmake --build build -j$(nproc)
     
     time ./build/bin/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/bin/test_bitcoin -t {} 2>&1
@@ -78,7 +78,7 @@ set -e
 if [ "$bench_exists" != "" ]; then
     echo "Bench binary already exists for this commit"
 else
-    rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON -DBerkeleyDB_INCLUDE_DIR:PATH="${BDB_PREFIX}/include" -DWITH_BDB=ON
+    rm -rf build && cmake -B build -DBUILD_TESTS=OFF -DBUILD_BENCH=ON
     time cmake --build build -j$(nproc)
     aws s3 cp build/bin/bench_bitcoin $S3_BENCH_FILE
 fi
