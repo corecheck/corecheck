@@ -7,9 +7,7 @@ RUN apt update && apt install -y \
     python3-zmq \
     libevent-dev \
     libboost-dev \
-    libdb5.3++-dev \
     libsqlite3-dev \
-    libminiupnpc-dev \
     libzmq3-dev \
     curl \
     wget \
