@@ -40,6 +40,7 @@ RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.3/sccache-v0.
 RUN ln -s /usr/bin/sccache /usr/bin/ccache
 
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
+RUN git clone --depth=1 https://github.com/bitcoin-core/qa-assets.git /tmp/bitcoin/qa-assets
 WORKDIR /tmp/bitcoin
 
 RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
