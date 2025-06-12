@@ -503,12 +503,14 @@
                     <td class="col-type-number col-field-pr">
                         <p
                             use:tooltip={{
-                                text: `master: ${report.base_report.benchmarks_grouped[
+                                text: report.base_report.benchmarks_grouped[benchmark]
+                                    ? `master: ${report.base_report.benchmarks_grouped[
                                     benchmark
                                 ]["totalTime"].toLocaleString("en-US", {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
-                                })}`,
+                                })}`
+                                : "",
                                 position: "left",
                             }}
                         >
