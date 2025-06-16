@@ -142,7 +142,7 @@ func isTimeToRunMutationsAgain() (error, bool) {
 
 	// last one was completed successfully so delay next run by 7 days
 	log.Info("It's been 7 days since the last successful mutation run. Run another one.")
-	return nil, result.CreatedAt.Add(7 * 24 * time.Hour).Before(time.Now())
+	return nil, result.CreatedAt.Add(1 * 24 * time.Hour).Before(time.Now())
 }
 
 func handlePullRequest(pr *github.PullRequest) error {
