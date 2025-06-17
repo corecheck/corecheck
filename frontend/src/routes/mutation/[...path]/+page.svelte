@@ -1,5 +1,7 @@
 <script>
   import { onMount } from "svelte";
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { env } from '$env/dynamic/public'
   let selectedFile = '';
   let fileContent = '';
@@ -13,29 +15,31 @@
   let mutations = [];
   let countMutations = 0;
 
-  onMount(async () => {
-      try {
-          const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations/meta');
-          mutationsMeta = await response.json();
-      } catch (error) {
-          console.error("Failed to fetch mutation metadata:", error);
-      }
+    onMount(() => {
+    // Subscribe to page store to react to URL changes
+    const unsubscribe = page.subscribe(($page) => {
+        const pathname = $page.url.pathname;
 
-      try {
-          const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations');
-          mutations = await response.json();
-      } catch (error) {
-          console.error("Failed to fetch mutations:", error);
-      }
-      
-      function countDiffs(jsonData) {
-          return jsonData.reduce((total, file) => {
-              return total + Object.values(file.diffs).reduce((sum, diffArray) => sum + diffArray.length, 0);
-          }, 0);
-      }
+        // Check if we're on a mutation path
+        if (pathname.startsWith('/mutation/') && pathname !== '/mutation/') {
+        const filePath = pathname.replace('/mutation/', '');
 
-      countMutations = countDiffs(mutations);
-  });
+        // Verify the file exists in your structure
+        if (fileExists(filePath)) {
+            // Only call handleFileSelect if it's different from current selection
+            if (selectedFile !== filePath) {
+            handleFileSelect(filePath, false); // Don't update URL since we're responding to URL change
+            }
+        } else {
+            // Handle invalid file path - redirect to main mutation page or show error
+            console.warn(`File not found: ${filePath}`);
+            goto('/mutation', { replaceState: true });
+        }
+        }
+    });
+
+    return unsubscribe;
+    });
 
 
   const files = {
@@ -59,40 +63,80 @@
     },
   };
 
-  async function handleFileSelect(file) {
-    selectedFile = file;
-    try {
-      console.log(file);
-      const selected_mutations = mutations.filter(val => val.filename.includes(file));
-
-      if(selected_mutations.length > 0 && 'diffs' in selected_mutations[0]) {
-        mutationData = selected_mutations[0].diffs || {};
-      } else {
-        mutationData = {};
-      }
-
-      // Fetch file content from GitHub raw URL
-      const githubPath = `${GITHUB_RAW_BASE}/${file}`;
-      const contentResp = await fetch(githubPath);
-      if (!contentResp.ok) {
-        throw new Error(`Failed to fetch file: ${contentResp.status}`);
-      }
-      fileContent = await contentResp.text();
-    } catch (error) {
-      console.error('Error:', error);
-      fileContent = `Error loading content: ${error.message}`;
-      mutationData = {};
-    }
+function toggleLine(lineNumber) {
+  expandedLines = new Set(expandedLines);
+  if (expandedLines.has(lineNumber)) {
+    expandedLines.delete(lineNumber);
+  } else {
+    expandedLines.add(lineNumber);
   }
+}
 
-  function toggleLine(lineNumber) {
-    expandedLines = new Set(expandedLines);
-    if (expandedLines.has(lineNumber)) {
-      expandedLines.delete(lineNumber);
+function onFileClick(file) {
+  handleFileSelect(file, true); // This will update the URL
+}
+
+function fileExists(filePath) {
+  const parts = filePath.split('/');
+  let current = files;
+
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
     } else {
-      expandedLines.add(lineNumber);
+      return false;
     }
   }
+  return true;
+}
+
+// Helper function to get all valid file paths from your structure
+function getAllFilePaths(obj = files, currentPath = '') {
+  let paths = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newPath = currentPath ? `${currentPath}/${key}` : key;
+
+    if (typeof value === 'object' && value !== null) {
+      paths = paths.concat(getAllFilePaths(value, newPath));
+    } else {
+      paths.push(newPath);
+    }
+  }
+
+  return paths;
+}
+
+async function handleFileSelect(file, updateUrl = true) {
+    selectedFile = file;
+
+    // Update URL if requested (default true)
+    if (updateUrl) {
+        goto(`/mutation/${file}`, { replaceState: false });
+    }
+
+    try {
+        const selected_mutations = mutations.filter(val => val.filename.includes(file));
+        if(selected_mutations.length > 0 && 'diffs' in selected_mutations[0]) {
+        mutationData = selected_mutations[0].diffs || {};
+        } else {
+        mutationData = {};
+        }
+
+        // Fetch file content from GitHub raw URL
+        const githubPath = `${GITHUB_RAW_BASE}/${file}`;
+        const contentResp = await fetch(githubPath);
+        if (!contentResp.ok) {
+        throw new Error(`Failed to fetch file: ${contentResp.status}`);
+        }
+        fileContent = await contentResp.text();
+    } catch (error) {
+        console.error('Error:', error);
+        fileContent = `Error loading content: ${error.message}`;
+        mutationData = {};
+    }
+    }
+
 
   function toggleDir(path) {
     expanded = new Set(expanded);
@@ -102,6 +146,7 @@
       expanded.add(path);
     }
   }
+
 
   function renderTree(tree, path = '') {
     return Object.entries(tree).map(([name, value]) => {
