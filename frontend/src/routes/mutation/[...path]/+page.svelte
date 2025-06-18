@@ -15,7 +15,27 @@
   let mutations = [];
   let countMutations = 0;
 
-    onMount(() => {
+  onMount(async () => {
+    try {
+      const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations/meta');
+      mutationsMeta = await response.json();
+    } catch (error) {
+        console.error("Failed to fetch mutation metadata:", error);
+    }
+
+    try {
+        const response = await fetch(env.PUBLIC_ENDPOINT + '/mutations');
+        mutations = await response.json();
+    } catch (error) {
+        console.error("Failed to fetch mutations:", error);
+    }
+      
+    function countDiffs(jsonData) {
+        return jsonData.reduce((total, file) => {
+            return total + Object.values(file.diffs).reduce((sum, diffArray) => sum + diffArray.length, 0);
+        }, 0);
+    }
+
     // Subscribe to page store to react to URL changes
     const unsubscribe = page.subscribe(($page) => {
         const pathname = $page.url.pathname;
@@ -38,9 +58,9 @@
         }
     });
 
+    countMutations = countDiffs(mutations);
     return unsubscribe;
-    });
-
+  });
 
   const files = {
     'src': {
