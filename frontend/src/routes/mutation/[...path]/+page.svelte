@@ -40,21 +40,26 @@
     const unsubscribe = page.subscribe(($page) => {
         const pathname = $page.url.pathname;
 
-        // Check if we're on a mutation path
-        if (pathname.startsWith('/mutation/') && pathname !== '/mutation/') {
-        const filePath = pathname.replace('/mutation/', '');
-
-        // Verify the file exists in your structure
-        if (fileExists(filePath)) {
-            // Only call handleFileSelect if it's different from current selection
-            if (selectedFile !== filePath) {
-            handleFileSelect(filePath, false); // Don't update URL since we're responding to URL change
-            }
-        } else {
-            // Handle invalid file path - redirect to main mutation page or show error
-            console.warn(`File not found: ${filePath}`);
-            goto('/mutation', { replaceState: true });
+        if (pathname === '/mutation' || pathname === '/mutation/') {
+            selectedFile = null;
+            return;
         }
+
+        // Check if we're on a mutation path
+        if (pathname.startsWith('/mutation/')) {
+            const filePath = pathname.replace('/mutation/', '');
+
+            // Verify the file exists in your structure
+            if (fileExists(filePath)) {
+                // Only call handleFileSelect if it's different from current selection
+                if (selectedFile !== filePath) {
+                handleFileSelect(filePath, false); // Don't update URL since we're responding to URL change
+                }
+            } else {
+                // Handle invalid file path - redirect to main mutation page or show error
+                console.warn(`File not found: ${filePath}`);
+                goto('/mutation', { replaceState: true });
+            }
         }
     });
 
@@ -295,7 +300,7 @@ async function handleFileSelect(file, updateUrl = true) {
       <div class="">
         <div class="shadow document" style="">
           <div class="heading" style="">
-            <h2 class=""><a on:click={() => selectedFile = null} style="text-decoration: underline;">Mutations</a> -> {selectedFile}</h2>
+            <h2 class=""><a on:click={() => goto('/mutation', { replaceState: true })} style="text-decoration: underline;">Mutations</a> -> {selectedFile}</h2>
           </div>
 
           <div class="main-content code-container">
