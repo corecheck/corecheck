@@ -295,7 +295,7 @@ async function handleFileSelect(file, updateUrl = true) {
       <div class="">
         <div class="shadow document" style="">
           <div class="heading" style="">
-            <h2 class="">{selectedFile}</h2>
+            <h2 class=""><a on:click={() => selectedFile = null} style="text-decoration: underline;">Mutations</a> -> {selectedFile}</h2>
           </div>
 
           <div class="main-content code-container">
