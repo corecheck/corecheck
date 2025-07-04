@@ -43,7 +43,7 @@ set -e
 if [ "$coverage_exists" != "" ]; then
     echo "Coverage data already exists for this commit"
 else
-    ./test/get_previous_releases.py -b
+    ./test/get_previous_releases.py
     
     NPROC_2=$(expr $(nproc) \* 2)
     
