@@ -24,8 +24,6 @@ RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-s
 RUN git clone https://github.com/bitcoin/bitcoin.git /tmp/bitcoin
 WORKDIR /tmp/bitcoin
 
-RUN make -C depends NO_BOOST=1 NO_LIBEVENT=1 NO_QT=1 NO_SQLITE=1 NO_ZMQ=1 NO_USDT=1 -j$(nproc)
-
 RUN mkdir -p /tmp/bitcoin/releases && ./test/get_previous_releases.py
 
 RUN git config --global user.email "ci@corecheck.dev"
