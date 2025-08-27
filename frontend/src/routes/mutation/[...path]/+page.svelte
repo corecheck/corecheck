@@ -29,7 +29,7 @@
     } catch (error) {
         console.error("Failed to fetch mutations:", error);
     }
-      
+
     function countDiffs(jsonData) {
         return jsonData.reduce((total, file) => {
             return total + Object.values(file.diffs).reduce((sum, diffArray) => sum + diffArray.length, 0);
@@ -84,7 +84,8 @@
         'asmap.cpp': 'content'
       },
       'pow.cpp': 'content',
-      'addrman.cpp': 'content'
+      'addrman.cpp': 'content',
+      'txgraph.cpp': 'content'
     },
   };
 
