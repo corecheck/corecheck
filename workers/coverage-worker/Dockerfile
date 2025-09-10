@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y git \
     libboost-dev \
     libsqlite3-dev \
     libzmq3-dev \
+    libcapnp-dev \
+    capnproto \
     lcov \
     build-essential \
     libtool \
