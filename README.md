@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://corecheck.dev"><img src="https://github.com/bitcoin-coverage/core/raw/master/docs/assets/logo.png" alt="Bitcoin Coverage" width="200"></a>
+  <a href="https://corecheck.dev"><img src="https://github.com/bitcoin-coverage/core/raw/master/frontend/static/images/logo.png" alt="Bitcoin Coverage" width="200"></a>
   <br>
     Bitcoin Coverage's Infra as Code
   <br>
