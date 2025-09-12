@@ -3,27 +3,29 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-git \
-python3-zmq \
-libevent-dev \
-libboost-dev \
-libsqlite3-dev \
-libzmq3-dev \
-build-essential \
-libtool \
-cmake \
-pkg-config \
-bsdmainutils \
-bsdextrautils \
-curl \
-wget \
-python3-pip \
-lsb-release \
-software-properties-common \
-gnupg \
-unzip \
-jq \
-parallel
+    git \
+    python3-zmq \
+    libevent-dev \
+    libboost-dev \
+    libsqlite3-dev \
+    libzmq3-dev \
+    libcapnp-dev \
+    capnproto \
+    build-essential \
+    libtool \
+    cmake \
+    pkg-config \
+    bsdmainutils \
+    bsdextrautils \
+    curl \
+    wget \
+    python3-pip \
+    lsb-release \
+    software-properties-common \
+    gnupg \
+    unzip \
+    jq \
+    parallel
 
 RUN pip install mutation-core --break-system-packages
 
