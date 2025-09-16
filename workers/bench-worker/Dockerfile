@@ -9,6 +9,8 @@ RUN apt update && apt install -y \
     libboost-dev \
     libsqlite3-dev \
     libzmq3-dev \
+    libcapnp-dev \
+    capnproto \
     curl \
     wget \
     python3-pip \
