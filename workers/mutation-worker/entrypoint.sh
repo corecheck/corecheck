@@ -25,7 +25,7 @@ else
 
     mutation-core mutate -f="src/wallet/coinselection.cpp"
     mutation-core mutate -f="src/script/interpreter.cpp"
-    mutation-core mutate -f="src/tx_graph.cpp"
+    mutation-core mutate -f="src/txgraph.cpp"
     mutation-core mutate -f="src/consensus/tx_verify.cpp"
     mutation-core mutate -f="src/consensus/tx_check.cpp"
     mutation-core mutate -f="src/consensus/merkle.cpp"
