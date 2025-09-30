@@ -17,6 +17,8 @@ set -e
 if [ "$mutation_exists" != "" ]; then
     echo "Mutation data already exists for this commit"
 else
+    pip install mutation-core --break-system-packages
+
     ./test/get_previous_releases.py
 
     NPROC_2=$(expr $(nproc) \* 2)
