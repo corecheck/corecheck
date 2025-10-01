@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y \
     jq \
     parallel
 
-RUN pip install mutation-core --break-system-packages
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
