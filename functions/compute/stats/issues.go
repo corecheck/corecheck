@@ -2,6 +2,7 @@ package main
 
 import (
 	"bitcoin-stats-datadog/types"
+	"strconv"
 
 	ddlambda "github.com/DataDog/datadog-lambda-go"
 )
@@ -152,7 +153,7 @@ func (c *TotalCommentsIssueConsumer) ProcessIssue(issue *types.Issue) {
 
 func (c *TotalCommentsIssueConsumer) SendMetrics() {
 	for issue, count := range c.Comments {
-		ddlambda.Metric("bitcoin.bitcoin.issues.comments", float64(count), "issue:"+string(issue))
+		ddlambda.Metric("bitcoin.bitcoin.issues.comments", float64(count), "issue:"+strconv.Itoa(issue))
 	}
 
 	ddlambda.Metric("bitcoin.bitcoin.issues.comments.total", float64(len(c.Comments)))
