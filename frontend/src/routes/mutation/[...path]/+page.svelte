@@ -354,7 +354,7 @@
                     <div>Total unkilled mutants: {countMutations}</div>
                     <div>
                         <a href="{env.PUBLIC_ENDPOINT}/mutations"
-                            >Raw mutation-core output</a
+                            >Raw bcore-mutation output</a
                         >
                     </div>
                     <div>
@@ -362,8 +362,8 @@
                         left.
                     </div>
                     <div>
-                        <br /><br />To see the exact mutation-core commands that
-                        corecheck.dev ran, checkout the
+                        <br /><br />To see the exact bcore-mutation commands
+                        that corecheck.dev ran, checkout the
                         <a
                             href="https://raw.githubusercontent.com/corecheck/corecheck/refs/heads/master/workers/mutation-worker/entrypoint.sh"
                             >entrypoint.sh</a
