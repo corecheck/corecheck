@@ -53,14 +53,6 @@ func proxy(c *gin.Context) {
 			return err
 		}
 		
-		// Log response details for debugging
-		fmt.Println("=== Response Debug ===")
-		fmt.Println("Content-Type:", resp.Header.Get("Content-Type"))
-		fmt.Println("Content-Encoding:", resp.Header.Get("Content-Encoding"))
-		fmt.Println("Original Content-Length:", resp.Header.Get("Content-Length"))
-		fmt.Println("Decompressed body length:", len(body))
-		fmt.Println("First 500 chars of body:", string(body[:min(500, len(body))]))
-		
 		// Perform URL replacements
 		content := string(body)
 		content = strings.ReplaceAll(content, "https://static.datadoghq.com", "https://datadog-proxy.corecheck.dev")
@@ -88,9 +80,6 @@ func proxy(c *gin.Context) {
 		// Update Content-Length
 		resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(modifiedBody)))
 		resp.Body = ioutil.NopCloser(bytes.NewReader(modifiedBody))
-		
-		fmt.Println("Modified body length:", len(modifiedBody))
-		fmt.Println("=== End Debug ===")
 		
 		return nil
 	}
