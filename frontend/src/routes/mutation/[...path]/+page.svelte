@@ -168,42 +168,6 @@
     $: treeData = renderTree(files);
 
     onMount(async () => {
-        // --- 1) Handle the current URL IMMEDIATELY (before any fetch) ---
-        {
-            const { pathname } = getStore(page).url;
-            if (pathname.startsWith("/mutation/")) {
-                const filePath = pathname.replace("/mutation/", "");
-                const m = (
-                    typeof window !== "undefined" ? window.location.hash : ""
-                ).match(/^#?L(\d+)$/);
-                const targetLine = m ? Number(m[1]) : null;
-
-                if (fileExists(filePath)) {
-                    // Don't update URL here; we're responding to current URL
-                    await handleFileSelect(filePath, false, targetLine);
-                }
-            }
-        }
-
-        // --- 2) Set up reactive navigation (and handle hash changes later on) ---
-        const unsubscribe = page.subscribe(async ($page) => {
-            const { pathname } = $page.url;
-            // If user navigates to a different file after mount
-            if (pathname.startsWith("/mutation/")) {
-                const filePath = pathname.replace("/mutation/", "");
-                if (fileExists(filePath) && selectedFile !== filePath) {
-                    const m = (
-                        typeof window !== "undefined"
-                            ? window.location.hash
-                            : ""
-                    ).match(/^#?L(\d+)$/);
-                    const targetLine = m ? Number(m[1]) : null;
-                    await handleFileSelect(filePath, false, targetLine);
-                }
-            }
-        });
-
-        // --- 3) Kick off data fetches in parallel (don’t block initial URL handling) ---
         try {
             const [metaResp, mutsResp] = await Promise.allSettled([
                 fetch(env.PUBLIC_ENDPOINT + "/mutations/meta"),
@@ -241,6 +205,39 @@
         } catch (e) {
             console.error("Initial data fetch failed:", e);
         }
+
+        {
+            const { pathname } = getStore(page).url;
+            if (pathname.startsWith("/mutation/")) {
+                const filePath = pathname.replace("/mutation/", "");
+                const m = (
+                    typeof window !== "undefined" ? window.location.hash : ""
+                ).match(/^#?L(\d+)$/);
+                const targetLine = m ? Number(m[1]) : null;
+
+                if (fileExists(filePath)) {
+                    // Don't update URL here; we're responding to current URL
+                    await handleFileSelect(filePath, false, targetLine);
+                }
+            }
+        }
+
+        const unsubscribe = page.subscribe(async ($page) => {
+            const { pathname } = $page.url;
+            // If user navigates to a different file after mount
+            if (pathname.startsWith("/mutation/")) {
+                const filePath = pathname.replace("/mutation/", "");
+                if (fileExists(filePath) && selectedFile !== filePath) {
+                    const m = (
+                        typeof window !== "undefined"
+                            ? window.location.hash
+                            : ""
+                    ).match(/^#?L(\d+)$/);
+                    const targetLine = m ? Number(m[1]) : null;
+                    await handleFileSelect(filePath, false, targetLine);
+                }
+            }
+        });
 
         return unsubscribe;
     });
