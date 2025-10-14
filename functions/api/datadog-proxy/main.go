@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -34,11 +37,49 @@ func proxy(c *gin.Context) {
 	}
 
 	proxy.ModifyResponse = func(resp *http.Response) error {
-		body, err := ioutil.ReadAll(resp.Body)
+		// Read the body (handle gzip if needed)
+		var reader io.Reader = resp.Body
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			gzReader, err := gzip.NewReader(resp.Body)
+			if err != nil {
+				return err
+			}
+			defer gzReader.Close()
+			reader = gzReader
+		}
+
+		body, err := ioutil.ReadAll(reader)
 		if err != nil {
 			return err
 		}
-		resp.Body = ioutil.NopCloser(strings.NewReader(strings.ReplaceAll(string(body), "https://static.datadoghq.com", "https://datadog-proxy.corecheck.dev")))
+
+		// Perform URL replacements
+		content := string(body)
+		content = strings.ReplaceAll(content, "https://static.datadoghq.com", "https://datadog-proxy.corecheck.dev")
+		content = strings.ReplaceAll(content, "http://static.datadoghq.com", "https://datadog-proxy.corecheck.dev")
+		content = strings.ReplaceAll(content, "//static.datadoghq.com", "//datadog-proxy.corecheck.dev")
+
+		modifiedBody := []byte(content)
+
+		// Re-compress if original was gzipped
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			var buf bytes.Buffer
+			gzWriter := gzip.NewWriter(&buf)
+			if _, err := gzWriter.Write(modifiedBody); err != nil {
+				return err
+			}
+			if err := gzWriter.Close(); err != nil {
+				return err
+			}
+			modifiedBody = buf.Bytes()
+		} else {
+			// If not gzipped, remove Content-Encoding header
+			resp.Header.Del("Content-Encoding")
+		}
+
+		// Update Content-Length
+		resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(modifiedBody)))
+		resp.Body = ioutil.NopCloser(bytes.NewReader(modifiedBody))
 
 		return nil
 	}
