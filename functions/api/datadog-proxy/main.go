@@ -38,6 +38,16 @@ func proxy(c *gin.Context) {
 		if err != nil {
 			return err
 		}
+		
+		// Log response details for debugging
+		fmt.Println("=== Response Debug ===")
+		fmt.Println("Content-Type:", resp.Header.Get("Content-Type"))
+		fmt.Println("Content-Encoding:", resp.Header.Get("Content-Encoding"))
+		fmt.Println("Content-Length:", resp.Header.Get("Content-Length"))
+		fmt.Println("Body length:", len(body))
+		fmt.Println("First 500 chars of body:", string(body[:min(500, len(body))]))
+		fmt.Println("=== End Debug ===")
+		
 		resp.Body = ioutil.NopCloser(strings.NewReader(strings.ReplaceAll(string(body), "https://static.datadoghq.com", "https://datadog-proxy.corecheck.dev")))
 
 		return nil
