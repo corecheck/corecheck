@@ -99,6 +99,9 @@ jobs:
     - name: Change workspace for dev
       run: if [ "${{ github.ref }}" == "refs/heads/dev" ]; then terraform workspace select dev; else terraform workspace select default; fi
 
+    - name: Import api bucket
+      run: terraform import aws_s3_bucket.corecheck-lambdas-api corecheck-api-lambdas-dev
+
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
     - name: Upload hosts.ini
