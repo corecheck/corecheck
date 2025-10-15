@@ -13,7 +13,7 @@
     let highlightedLine = null;
 
     const GITHUB_RAW_BASE =
-        "https://raw.githubusercontent.com/bitcoin/bitcoin/master";
+        "https://raw.githubusercontent.com/bitcoin/bitcoin/";
 
     let mutationsMeta = {};
     let mutations = [];
@@ -79,7 +79,12 @@
                     : {};
 
             // Fetch file content
-            const githubPath = `${GITHUB_RAW_BASE}/${file}`;
+            const commit = selected_mutations[0]?.diffs
+                ? (Object.values(selected_mutations[0].diffs)[0]?.[0]?.commit ??
+                  "master")
+                : "master";
+            console.log(commit);
+            const githubPath = `${GITHUB_RAW_BASE}/${commit}/${file}`;
             const contentResp = await fetch(githubPath);
             if (!contentResp.ok)
                 throw new Error(`Failed to fetch file: ${contentResp.status}`);
