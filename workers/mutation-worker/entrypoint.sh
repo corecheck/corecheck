@@ -34,6 +34,7 @@ else
     bcore-mutation mutate -f="src/pow.cpp" --one-mutant
     bcore-mutation mutate -f="src/addrman.cpp" --one-mutant
     bcore-mutation mutate -f="src/util/asmap.cpp" --one-mutant
+    bcore-mutation mutate -f="src/script/descriptor.cpp" --one-mutant
 
     bcore-mutation analyze -f="muts-coinselection-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=coinselection_tests && ./build/bin/test_bitcoin --run_test=coinselector_tests && ./build/bin/test_bitcoin --run_test=spend_tests && ./build/test/functional/rpc_psbt.py && ./build/test/functional/wallet_fundrawtransaction.py"
     bcore-mutation analyze -f="muts-interpreter-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=miniscript_tests ./build/bin/test_bitcoin --run_test=transaction_tests && DIR_UNIT_TEST_DATA=qa-assets/unit_test_data ./build/bin/test_bitcoin --run_test=script_assets_tests && ./build/bin/test_bitcoin --run_test=script_tests && ./build/bin/test_bitcoin --run_test=scriptnum_tests && ./build/bin/test_bitcoin --run_test=script_p2sh_tests && ./build/bin/test_bitcoin --run_test=script_parse_tests && ./build/bin/test_bitcoin --run_test=script_p2sh_tests && ./build/bin/test_bitcoin --run_test=script_standard_tests && ./build/test/functional/feature_taproot.py && ./build/test/functional/rpc_decodescript.py && ./build/test/functional/feature_block.py --skipreorg"
@@ -44,6 +45,7 @@ else
     bcore-mutation analyze -f="muts-pow-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=pow_tests && ./build/bin/test_bitcoin --run_test=headers_sync_chainwork_tests && ./build/test/functional/feature_block.py --skipreorg"
     bcore-mutation analyze -f="muts-addrman-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=addrman_tests && ./build/test/functional/feature_addrman.py && ./build/test/functional/feature_asmap.py && ./build/test/functional/rpc_net.py"
     bcore-mutation analyze -f="muts-asmap-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=addrman_tests && ./build/test/functional/feature_asmap.py && ./build/test/functional/feature_addrman.py"
+    bcore-mutation analyze -f="muts-descriptor-cpp" -c="cmake --build build -j $(nproc) && ./build/bin/test_bitcoin --run_test=descriptor_tests && ./build/test/functional/wallet_descriptor.py && ./build/test/functional/wallet_multisig_descriptor_psbt.py"
 
     sccache --show-stats
 
