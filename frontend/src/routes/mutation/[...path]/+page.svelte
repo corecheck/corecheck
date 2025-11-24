@@ -131,7 +131,10 @@
     const files = {
         src: {
             wallet: { "coinselection.cpp": "content" },
-            script: { "interpreter.cpp": "content" },
+            script: {
+                "interpreter.cpp": "content",
+                "descriptor.cpp": "content",
+            },
             consensus: {
                 "tx_verify.cpp": "content",
                 "tx_check.cpp": "content",
