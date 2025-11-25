@@ -25,6 +25,8 @@ module "compute" {
   db_user     = var.db_user
   db_password = var.db_password
   db_database = var.db_database
+  db_instance_id = aws_instance.db.id
+  ansible_inventory_path = abspath(local_file.hosts.filename)
 
   github_token          = var.github_token
   corecheck_data_bucket = aws_s3_bucket.bitcoin-coverage-data.id
@@ -42,4 +44,8 @@ module "compute" {
     aws.us_east_1 = aws.us_east_1
     aws.compute_region = aws.compute_region
   }
+
+  depends_on = [
+    aws_volume_attachment.db,
+  ]
 }

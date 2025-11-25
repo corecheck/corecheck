@@ -172,17 +172,17 @@ resource "aws_lambda_function" "function" {
 }
 
 
-# resource "aws_lambda_invocation" "invoke" {
-#   provider = aws.compute_region
-#   function_name = "migrate-${terraform.workspace}"
-#   input         = "{\"action\": \"up\"}"
-#   triggers = {
-#     always_run = timestamp()
-#   }
-#   depends_on = [
-#     aws_lambda_function.function,
-#   ]
-# }
+resource "aws_lambda_invocation" "run_migrations" {
+  provider      = aws.compute_region
+  function_name = aws_lambda_function.function["migrate"].function_name
+  input         = jsonencode({ action = "up" })
+  triggers = {
+    always_run = timestamp()
+  }
+  depends_on = [
+    null_resource.configure_db,
+  ]
+}
 
 resource "aws_cloudwatch_event_rule" "github_sync" {
   provider = aws.compute_region
