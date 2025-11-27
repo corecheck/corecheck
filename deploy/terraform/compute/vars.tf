@@ -23,6 +23,16 @@ variable "db_database" {
   description = "db database"
 }
 
+variable "db_instance_id" {
+  type        = string
+  description = "db instance id"
+}
+
+variable "ansible_inventory_path" {
+  type        = string
+  description = "absolute path to the generated ansible inventory"
+}
+
 variable "github_token" {
   type        = string
   description = "github token"
