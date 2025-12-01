@@ -43,13 +43,19 @@ set -e
 if [ "$coverage_exists" != "" ]; then
     echo "Coverage data already exists for this commit"
 else
+
     ./test/get_previous_releases.py
-    
+
+    DIR_UNIT_TEST_DATA="$PWD/qa-assets/unit_test_data"
+    mkdir -p "$DIR_UNIT_TEST_DATA"
+    curl --location --fail https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json -o "$DIR_UNIT_TEST_DATA/script_assets_test.json"
+    export DIR_UNIT_TEST_DATA
+
     NPROC_2=$(expr $(nproc) \* 2)
-    
+
     time cmake -B build -DCMAKE_BUILD_TYPE=Coverage
     time cmake --build build -j$(nproc)
-    
+
     time ./build/bin/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/bin/test_bitcoin -t {} 2>&1
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
     
