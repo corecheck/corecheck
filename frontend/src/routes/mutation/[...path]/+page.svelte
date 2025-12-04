@@ -141,6 +141,7 @@
                 "merkle.cpp": "content",
             },
             util: { "asmap.cpp": "content" },
+            "netgroup.cpp": "content",
             "pow.cpp": "content",
             "addrman.cpp": "content",
             "txgraph.cpp": "content",
