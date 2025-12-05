@@ -19,6 +19,22 @@
     let mutations = [];
     let countMutations = 0;
 
+    // ===== Parse git diff into lines with types =====
+    function parseDiff(diffText) {
+        const lines = diffText.split("\n");
+        return lines.map((line) => {
+            if (line.startsWith("+") && !line.startsWith("+++")) {
+                return { type: "addition", text: line };
+            } else if (line.startsWith("-") && !line.startsWith("---")) {
+                return { type: "deletion", text: line };
+            } else if (line.startsWith("@@")) {
+                return { type: "hunk", text: line };
+            } else {
+                return { type: "context", text: line };
+            }
+        });
+    }
+
     // ===== Vertical-only scroll helper =====
     function scrollLineIntoView(
         lineNumber,
@@ -444,7 +460,13 @@
                                                     Mutant #{mutant.id} - {mutant.status}
                                                 </div>
                                                 <div class="mutant-content">
-                                                    <pre>{mutant.diff}</pre>
+                                                    {#each parseDiff(mutant.diff) as diffLine}
+                                                        <div
+                                                            class="diff-line diff-{diffLine.type}"
+                                                        >
+                                                            <pre>{diffLine.text}</pre>
+                                                        </div>
+                                                    {/each}
                                                 </div>
                                             </div>
                                         {/each}
@@ -583,9 +605,43 @@
     .mutant-content {
         font-size: 0.875rem;
         line-height: 1.25rem;
-        padding: 0.5rem;
         background-color: rgba(243, 244, 246, 1);
         overflow: hidden;
+    }
+
+    /* Git diff styling */
+    .diff-line {
+        margin: 0;
+        padding: 2px 4px;
+        font-family: "Courier New", Courier, monospace;
+    }
+
+    .diff-line pre {
+        margin: 0;
+        padding: 0;
+        white-space: pre;
+        font-family: inherit;
+    }
+
+    .diff-addition {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .diff-deletion {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .diff-hunk {
+        background-color: #e7f3ff;
+        color: #004085;
+        font-weight: 600;
+    }
+
+    .diff-context {
+        background-color: transparent;
+        color: rgba(55, 65, 81, 1);
     }
 
     .highlight {
