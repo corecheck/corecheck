@@ -45,7 +45,7 @@ locals {
       }
     },
     "handle-coverage" = {
-      timeout     = 300
+      timeout     = 900
       memory_size = 512
       ephemeral_storage_size = 512
       environment = {
