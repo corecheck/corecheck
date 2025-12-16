@@ -57,13 +57,17 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		return err
 	}
 
+	log.Debug("Getting master coverage data")
 	coverageMaster, err := GetCoverageDataMaster(job.BaseCommit)
 	if err != nil {
 		log.Error("Error getting master coverage data", err)
 		return err
 	}
 
+	log.Debug("Getting differential coverage")
 	differentialCoverage := coverage.Diff(coverageMaster, diff)
+
+	log.Debug("Creating hunks")
 	hunks := differentialCoverage.CreateHunks(report)
 
 	log.Info(fmt.Sprintf("Found %d hunks", len(hunks)))
