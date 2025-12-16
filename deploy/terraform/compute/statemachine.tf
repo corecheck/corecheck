@@ -46,8 +46,8 @@ locals {
     },
     "handle-coverage" = {
       timeout     = 900
-      memory_size = 512
-      ephemeral_storage_size = 512
+      memory_size = 2048
+      ephemeral_storage_size = 2048
       environment = {
         variables = {
           DATABASE_HOST     = var.db_host
