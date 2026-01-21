@@ -57,7 +57,7 @@ else
     time cmake --build build -j$(nproc)
 
     time ./build/bin/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/bin/test_bitcoin -t {} 2>&1
-    time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 &> functional-tests.log
+    time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 2>&1 | tee functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
         binary_size=$(stat -c %s ./build/bin/bitcoind)
