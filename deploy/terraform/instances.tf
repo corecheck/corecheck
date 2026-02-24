@@ -84,6 +84,10 @@ resource "aws_instance" "db" {
   root_block_device {
     volume_size = 10
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "aws_volume_attachment" "db" {
