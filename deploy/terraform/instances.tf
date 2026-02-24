@@ -34,10 +34,13 @@ resource "aws_eip" "lb" {
 # create external disk for db data
 resource "aws_ebs_volume" "db" {
   availability_zone = "eu-west-3a"
-  size              = 10
+  size              = 20
   type              = "gp2"
   tags = {
     Name = "db"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -83,6 +86,10 @@ resource "aws_instance" "db" {
 
   root_block_device {
     volume_size = 10
+  }
+
+  lifecycle {
+    ignore_changes = [ami]
   }
 }
 
