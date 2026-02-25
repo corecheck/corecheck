@@ -90,6 +90,48 @@
     .app-sidebar ~ .app-body {
         min-width: 650px;
     }
+
+    // Mobile: convert left sidebar to a top navbar
+    @media screen and (max-width: 768px) {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+
+        .app-sidebar ~ .app-body {
+            min-width: 0;
+            height: auto;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .app-sidebar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        height: auto;
+        min-height: 52px;
+        padding: 6px 12px;
+        border-right: none;
+        border-bottom: 1px solid var(--baseAlt2Color);
+        gap: 4px;
+
+        .main-menu {
+            flex-direction: row;
+            flex-grow: 1;
+            flex-shrink: 1;
+            margin: 0;
+            column-gap: 2px;
+            row-gap: 0;
+            justify-content: flex-start;
+            overflow-x: auto;
+            overflow-y: visible;
+            scrollbar-width: none;
+            &::-webkit-scrollbar { display: none; }
+        }
+    }
 }
 
 // page elements
