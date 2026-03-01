@@ -1,4 +1,4 @@
-name: Build Bench Worker
+name: Build Bench Workers 
 on:
   push:
     branches: [ "master" , "dev" ]
