@@ -62,15 +62,13 @@ else
 
     # Create directory for raw profile data
     mkdir -p build/raw_profile_data
-    LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw"
+    export LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw"
 
-    env
     # Run tests to generate profiles
     time ctest --test-dir build -j $(nproc) | tee unit-tests.log
-    ls -la build/raw_profile_data
+
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 \
         --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
-    ls -la build/raw_profile_data
     
     if [ "$IS_MASTER" == "true" ]; then
         binary_size=$(stat -c %s ./build/bin/bitcoind)
@@ -93,7 +91,7 @@ else
     # future work could be to just use llvm-cov output formats natively
     time llvm-cov export --format=lcov --object=build/bin/test_bitcoin --object=build/bin/bitcoind --instr-profile=build/coverage.profdata --ignore-filename-regex="src/crc32c/|src/leveldb/|src/minisketch/|src/secp256k1/|src/test/" -Xdemangler=llvm-cxxfilt > build/coverage.info
     
-    python3 /convert_lcov_to_gcovr.py coverage.info coverage.json
+    python3 /convert_lcov_to_gcovr.py build/coverage.info coverage.json
     
     aws s3 cp coverage.json $S3_COVERAGE_FILE
 fi
