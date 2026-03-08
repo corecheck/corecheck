@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/corecheck/corecheck/internal/api"
 	"github.com/corecheck/corecheck/internal/config"
@@ -23,6 +24,18 @@ func listPulls(c echo.Context) error {
 		log.Warn(err)
 		pageNum = 1
 	}
+
+	// If the search term is a PR number, return just that PR (or empty list if not found).
+	if title != "" {
+		if prNum, err := strconv.Atoi(strings.TrimSpace(title)); err == nil {
+			pr, err := db.GetPR(prNum)
+			if err != nil {
+				return c.JSON(200, []db.PR{})
+			}
+			return c.JSON(200, []db.PR{*pr})
+		}
+	}
+
 	pulls, err := db.ListPulls(db.SearchPRsOptions{
 		Title: title,
 		Page:  pageNum,

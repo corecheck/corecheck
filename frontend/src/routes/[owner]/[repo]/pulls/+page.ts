@@ -1,7 +1,8 @@
-import { env } from '$env/dynamic/public'
+import { env } from '$env/dynamic/public';
 
 export async function _fetchPulls(title: string, page: number) {
-    return fetch(`${env.PUBLIC_ENDPOINT}/pulls?page=${page}&title=${title}`)
+    const q = encodeURIComponent(title ?? '');
+    return fetch(`${env.PUBLIC_ENDPOINT}/pulls?page=${page}&title=${q}`)
         .then(res => {
             if (res.status === 200) {
                 return res.json();
