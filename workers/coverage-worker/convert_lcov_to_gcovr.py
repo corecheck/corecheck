@@ -2,6 +2,15 @@ import json
 import hashlib
 from collections import defaultdict
 
+MAX_SIGNED_32 = 2**31 - 1
+WRAPAROUND_FALLBACK = 1337
+
+def normalize_count(count):
+    # LLVM coverage bug can wrap around and yield huge unsigned values; clamp to a stable fallback.
+    if count > MAX_SIGNED_32:
+        return WRAPAROUND_FALLBACK
+    return count
+
 def md5_stub(filename, line):
     # gcovr hashes source context; we can't reproduce it
     # so we make a stable placeholder
@@ -29,11 +38,12 @@ def lcov_to_gcovr_json(lcov_path):
             elif line.startswith("DA:") and current_file:
                 lineno, count = line[3:].split(",")
                 lineno = int(lineno)
+                count = normalize_count(int(count))
 
                 files[current_file]["lines"][lineno].update({
                     "line_number": lineno,
                     "function_name": None,
-                    "count": int(count),
+                    "count": count,
                     "gcovr/md5": md5_stub(current_file, lineno),
                 })
 
@@ -45,7 +55,7 @@ def lcov_to_gcovr_json(lcov_path):
                 if count == "-":
                     count = 0
                 else:
-                    count = int(count)
+                    count = normalize_count(int(count))
 
                 branchno = len(files[current_file]["lines"][lineno]["branches"])
 
