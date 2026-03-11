@@ -54,10 +54,11 @@ else
     NPROC_2=$(expr $(nproc) \* 2)
 
     time cmake -B build -DCMAKE_C_COMPILER="clang" \
-       -DCMAKE_CXX_COMPILER="clang++" \
-       -DAPPEND_CFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
-       -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
-       -DAPPEND_LDFLAGS="-fprofile-instr-generate -fcoverage-mapping"
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_CXX_COMPILER="clang++" \
+        -DAPPEND_CFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+        -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+        -DAPPEND_LDFLAGS="-fprofile-instr-generate -fcoverage-mapping"
     time cmake --build build -j$(nproc)
 
     # Create directory for raw profile data
