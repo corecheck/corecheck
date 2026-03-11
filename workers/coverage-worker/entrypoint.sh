@@ -56,9 +56,11 @@ else
     time cmake -B build -DCMAKE_BUILD_TYPE=Coverage
     time cmake --build build -j$(nproc)
 
-    time ./build/bin/test_bitcoin --list_content 2>&1 | grep -v "    " | parallel --halt now,fail=1 ./build/bin/test_bitcoin -t {} 2>&1
-    time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 --exclude=feature_reindex_readonly,feature_dbcrash -j$NPROC_2 2>&1 | tee functional-tests.log
-    
+    time ctest --test-dir build -j $(nproc) | tee unit-tests.log
+
+    time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 \
+        --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
+
     if [ "$IS_MASTER" == "true" ]; then
         binary_size=$(stat -c %s ./build/bin/bitcoind)
         echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
