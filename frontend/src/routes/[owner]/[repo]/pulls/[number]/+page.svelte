@@ -15,14 +15,14 @@
     let { pr, sonarcloud, report } = data;
     console.log(report);
 
-    let selectedReport = pr.reports[0];
+    let selectedReport = pr.reports?.[0];
     let prev = selectedReport;
 
     let fetching = false;
 
     $: {
         (async () => {
-            if (selectedReport.id !== prev.id) {
+            if (selectedReport && selectedReport.id !== prev?.id) {
                 prev = selectedReport;
                 fetching = true;
                 report = await _fetchReport(
