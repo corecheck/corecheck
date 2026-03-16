@@ -234,7 +234,7 @@ mainLoop:
 	for {
 		log.Debugf("Retrieving page %d", page)
 		prs, _, err := c.PullRequests.List(context.Background(), "bitcoin", "bitcoin", &github.PullRequestListOptions{
-			State:     "open",
+			State:     "all",
 			Sort:      "updated",
 			Direction: "desc",
 			ListOptions: github.ListOptions{

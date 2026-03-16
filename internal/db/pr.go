@@ -93,13 +93,17 @@ const pageSize = 100
 
 func ListPulls(opts SearchPRsOptions) ([]PR, error) {
 	var prs []PR
-	err := DB.Where("title LIKE ? AND state = ?", "%"+opts.Title+"%", "open").Order("updated_at desc").Offset((opts.Page - 1) * pageSize).Limit(pageSize).Find(&prs).Error
+	q := DB.Model(&PR{})
+	if opts.Title != "" {
+		q = q.Where("title LIKE ?", "%"+opts.Title+"%")
+	}
+	err := q.Order("updated_at desc").Offset((opts.Page - 1) * pageSize).Limit(pageSize).Find(&prs).Error
 	return prs, err
 }
 
 func ListAllPulls() ([]PR, error) {
 	var prs []PR
-	err := DB.Where("state = ?", "open").Order("updated_at desc").Find(&prs).Error
+	err := DB.Order("updated_at desc").Find(&prs).Error
 	return prs, err
 }
 

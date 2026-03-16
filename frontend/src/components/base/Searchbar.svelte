@@ -30,7 +30,7 @@
     }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions -->
 <form class="searchbar" on:click|stopPropagation on:submit|preventDefault={submit}>
     <label for={uniqueId} class="m-l-10 txt-xl">
         <i class="ri-search-line" />
