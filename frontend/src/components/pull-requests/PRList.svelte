@@ -61,14 +61,15 @@
         </thead>
         <tbody>
             {#each items as item}
+                {@const displayState = item.merged_at ? "merged" : (item.state || "open")}
                 <tr
                     tabindex="0"
                     class="row-handle"
                     on:click={() => window.open("/bitcoin/bitcoin/pulls/" + item.number, "_blank")}
                 >
                     <td class="col-type-text col-field-method min-width">
-                        <span class="label" class:label-danger={item.state === "closed"} class:label-success={item.state === "open"}>
-                            {item.state}
+                        <span class="label" class:label-danger={displayState === "closed"} class:label-success={displayState === "open"} class:label-info={displayState === "merged"}>
+                            {displayState}
                         </span>
                     </td>
                     <td class="col-type-number col-field-number min-width">
