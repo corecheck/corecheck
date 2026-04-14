@@ -1,8 +1,10 @@
 package db
 
 import (
+	"errors"
 	"time"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -123,9 +125,15 @@ func UpdateCoverageReport(reportID int, status string, benchStatus string, baseC
 	}).Error
 }
 
-func HasCoverageReportForCommit(commit string) (bool, error) {
+func HasCoverageReportForCommitMaster(commit string) (bool, error) {
 	var count int64
-	err := DB.Model(&CoverageReport{}).Where("commit = ?", commit).Count(&count).Error
+	err := DB.Model(&CoverageReport{}).Where("commit = ? AND is_master = ?", commit, true).Count(&count).Error
+	return count > 0, err
+}
+
+func HasCoverageReportForCommitPR(commit string, prNum int) (bool, error) {
+	var count int64
+	err := DB.Model(&CoverageReport{}).Where("commit = ? AND pr_number = ? AND is_master = ?", commit, prNum, false).Count(&count).Error
 	return count > 0, err
 }
 
@@ -146,6 +154,9 @@ func CreateCoverageHunks(reportID int, hunks []*CoverageFileHunk) error {
 func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 	var report CoverageReport
 	err := DB.Preload("Benchmarks").Where("is_master = ? AND status = ? AND benchmark_status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS, BENCHMARK_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = DB.Preload("Benchmarks").Where("is_master = ? AND status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+	}
 	return &report, err
 }
 

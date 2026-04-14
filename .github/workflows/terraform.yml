@@ -69,6 +69,9 @@ jobs:
       TF_VAR_db_user: ${{ secrets.DB_USER }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
       TF_VAR_ssh_pubkey: ${{ secrets.SSH_PUBKEY }}
+      TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+      TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
