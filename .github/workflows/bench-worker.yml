@@ -11,7 +11,7 @@ jobs:
     name: bench-worker
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup env variables
       run: |
         if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
@@ -29,7 +29,7 @@ jobs:
       run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i3s2n0b6
     - name: Build and push
       id: docker_build
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: workers/bench-worker
         push: true
