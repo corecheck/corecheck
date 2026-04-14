@@ -39,7 +39,7 @@ func checkMasterCoverage(c *github.Client) error {
 
 	log.Debug("Latest commit: %s", master.GetCommit().GetSHA())
 
-	hasReport, err := db.HasCoverageReportForCommit(master.GetCommit().GetSHA())
+	hasReport, err := db.HasCoverageReportForCommitMaster(master.GetCommit().GetSHA())
 	if err != nil {
 		log.Error(err)
 		return err
@@ -160,7 +160,7 @@ func handlePullRequest(pr *github.PullRequest) error {
 	}
 
 	if pr.GetState() == "open" {
-		hasReport, err := db.HasCoverageReportForCommit(dbPR.Head)
+		hasReport, err := db.HasCoverageReportForCommitPR(dbPR.Head, dbPR.Number)
 		if err != nil {
 			log.Error(err)
 			return err
