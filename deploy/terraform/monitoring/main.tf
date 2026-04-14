@@ -96,7 +96,7 @@ resource "aws_lambda_function" "telegram_notifier" {
   function_name    = "corecheck-telegram-notifier-${terraform.workspace}"
   handler          = "index.handler"
   role             = aws_iam_role.telegram_lambda[0].arn
-  runtime          = "nodejs20.x"
+  runtime          = "nodejs22.x"
   filename         = data.archive_file.telegram_lambda[0].output_path
   source_code_hash = data.archive_file.telegram_lambda[0].output_base64sha256
   timeout          = 30
