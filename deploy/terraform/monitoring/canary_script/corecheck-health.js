@@ -5,8 +5,9 @@ const API_BASE = 'https://api.corecheck.dev';
 const FRONTEND_BASE = 'https://corecheck.dev/bitcoin/bitcoin/pulls';
 
 exports.handler = async function () {
-  // Step 1: Fetch the PR list and find one updated more than 2 hours ago.
-  // A PR updated 2+ hours ago has had enough time for the coverage pipeline to finish.
+  // Step 1: Fetch the PR list and find one with a code change more than 2 hours ago.
+  // The list is sorted by code_updated_at (only set when the HEAD commit changes),
+  // so a PR with code_updated_at 2+ hours ago has had enough time for the coverage pipeline to finish.
   log.info('Fetching PR list from API...');
   const listResponse = await fetch(`${API_BASE}/pulls?page=1&title=`);
   if (!listResponse.ok) {
@@ -22,22 +23,22 @@ exports.handler = async function () {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  // Find a PR updated between start of today and 2 hours ago so we know it
-  // was processed today but has had time to complete.
+  // Find a PR whose code was changed between start of today and 2 hours ago so we know
+  // the coverage job was triggered today but has had time to complete.
   const targetPR = pulls.find((pr) => {
-    if (!pr.updated_at) return false;
-    const updatedAt = new Date(pr.updated_at).getTime();
-    return updatedAt >= todayStart.getTime() && updatedAt <= twoHoursAgo;
+    if (!pr.code_updated_at) return false;
+    const codeUpdatedAt = new Date(pr.code_updated_at).getTime();
+    return codeUpdatedAt >= todayStart.getTime() && codeUpdatedAt <= twoHoursAgo;
   });
 
   if (!targetPR) {
     throw new Error(
-      'No PR found that was updated today and at least 2 hours ago - ' +
-        'the coverage pipeline may be stalled or no PRs have been processed today',
+      'No PR found with a code change today that is at least 2 hours old - ' +
+        'the coverage pipeline may be stalled or no PRs have had code changes today',
     );
   }
 
-  log.info(`Using PR #${targetPR.number}: "${targetPR.title}" (updated ${targetPR.updated_at})`);
+  log.info(`Using PR #${targetPR.number}: "${targetPR.title}" (code updated ${targetPR.code_updated_at})`);
 
   // Step 2: Verify the PR has a report via the API and that it is from today.
   const prResponse = await fetch(`${API_BASE}/pulls/${targetPR.number}`);
