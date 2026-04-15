@@ -37,7 +37,7 @@
                     <div class="breadcrumb-item">{pageTitle}</div>
                 </nav>
                 <RefreshButton on:refresh={() => refresh()} />
-                <small style="opacity: 0.6">Updated every hour</small>
+                <small style="opacity: 0.6">Updated every 10 minutes</small>
                 <div class="flex-fill" />
             </header>
 
