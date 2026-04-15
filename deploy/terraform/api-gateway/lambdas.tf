@@ -21,7 +21,7 @@ resource "aws_lambda_function" "lambda" {
   role          = aws_iam_role.lambda.arn
   memory_size   = 128
   architectures = ["arm64"]
-  timeout       = 30
+  timeout       = 120
 
   s3_key            = data.aws_s3_object.lambda_api_zip[each.value].key
   s3_object_version = data.aws_s3_object.lambda_api_zip[each.value].version_id
