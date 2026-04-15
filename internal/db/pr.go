@@ -7,18 +7,19 @@ import (
 )
 
 type PR struct {
-	Number    int        `json:"number" gorm:"primaryKey"`
-	State     *string    `json:"state"`
-	Title     *string    `json:"title"`
-	Body      *string    `json:"body"`
-	CreatedAt *time.Time `json:"created_at" gorm:"autoCreateTime:false"`
-	UpdatedAt *time.Time `json:"updated_at" gorm:"autoUpdateTime:false"`
-	ClosedAt  *time.Time `json:"closed_at"`
-	MergedAt  *time.Time `json:"merged_at"`
-	User      string     `json:"user"`
-	Head      string     `json:"head"`
-	HeadRepo  string     `json:"head_repo"`
-	HeadRef   string     `json:"head_ref"`
+	Number        int        `json:"number" gorm:"primaryKey"`
+	State         *string    `json:"state"`
+	Title         *string    `json:"title"`
+	Body          *string    `json:"body"`
+	CreatedAt     *time.Time `json:"created_at" gorm:"autoCreateTime:false"`
+	UpdatedAt     *time.Time `json:"updated_at" gorm:"autoUpdateTime:false"`
+	CodeUpdatedAt *time.Time `json:"code_updated_at" gorm:"autoUpdateTime:false"`
+	ClosedAt      *time.Time `json:"closed_at"`
+	MergedAt      *time.Time `json:"merged_at"`
+	User          string     `json:"user"`
+	Head          string     `json:"head"`
+	HeadRepo      string     `json:"head_repo"`
+	HeadRef       string     `json:"head_ref"`
 
 	Reports []*CoverageReport `json:"reports" gorm:"-"`
 }
@@ -45,37 +46,44 @@ func UpdateOrCreatePR(pr *github.PullRequest) error {
 	if err != nil {
 		if err.Error() == "record not found" {
 			return DB.Create(&PR{
-				Number:    pr.GetNumber(),
-				State:     pr.State,
-				Title:     pr.Title,
-				Body:      pr.Body,
-				CreatedAt: pr.CreatedAt.GetTime(),
-				UpdatedAt: pr.UpdatedAt.GetTime(),
-				ClosedAt:  pr.ClosedAt.GetTime(),
-				MergedAt:  pr.MergedAt.GetTime(),
-				User:      pr.User.GetLogin(),
-				Head:      pr.Head.GetSHA(),
-				HeadRepo:  pr.Head.Repo.GetFullName(),
-				HeadRef:   pr.Head.GetRef(),
+				Number:        pr.GetNumber(),
+				State:         pr.State,
+				Title:         pr.Title,
+				Body:          pr.Body,
+				CreatedAt:     pr.CreatedAt.GetTime(),
+				UpdatedAt:     pr.UpdatedAt.GetTime(),
+				CodeUpdatedAt: pr.UpdatedAt.GetTime(),
+				ClosedAt:      pr.ClosedAt.GetTime(),
+				MergedAt:      pr.MergedAt.GetTime(),
+				User:          pr.User.GetLogin(),
+				Head:          pr.Head.GetSHA(),
+				HeadRepo:      pr.Head.Repo.GetFullName(),
+				HeadRef:       pr.Head.GetRef(),
 			}).Error
 		}
 		return err
 	}
 
-	return DB.Model(&existingPR).Updates(&PR{
-		Number:    pr.GetNumber(),
-		State:     pr.State,
-		Title:     pr.Title,
-		Body:      pr.Body,
+	updates := &PR{
+		Number:   pr.GetNumber(),
+		State:    pr.State,
+		Title:    pr.Title,
+		Body:     pr.Body,
 		CreatedAt: pr.CreatedAt.GetTime(),
 		UpdatedAt: pr.UpdatedAt.GetTime(),
-		ClosedAt:  pr.ClosedAt.GetTime(),
-		MergedAt:  pr.MergedAt.GetTime(),
-		User:      pr.User.GetLogin(),
-		Head:      pr.Head.GetSHA(),
-		HeadRepo:  pr.Head.Repo.GetFullName(),
-		HeadRef:   pr.Head.GetRef(),
-	}).Error
+		ClosedAt: pr.ClosedAt.GetTime(),
+		MergedAt: pr.MergedAt.GetTime(),
+		User:     pr.User.GetLogin(),
+		Head:     pr.Head.GetSHA(),
+		HeadRepo: pr.Head.Repo.GetFullName(),
+		HeadRef:  pr.Head.GetRef(),
+	}
+
+	if existingPR.Head != pr.Head.GetSHA() {
+		updates.CodeUpdatedAt = pr.UpdatedAt.GetTime()
+	}
+
+	return DB.Model(&existingPR).Updates(updates).Error
 }
 
 func GetPR(number int) (*PR, error) {
@@ -97,13 +105,13 @@ func ListPulls(opts SearchPRsOptions) ([]PR, error) {
 	if opts.Title != "" {
 		q = q.Where("title LIKE ?", "%"+opts.Title+"%")
 	}
-	err := q.Order("updated_at desc").Offset((opts.Page - 1) * pageSize).Limit(pageSize).Find(&prs).Error
+	err := q.Order("code_updated_at desc nulls last").Offset((opts.Page - 1) * pageSize).Limit(pageSize).Find(&prs).Error
 	return prs, err
 }
 
 func ListAllPulls() ([]PR, error) {
 	var prs []PR
-	err := DB.Order("updated_at desc").Find(&prs).Error
+	err := DB.Order("code_updated_at desc nulls last").Find(&prs).Error
 	return prs, err
 }
 

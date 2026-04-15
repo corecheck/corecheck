@@ -52,7 +52,7 @@
                 <SortHeader disable class="col-type-date col-field-updated" name="created" bind:sort>
                     <div class="col-header-content">
                         <i class={CommonHelper.getFieldTypeIcon("date")} />
-                        <span class="txt">Updated</span>
+                        <span class="txt">Code updated</span>
                     </div>
                 </SortHeader>
 
@@ -93,7 +93,7 @@
                         <FormattedDate date={item.created_at} />
                     </td>
                     <td class="col-type-date col-field-created">
-                        <FormattedDate date={item.updated_at} />
+                        <FormattedDate date={item.code_updated_at} />
                     </td>
 
                     <td class="col-type-action min-width">
