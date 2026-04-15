@@ -45,17 +45,21 @@ resource "aws_synthetics_canary" "corecheck_health" {
   depends_on = [aws_iam_role_policy_attachment.canary]
 }
 
-# CloudWatch Alarm – fires after a single failed canary run
+# CloudWatch Alarm – fires after 6 hours of continuous canary failures (12 × 30-min windows).
+# Uses SuccessPercent (always emitted on every run) rather than Failed (a COUNT that emits
+# nothing on a passing run, which would cause treat_missing_data=breaching to keep the alarm
+# stuck in ALARM permanently even after the canary recovers).
 resource "aws_cloudwatch_metric_alarm" "canary_failed" {
   alarm_name          = "corecheck-health-check-failed-${terraform.workspace}"
-  alarm_description   = "CoreCheck health check canary has failed. The frontend or coverage pipeline may be down."
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 1
-  metric_name         = "Failed"
+  alarm_description   = "CoreCheck health check canary has been failing for 6 hours. The frontend or coverage pipeline may be down."
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 12
+  datapoints_to_alarm = 12
+  metric_name         = "SuccessPercent"
   namespace           = "CloudWatchSynthetics"
   period              = 1800
-  statistic           = "Sum"
-  threshold           = 1
+  statistic           = "Average"
+  threshold           = 100
   treat_missing_data  = "breaching"
 
   dimensions = {
