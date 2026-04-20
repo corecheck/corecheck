@@ -13,8 +13,8 @@ locals {
   # create a map of lambdas and their environment variables
   lambda_overrides = {
     "github-sync" = {
-      timeout     = 900
-      memory_size = 128
+      timeout                = 900
+      memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
         variables = {
@@ -23,16 +23,17 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
 
-          GITHUB_ACCESS_TOKEN = var.github_token
-          STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
+          GITHUB_ACCESS_TOKEN        = var.github_token
+          STATE_MACHINE_ARN          = aws_sfn_state_machine.state_machine.arn
           MUTATION_STATE_MACHINE_ARN = aws_sfn_state_machine.mutation_state_machine.arn
         }
       }
     },
     "migrate" = {
-      timeout     = 60
-      memory_size = 128
+      timeout                = 60
+      memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
         variables = {
@@ -41,12 +42,13 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
         }
       }
     },
     "handle-coverage" = {
-      timeout     = 900
-      memory_size = 2048
+      timeout                = 900
+      memory_size            = 2048
       ephemeral_storage_size = 2048
       environment = {
         variables = {
@@ -55,6 +57,7 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
 
           GITHUB_ACCESS_TOKEN = var.github_token
 
@@ -63,8 +66,8 @@ locals {
       }
     },
     "handle-benchmarks" = {
-      timeout     = 900
-      memory_size = 128
+      timeout                = 900
+      memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
         variables = {
@@ -73,16 +76,17 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
 
           BENCH_ARRAY_SIZE = local.bench_array_size
-          BUCKET_DATA_URL = var.corecheck_data_bucket_url
-          DD_API_KEY = var.datadog_api_key
+          BUCKET_DATA_URL  = var.corecheck_data_bucket_url
+          DD_API_KEY       = var.datadog_api_key
         }
       }
     },
     "handle-mutation" = {
-      timeout     = 300
-      memory_size = 128
+      timeout                = 300
+      memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
         variables = {
@@ -91,12 +95,13 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
         }
       }
     },
     "rerun-all" = {
-      timeout     = 900
-      memory_size = 128
+      timeout                = 900
+      memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
         variables = {
@@ -105,18 +110,19 @@ locals {
           DATABASE_USER     = var.db_user
           DATABASE_PASSWORD = var.db_password
           DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
 
-          BUCKET_DATA = var.corecheck_data_bucket
+          BUCKET_DATA        = var.corecheck_data_bucket
           BUCKET_DATA_REGION = var.corecheck_data_bucket_region
           STATE_MACHINE_ARN  = aws_sfn_state_machine.state_machine.arn
         }
       }
     },
     "stats" = {
-      timeout     = 900
-      memory_size = 1024
+      timeout                = 900
+      memory_size            = 1024
       ephemeral_storage_size = 10240
-      
+
       environment = {
         variables = {
           DD_API_KEY = var.datadog_api_key
@@ -179,22 +185,19 @@ resource "aws_lambda_invocation" "run_migrations" {
   triggers = {
     always_run = timestamp()
   }
-  depends_on = [
-    null_resource.configure_db,
-  ]
 }
 
 resource "aws_cloudwatch_event_rule" "github_sync" {
-  provider = aws.compute_region
-  name        = "github-sync-rule-${terraform.workspace}"
-  description = "github-sync"
+  provider            = aws.compute_region
+  name                = "github-sync-rule-${terraform.workspace}"
+  description         = "github-sync"
   schedule_expression = "rate(10 minutes)"
-  is_enabled = terraform.workspace == "default"
+  is_enabled          = terraform.workspace == "default"
 }
 
 # target
 resource "aws_cloudwatch_event_target" "github_sync" {
-  provider = aws.compute_region
+  provider  = aws.compute_region
   rule      = aws_cloudwatch_event_rule.github_sync.name
   target_id = "github-sync-${terraform.workspace}"
   arn       = aws_lambda_function.function["github-sync"].arn
@@ -202,7 +205,7 @@ resource "aws_cloudwatch_event_target" "github_sync" {
 
 
 resource "aws_lambda_permission" "allow_eventbridge" {
-  provider = aws.compute_region
+  provider      = aws.compute_region
   statement_id  = "AllowExecutionFromEventBridge-${terraform.workspace}"
   action        = "lambda:InvokeFunction"
   function_name = "github-sync-${terraform.workspace}"
@@ -211,23 +214,23 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 }
 
 resource "aws_cloudwatch_event_rule" "stats" {
-  provider = aws.compute_region
-  name        = "stats-rule-${terraform.workspace}"
-  description = "stats"
+  provider            = aws.compute_region
+  name                = "stats-rule-${terraform.workspace}"
+  description         = "stats"
   schedule_expression = "rate(1 hour)"
-  is_enabled = terraform.workspace == "default"
+  is_enabled          = terraform.workspace == "default"
 }
 
 # target
 resource "aws_cloudwatch_event_target" "stats" {
-  provider = aws.compute_region
+  provider  = aws.compute_region
   rule      = aws_cloudwatch_event_rule.stats.name
   target_id = "stats-${terraform.workspace}"
   arn       = aws_lambda_function.function["stats"].arn
 }
 
 resource "aws_lambda_permission" "allow_eventbridge_stats" {
-  provider = aws.compute_region
+  provider      = aws.compute_region
   statement_id  = "AllowExecutionFromEventBridgeStats-${terraform.workspace}"
   action        = "lambda:InvokeFunction"
   function_name = "stats-${terraform.workspace}"

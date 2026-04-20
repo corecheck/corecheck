@@ -53,6 +53,6 @@ resource "aws_api_gateway_deployment" "datadog_proxy" {
 }
 
 resource "aws_cloudwatch_log_group" "datadog_proxy_logs" {
-  name = "/aws/datadog-proxy/${aws_api_gateway_rest_api.datadog_proxy.name}-${terraform.workspace}"
+  name              = "/aws/datadog-proxy/${aws_api_gateway_rest_api.datadog_proxy.name}-${terraform.workspace}"
   retention_in_days = 7
 }

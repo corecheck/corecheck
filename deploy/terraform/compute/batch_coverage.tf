@@ -97,7 +97,7 @@ resource "aws_batch_job_definition" "coverage_job" {
         value = aws_s3_bucket.corecheck-artifacts.id
       },
       {
-        name = "DD_API_KEY",
+        name  = "DD_API_KEY",
         value = var.datadog_api_key
       }
     ]

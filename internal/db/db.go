@@ -9,7 +9,7 @@ import (
 var DB *gorm.DB
 
 func Connect(cfg config.DatabaseConfig) error {
-	dbURI := "host=" + cfg.Database.Host + " user=" + cfg.Database.User + " password=" + cfg.Database.Password + " dbname=" + cfg.Database.Name + " port=" + cfg.Database.Port + " sslmode=disable TimeZone=Europe/Paris"
+	dbURI := "host=" + cfg.Database.Host + " user=" + cfg.Database.User + " password=" + cfg.Database.Password + " dbname=" + cfg.Database.Name + " port=" + cfg.Database.Port + " sslmode=" + cfg.Database.SSLMode + " TimeZone=Europe/Paris"
 	database, err := gorm.Open(postgres.Open(dbURI), &gorm.Config{})
 	if err != nil {
 		return err

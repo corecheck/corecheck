@@ -11,6 +11,7 @@ type DatabaseConfig struct {
 		User     string `env:"USER" env-required:"true"`
 		Password string `env:"PASSWORD" env-required:"true"`
 		Name     string `env:"NAME" env-default:"corecheck"`
+		SSLMode  string `env:"SSLMODE" env-default:"require"`
 	} `env-prefix:"DATABASE_"`
 }
 

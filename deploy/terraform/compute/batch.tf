@@ -12,16 +12,16 @@ data "aws_subnets" "batch_subnets" {
 }
 
 resource "aws_s3_bucket" "corecheck-ccache" {
-  provider = aws.compute_region
-  bucket   = "corecheck-ccache-${terraform.workspace}"
+  provider      = aws.compute_region
+  bucket        = "corecheck-ccache-${terraform.workspace}"
   force_destroy = true
 }
 
 
 # remove objects after 30days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
-  provider                              = aws.compute_region
-  bucket                                = aws_s3_bucket.corecheck-ccache.id
+  provider                               = aws.compute_region
+  bucket                                 = aws_s3_bucket.corecheck-ccache.id
   transition_default_minimum_object_size = "varies_by_storage_class"
 
   rule {
@@ -34,14 +34,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "corecheck-ccache" {
   }
 }
 resource "aws_s3_bucket" "corecheck-artifacts" {
-  provider = aws.compute_region
-  bucket   = "corecheck-artifacts-${terraform.workspace}"
+  provider      = aws.compute_region
+  bucket        = "corecheck-artifacts-${terraform.workspace}"
   force_destroy = true
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-artifacts" {
-  provider                              = aws.compute_region
-  bucket                                = aws_s3_bucket.corecheck-artifacts.id
+  provider                               = aws.compute_region
+  bucket                                 = aws_s3_bucket.corecheck-artifacts.id
   transition_default_minimum_object_size = "varies_by_storage_class"
 
   rule {

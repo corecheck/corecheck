@@ -44,7 +44,7 @@ resource "aws_s3_bucket_policy" "bitcoin-coverage-data-public" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "bitcoin-coverage-data" {
-  bucket                                = aws_s3_bucket.bitcoin-coverage-data.id
+  bucket                                 = aws_s3_bucket.bitcoin-coverage-data.id
   transition_default_minimum_object_size = "varies_by_storage_class"
 
   rule {
@@ -74,8 +74,8 @@ resource "aws_s3_bucket_versioning" "corecheck-statemachine-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-statemachine-lambdas" {
-  bucket                                = aws_s3_bucket.corecheck-lambdas.id
-  provider                              = aws.compute_region
+  bucket                                 = aws_s3_bucket.corecheck-lambdas.id
+  provider                               = aws.compute_region
   transition_default_minimum_object_size = "varies_by_storage_class"
 
   rule {
@@ -105,7 +105,7 @@ resource "aws_s3_bucket_versioning" "corecheck-api-lambdas" {
 
 # remove non current versions after 7 days
 resource "aws_s3_bucket_lifecycle_configuration" "corecheck-api-lambdas" {
-  bucket                                = aws_s3_bucket.corecheck-lambdas-api.id
+  bucket                                 = aws_s3_bucket.corecheck-lambdas-api.id
   transition_default_minimum_object_size = "varies_by_storage_class"
 
   rule {

@@ -1,0 +1,20 @@
+apt install clang
+
+cmake -B build -DCMAKE_C_COMPILER="clang" \
+   -DCMAKE_CXX_COMPILER="clang++" \
+   -DAPPEND_CFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+   -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+   -DAPPEND_LDFLAGS="-fprofile-instr-generate -fcoverage-mapping"
+cmake --build build # Append "-j N" here for N parallel jobs.
+
+# Create directory for raw profile data
+mkdir -p build/raw_profile_data
+
+# Run tests to generate profiles
+LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" ctest --test-dir build # Append "-j N" here for N parallel jobs.
+LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" build/test/functional/test_runner.py # Append "-j N" here for N parallel jobs
+
+# Merge all the raw profile data into a single file
+find build/raw_profile_data -name "*.profraw" | xargs llvm-profdata merge -o build/coverage.profdata
+
+llvm-cov export --format=lcov --object=build/bin/test_bitcoin --object=build/bin/bitcoind --instr-profile=build/coverage.profdata --ignore-filename-regex="src/crc32c/|src/leveldb/|src/minisketch/|src/secp256k1/|src/test/" -Xdemangler=llvm-cxxfilt > build/coverage_report/coverage.info
