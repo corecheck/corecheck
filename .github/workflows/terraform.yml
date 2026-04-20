@@ -68,7 +68,6 @@ jobs:
       TF_VAR_datadog_api_key: ${{ secrets.DATADOG_API_KEY }}
       TF_VAR_db_user: ${{ secrets.DB_USER }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-      TF_VAR_ssh_pubkey: ${{ secrets.SSH_PUBKEY }}
       TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
       TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -94,19 +93,6 @@ jobs:
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws configure set default.region eu-west-3
 
-    - name: Setup SSH key for Ansible
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-
-    - name: Install Ansible
-      run: |
-        sudo apt update
-        sudo apt install -y software-properties-common
-        sudo apt-add-repository --yes --update ppa:ansible/ansible
-        sudo apt install -y ansible
-
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       run: terraform init
@@ -116,4 +102,3 @@ jobs:
 
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
-

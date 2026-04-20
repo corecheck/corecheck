@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 var (
@@ -128,6 +130,10 @@ func createPendingMutationResult(commit string) error {
 func isTimeToRunMutationsAgain() (error, bool) {
 	result, err := db.GetLatestMutationResult()
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Info("No mutation results found, running initial mutation job")
+			return nil, true
+		}
 		log.Error(err)
 		return err, false
 	}
@@ -175,6 +181,10 @@ func handlePullRequest(pr *github.PullRequest) error {
 
 		masterReport, err := db.GetLatestMasterCoverageReport()
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				log.Infof("Skipping coverage job for PR %d until master coverage is available", dbPR.Number)
+				return nil
+			}
 			log.Error(err)
 			return err
 		}

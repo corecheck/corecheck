@@ -25,9 +25,9 @@ resource "aws_batch_compute_environment" "mutation_compute" {
       data.aws_subnets.batch_subnets.ids[2],
     ]
 
-    type                = "EC2"
-    instance_role       = aws_iam_instance_profile.ecs_instance_role.arn
-    instance_type       = ["c7g.2xlarge"]
+    type          = "EC2"
+    instance_role = aws_iam_instance_profile.ecs_instance_role.arn
+    instance_type = ["c7g.2xlarge"]
     launch_template {
       launch_template_id = aws_launch_template.mutation_compute.id
       version            = "$Latest"

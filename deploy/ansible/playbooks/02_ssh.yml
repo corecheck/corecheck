@@ -1,9 +1,0 @@
----
-- name: Setup SSH public key 
-  hosts: all
-  tasks:
-    - name: Install SSH public keys
-      ansible.posix.authorized_key:
-        user: ubuntu
-        state: present
-        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEM79mi/xHOtZw+bUfOH8soMjCyO5qOdpLls1tXnR2AD aurele@oules.com"

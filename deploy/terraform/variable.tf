@@ -7,7 +7,9 @@ variable "db_password" {}
 variable "db_database" {
   default = "corecheck"
 }
-variable "ssh_pubkey" {}
+variable "db_sslmode" {
+  default = "require"
+}
 
 variable "dns_name" {
   default = "corecheck.dev"
