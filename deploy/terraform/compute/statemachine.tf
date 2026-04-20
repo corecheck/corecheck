@@ -326,7 +326,7 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Resource": "arn:aws:states:::batch:submitJob.sync",
       "Parameters": {
         "Parameters.$": "$.params",
-        "JobDefinition": "${aws_batch_job_definition.coverage_job.arn}",
+        "JobDefinition": "${aws_batch_job_definition.coverage_job.name}",
         "JobName": "coverage",
         "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
       },
@@ -355,7 +355,7 @@ resource "aws_sfn_state_machine" "state_machine" {
               "Resource": "arn:aws:states:::batch:submitJob.sync",
               "Parameters": {
                 "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.sonar_job.arn}",
+                "JobDefinition": "${aws_batch_job_definition.sonar_job.name}",
                 "JobName": "sonar",
                 "JobQueue": "${aws_batch_job_queue.sonar_queue.arn}"
               },
@@ -372,7 +372,7 @@ resource "aws_sfn_state_machine" "state_machine" {
               "Resource": "arn:aws:states:::batch:submitJob.sync",
               "Parameters": {
                 "Parameters.$": "$.params",
-                "JobDefinition": "${aws_batch_job_definition.bench_job.arn}",
+                "JobDefinition": "${aws_batch_job_definition.bench_job.name}",
                 "JobName": "benchmarks",
                 "JobQueue": "${aws_batch_job_queue.bench_queue.arn}",
                 "ArrayProperties": {
@@ -415,7 +415,7 @@ resource "aws_sfn_state_machine" "mutation_state_machine" {
       "Resource": "arn:aws:states:::batch:submitJob.sync",
       "Parameters": {
         "Parameters.$": "$.params",
-        "JobDefinition": "${aws_batch_job_definition.mutation_job.arn}",
+        "JobDefinition": "${aws_batch_job_definition.mutation_job.name}",
         "JobName": "mutation",
         "JobQueue": "${aws_batch_job_queue.mutation_queue.arn}"
       },
