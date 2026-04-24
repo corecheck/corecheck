@@ -1,4 +1,6 @@
 data "aws_iam_policy_document" "canary_assume_role" {
+  count = local.canary_enabled ? 1 : 0
+
   statement {
     actions = ["sts:AssumeRole"]
     principals {
@@ -9,19 +11,22 @@ data "aws_iam_policy_document" "canary_assume_role" {
 }
 
 resource "aws_iam_role" "canary" {
+  count              = local.canary_enabled ? 1 : 0
   name               = "corecheck-canary-${terraform.workspace}"
-  assume_role_policy = data.aws_iam_policy_document.canary_assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.canary_assume_role[0].json
 }
 
 data "aws_iam_policy_document" "canary" {
+  count = local.canary_enabled ? 1 : 0
+
   statement {
     actions   = ["s3:PutObject", "s3:GetObject"]
-    resources = ["${aws_s3_bucket.canary_artifacts.arn}/*"]
+    resources = ["${aws_s3_bucket.canary_artifacts[0].arn}/*"]
   }
 
   statement {
     actions   = ["s3:GetBucketLocation"]
-    resources = [aws_s3_bucket.canary_artifacts.arn]
+    resources = [aws_s3_bucket.canary_artifacts[0].arn]
   }
 
   statement {
@@ -55,13 +60,15 @@ data "aws_iam_policy_document" "canary" {
 }
 
 resource "aws_iam_policy" "canary" {
+  count  = local.canary_enabled ? 1 : 0
   name   = "corecheck-canary-${terraform.workspace}"
-  policy = data.aws_iam_policy_document.canary.json
+  policy = data.aws_iam_policy_document.canary[0].json
 }
 
 resource "aws_iam_role_policy_attachment" "canary" {
-  role       = aws_iam_role.canary.name
-  policy_arn = aws_iam_policy.canary.arn
+  count      = local.canary_enabled ? 1 : 0
+  role       = aws_iam_role.canary[0].name
+  policy_arn = aws_iam_policy.canary[0].arn
 }
 
 # Telegram notifier Lambda IAM (only created when Telegram is configured)

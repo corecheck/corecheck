@@ -1,10 +1,16 @@
+locals {
+  canary_enabled = terraform.workspace != "dev"
+}
+
 # S3 bucket for canary artifacts (screenshots, logs, HAR files)
 resource "aws_s3_bucket" "canary_artifacts" {
+  count  = local.canary_enabled ? 1 : 0
   bucket = "corecheck-canary-artifacts-${terraform.workspace}"
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "canary_artifacts" {
-  bucket = aws_s3_bucket.canary_artifacts.id
+  count  = local.canary_enabled ? 1 : 0
+  bucket = aws_s3_bucket.canary_artifacts[0].id
 
   rule {
     id     = "expire-old-artifacts"
@@ -18,6 +24,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "canary_artifacts" {
 # Zip the canary script into the structure CloudWatch Synthetics expects:
 # nodejs/node_modules/<handler-filename>.js
 data "archive_file" "canary_script" {
+  count       = local.canary_enabled ? 1 : 0
   type        = "zip"
   output_path = "${path.module}/dist/corecheck-health.zip"
 
@@ -29,12 +36,14 @@ data "archive_file" "canary_script" {
 
 # Canary – runs every 30 minutes (configurable) and checks the full user journey
 resource "aws_synthetics_canary" "corecheck_health" {
+  count = local.canary_enabled ? 1 : 0
+
   # Name must be ≤21 characters and alphanumeric + hyphens only
   name                 = "cc-health-${terraform.workspace}"
-  artifact_s3_location = "s3://${aws_s3_bucket.canary_artifacts.id}/artifacts"
-  execution_role_arn   = aws_iam_role.canary.arn
+  artifact_s3_location = "s3://${aws_s3_bucket.canary_artifacts[0].id}/artifacts"
+  execution_role_arn   = aws_iam_role.canary[0].arn
   handler              = "corecheck-health.handler"
-  zip_file             = data.archive_file.canary_script.output_path
+  zip_file             = data.archive_file.canary_script[0].output_path
   runtime_version      = "syn-nodejs-puppeteer-9.0"
   start_canary         = true
 
@@ -42,7 +51,7 @@ resource "aws_synthetics_canary" "corecheck_health" {
     expression = var.canary_schedule
   }
 
-  depends_on = [aws_iam_role_policy_attachment.canary]
+  depends_on = [aws_iam_role_policy_attachment.canary[0]]
 }
 
 # CloudWatch Alarm – fires after 6 hours of continuous canary failures (12 × 30-min windows).
@@ -50,6 +59,7 @@ resource "aws_synthetics_canary" "corecheck_health" {
 # nothing on a passing run, which would cause treat_missing_data=breaching to keep the alarm
 # stuck in ALARM permanently even after the canary recovers).
 resource "aws_cloudwatch_metric_alarm" "canary_failed" {
+  count               = local.canary_enabled ? 1 : 0
   alarm_name          = "corecheck-health-check-failed-${terraform.workspace}"
   alarm_description   = "CoreCheck health check canary has been failing for 6 hours. The frontend or coverage pipeline may be down."
   comparison_operator = "LessThanThreshold"
@@ -63,7 +73,7 @@ resource "aws_cloudwatch_metric_alarm" "canary_failed" {
   treat_missing_data  = "breaching"
 
   dimensions = {
-    CanaryName = aws_synthetics_canary.corecheck_health.name
+    CanaryName = aws_synthetics_canary.corecheck_health[0].name
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]
