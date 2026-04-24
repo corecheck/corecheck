@@ -85,7 +85,8 @@ else
     fi
     
     # Merge all the raw profile data into a single file
-    find build/raw_profile_data -name "*.profraw" | xargs llvm-profdata merge -o build/coverage.profdata
+    find build/raw_profile_data -name "*.profraw" > build/profraw_files.txt
+    llvm-profdata merge -f build/profraw_files.txt -o build/coverage.profdata
 
     # lcov is probably the simplest format to later convert to gcovr json format
     # sticking with gcovr json format even though gcc and lcov and gcovr are not used any more as it's human readable and the rest of the app processes it
