@@ -79,10 +79,20 @@ func checkMasterCoverage(c *github.Client) error {
 		log.Error(err)
 		return err
 	}
-	_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
+	execution, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
 		StateMachineArn: aws.String(cfg.StateMachineARN),
 		Input:           aws.String(string(paramsJson)),
 	})
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	err = db.UpdateCoverageReportTrace(report.ID, aws.StringValue(execution.ExecutionArn), "")
+	if err != nil {
+		log.Errorf("Error updating coverage report trace: %s", err)
+		return err
+	}
 
 	err, runMutations := isTimeToRunMutationsAgain()
 	if err != nil {
@@ -215,13 +225,18 @@ func handlePullRequest(pr *github.PullRequest) error {
 			return err
 		}
 
-		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
+		execution, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.StateMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
-
 		if err != nil {
 			log.Error(err)
+			return err
+		}
+
+		err = db.UpdateCoverageReportTrace(report.ID, aws.StringValue(execution.ExecutionArn), "")
+		if err != nil {
+			log.Errorf("Error updating coverage report trace: %s", err)
 			return err
 		}
 	}

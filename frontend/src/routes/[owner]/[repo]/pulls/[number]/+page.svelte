@@ -101,6 +101,22 @@
                     </span>
                 </div>
             {/if}
+            {#if report}
+                <div
+                    id="report-debug-trace"
+                    hidden
+                    aria-hidden="true"
+                    data-report-id={report.id}
+                    data-report-commit={report.commit}
+                    data-step-function-execution-arn={report.step_function_execution_arn ||
+                        ""}
+                    data-coverage-batch-job-id={report.coverage_batch_job_id || ""}
+                >
+                    step_function_execution_arn={report.step_function_execution_arn ||
+                        ""}; coverage_batch_job_id={report.coverage_batch_job_id ||
+                        ""}
+                </div>
+            {/if}
         </div>
         <div class="clearfix m-b-base" />
 
