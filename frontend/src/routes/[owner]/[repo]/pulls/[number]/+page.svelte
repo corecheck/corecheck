@@ -84,6 +84,23 @@
                     optionComponent={CoverageReportSelectOption}
                 />
             </Field>
+            {#if report?.base_commit}
+                <div class="report-meta">
+                    <span class="report-meta-label">Base master commit</span>
+                    <a
+                        class="label label-sm link-primary txt-mono"
+                        href={"https://github.com/bitcoin/bitcoin/commit/" +
+                            report.base_commit}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {report.base_commit.substring(0, 7)}
+                    </a>
+                    <span class="report-meta-description">
+                        used for coverage and benchmarks
+                    </span>
+                </div>
+            {/if}
         </div>
         <div class="clearfix m-b-base" />
 
@@ -211,5 +228,20 @@
         .cov-col {
             width: 48%;
         }
+    }
+
+    .report-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .report-meta-label {
+        font-weight: 600;
+    }
+
+    .report-meta-description {
+        color: #65717d;
     }
 </style>
