@@ -22,11 +22,19 @@ var (
 
 func handleCodeCoverageSuccess(job *types.JobParams) error {
 	log.Info("Handling code coverage success")
+	stepFunctionExecutionARN := job.GetStepFunctionExecutionARN()
+	coverageBatchJobID := job.GetCoverageBatchJobID()
 
 	if job.GetIsMaster() {
 		report, err := db.GetOrCreateCoverageReportByCommitMaster(job.Commit)
 		if err != nil {
 			log.Error("Error getting coverage report", err)
+			return err
+		}
+
+		err = db.UpdateCoverageReportTrace(report.ID, stepFunctionExecutionARN, coverageBatchJobID)
+		if err != nil {
+			log.Error("Error updating coverage report trace", err)
 			return err
 		}
 
@@ -43,6 +51,12 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	report, err := db.GetOrCreateCoverageReportByCommitPr(job.Commit, job.GetPRNumber(), job.BaseCommit)
 	if err != nil {
 		log.Error("Error getting coverage report", err)
+		return err
+	}
+
+	err = db.UpdateCoverageReportTrace(report.ID, stepFunctionExecutionARN, coverageBatchJobID)
+	if err != nil {
+		log.Error("Error updating coverage report trace", err)
 		return err
 	}
 

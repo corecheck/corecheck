@@ -341,7 +341,11 @@ resource "aws_sfn_state_machine" "state_machine" {
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "handle-coverage-${terraform.workspace}:$LATEST",
-        "Payload.$": "$"
+        "Payload": {
+          "params.$": "$.params",
+          "coverage_job.$": "$.coverage_job",
+          "step_function_execution_arn.$": "$$.Execution.Id"
+        }
       },
       "Next": "Parallel",
       "ResultPath": "$.coverage_result"

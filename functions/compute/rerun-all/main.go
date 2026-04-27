@@ -89,11 +89,17 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 			return "", err
 		}
 
-		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
+		execution, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.StateMachineARN),
 			Input:           aws.String(string(paramsJson)),
 		})
 
+		if err != nil {
+			log.Error(err)
+			return "", err
+		}
+
+		err = db.UpdateCoverageReportTrace(report.ID, aws.StringValue(execution.ExecutionArn), "")
 		if err != nil {
 			log.Error(err)
 			return "", err

@@ -15,19 +15,21 @@ const (
 )
 
 type CoverageReport struct {
-	ID                int                                      `json:"id,omitempty" gorm:"primaryKey"`
-	Status            string                                   `json:"status" gorm:"default:pending"`
-	BenchmarkStatus   string                                   `json:"benchmark_status" gorm:"default:pending"`
-	IsMaster          bool                                     `json:"is_master"`
-	PRNumber          int                                      `json:"pr_number"`
-	Commit            string                                   `json:"commit"`
-	BaseCommit        string                                   `json:"base_commit"`
-	BaseReport        *CoverageReport                          `json:"base_report" gorm:"-"`
-	Benchmarks        []BenchmarkResult                        `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	BenchmarksGrouped map[string]*BenchmarkResult              `json:"benchmarks_grouped" gorm:"-"`
-	Hunks             []CoverageFileHunk                       `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
-	Coverage          map[string]map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
-	CreatedAt         time.Time                                `json:"created_at"`
+	ID                       int                                      `json:"id,omitempty" gorm:"primaryKey"`
+	Status                   string                                   `json:"status" gorm:"default:pending"`
+	BenchmarkStatus          string                                   `json:"benchmark_status" gorm:"default:pending"`
+	IsMaster                 bool                                     `json:"is_master"`
+	PRNumber                 int                                      `json:"pr_number"`
+	Commit                   string                                   `json:"commit"`
+	BaseCommit               string                                   `json:"base_commit"`
+	StepFunctionExecutionARN string                                   `json:"step_function_execution_arn"`
+	CoverageBatchJobID       string                                   `json:"coverage_batch_job_id"`
+	BaseReport               *CoverageReport                          `json:"base_report" gorm:"-"`
+	Benchmarks               []BenchmarkResult                        `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	BenchmarksGrouped        map[string]*BenchmarkResult              `json:"benchmarks_grouped" gorm:"-"`
+	Hunks                    []CoverageFileHunk                       `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
+	Coverage                 map[string]map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
+	CreatedAt                time.Time                                `json:"created_at"`
 }
 
 type CoverageFileHunkLine struct {
@@ -122,6 +124,13 @@ func UpdateCoverageReport(reportID int, status string, benchStatus string, baseC
 		"status":           status,
 		"benchmark_status": benchStatus,
 		"base_commit":      baseCommit,
+	}).Error
+}
+
+func UpdateCoverageReportTrace(reportID int, stepFunctionExecutionARN string, coverageBatchJobID string) error {
+	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(map[string]interface{}{
+		"step_function_execution_arn": stepFunctionExecutionARN,
+		"coverage_batch_job_id":       coverageBatchJobID,
 	}).Error
 }
 
