@@ -6,6 +6,7 @@ terraform.tfstate.backup
 node_modules
 /frontend/build
 /frontend/.svelte-kit
+/frontend/.netlify
 /frontend/package
 .env
 .env.*
