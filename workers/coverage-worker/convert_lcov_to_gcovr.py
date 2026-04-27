@@ -4,6 +4,7 @@ from collections import defaultdict
 
 MAX_SIGNED_32 = 2**31 - 1
 WRAPAROUND_FALLBACK = 1337
+WORKSPACE_PREFIX = "/tmp/bitcoin/"
 
 def normalize_count(count):
     # LLVM coverage bug can wrap around and yield huge unsigned values; clamp to a stable fallback.
@@ -16,6 +17,11 @@ def md5_stub(filename, line):
     # so we make a stable placeholder
     return hashlib.md5(f"{filename}:{line}".encode()).hexdigest()
 
+def normalize_filename(filename):
+    if filename.startswith(WORKSPACE_PREFIX):
+        return filename[len(WORKSPACE_PREFIX):]
+    return filename
+
 def lcov_to_gcovr_json(lcov_path):
     files = {}
 
@@ -26,7 +32,7 @@ def lcov_to_gcovr_json(lcov_path):
             line = raw.strip()
 
             if line.startswith("SF:"):
-                current_file = line[3:]
+                current_file = normalize_filename(line[3:])
                 files[current_file] = {
                     "file": current_file,
                     "lines": defaultdict(lambda: {
