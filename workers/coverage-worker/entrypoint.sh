@@ -24,8 +24,9 @@ if [ "$IS_MASTER" != "true" ]; then
         echo "Commit $COMMIT is not equal to HEAD commit $HEAD_COMMIT"
         exit 1
     fi
-    
-    git rebase $BASE_COMMIT
+
+    PR_MERGE_BASE=$(git merge-base HEAD origin/master)
+    git rebase --onto "$BASE_COMMIT" "$PR_MERGE_BASE"
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/src
@@ -130,7 +131,7 @@ if [ "$IS_MASTER" != "true" ]; then
     set -e
     
     if [ "$diff_exists" == "" ]; then
-        git diff $BASE_COMMIT > diff.patch
+        git diff "$BASE_COMMIT" HEAD > diff.patch
         aws s3 cp diff.patch s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch
     fi
 fi
