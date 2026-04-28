@@ -17,3 +17,4 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 deploy/terraform/monitoring/dist/
 *.tfvars
+__pycache__

@@ -5,6 +5,15 @@ from collections import defaultdict
 MAX_SIGNED_32 = 2**31 - 1
 WRAPAROUND_FALLBACK = 1337
 WORKSPACE_PREFIX = "/tmp/bitcoin/"
+BUILD_WORKSPACE_PREFIX = "/tmp/bitcoin/build/"
+ALLOWED_EXTENSIONS = (".cpp", ".h", ".c")
+EXCLUDED_PREFIXES = (
+    "src/test",
+    "src/qt/test",
+    "src/wallet/test",
+    "test",
+    "src/bench",
+)
 
 def normalize_count(count):
     # LLVM coverage bug can wrap around and yield huge unsigned values; clamp to a stable fallback.
@@ -18,9 +27,23 @@ def md5_stub(filename, line):
     return hashlib.md5(f"{filename}:{line}".encode()).hexdigest()
 
 def normalize_filename(filename):
+    if filename.startswith(BUILD_WORKSPACE_PREFIX):
+        return filename[len(BUILD_WORKSPACE_PREFIX):]
     if filename.startswith(WORKSPACE_PREFIX):
         return filename[len(WORKSPACE_PREFIX):]
+    if filename.startswith("build/src/"):
+        return filename[len("build/"):]
     return filename
+
+
+def should_include_filename(filename):
+    if not filename.startswith("src/"):
+        return False
+
+    if filename.startswith(EXCLUDED_PREFIXES):
+        return False
+
+    return filename.endswith(ALLOWED_EXTENSIONS)
 
 def lcov_to_gcovr_json(lcov_path):
     files = {}
@@ -33,13 +56,17 @@ def lcov_to_gcovr_json(lcov_path):
 
             if line.startswith("SF:"):
                 current_file = normalize_filename(line[3:])
-                files[current_file] = {
+                if not should_include_filename(current_file):
+                    current_file = None
+                    continue
+
+                files.setdefault(current_file, {
                     "file": current_file,
                     "lines": defaultdict(lambda: {
                         "branches": []
                     }),
                     "functions": {}
-                }
+                })
 
             elif line.startswith("DA:") and current_file:
                 lineno, count = line[3:].split(",")
