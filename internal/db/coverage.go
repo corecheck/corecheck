@@ -17,6 +17,7 @@ const (
 type CoverageReport struct {
 	ID                       int                                      `json:"id,omitempty" gorm:"primaryKey"`
 	Status                   string                                   `json:"status" gorm:"default:pending"`
+	FailureReason            string                                   `json:"failure_reason"`
 	BenchmarkStatus          string                                   `json:"benchmark_status" gorm:"default:pending"`
 	IsMaster                 bool                                     `json:"is_master"`
 	PRNumber                 int                                      `json:"pr_number"`
@@ -122,16 +123,32 @@ func GetOrCreateCoverageReportByCommitMaster(commit string) (*CoverageReport, er
 func UpdateCoverageReport(reportID int, status string, benchStatus string, baseCommit string) error {
 	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(map[string]interface{}{
 		"status":           status,
+		"failure_reason":   "",
 		"benchmark_status": benchStatus,
 		"base_commit":      baseCommit,
 	}).Error
 }
 
-func UpdateCoverageReportTrace(reportID int, stepFunctionExecutionARN string, coverageBatchJobID string) error {
+func UpdateCoverageReportFailure(reportID int, reason string) error {
 	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(map[string]interface{}{
-		"step_function_execution_arn": stepFunctionExecutionARN,
-		"coverage_batch_job_id":       coverageBatchJobID,
+		"status":         COVERAGE_REPORT_STATUS_FAILURE,
+		"failure_reason": reason,
 	}).Error
+}
+
+func UpdateCoverageReportTrace(reportID int, stepFunctionExecutionARN string, coverageBatchJobID string) error {
+	updates := map[string]interface{}{}
+	if stepFunctionExecutionARN != "" {
+		updates["step_function_execution_arn"] = stepFunctionExecutionARN
+	}
+	if coverageBatchJobID != "" {
+		updates["coverage_batch_job_id"] = coverageBatchJobID
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(updates).Error
 }
 
 func HasCoverageReportForCommitMaster(commit string) (bool, error) {
@@ -171,7 +188,11 @@ func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 
 func GetLatestPullCoverageReport(prNum int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("pr_number = ? AND (status = ? OR status = ?)", prNum, COVERAGE_REPORT_STATUS_SUCCESS, COVERAGE_REPORT_STATUS_PENDING).Order("created_at desc").First(&report).Error
+	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("pr_number = ? AND status IN ?", prNum, []string{
+		COVERAGE_REPORT_STATUS_SUCCESS,
+		COVERAGE_REPORT_STATUS_PENDING,
+		COVERAGE_REPORT_STATUS_FAILURE,
+	}).Order("created_at desc").First(&report).Error
 	return &report, err
 }
 

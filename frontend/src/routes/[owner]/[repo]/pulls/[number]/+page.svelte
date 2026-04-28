@@ -20,6 +20,13 @@
 
     let fetching = false;
 
+    function getReportFailureReason(report: { failure_reason?: string } | null | undefined) {
+        return (
+            report?.failure_reason?.trim() ||
+            "The coverage workflow failed for an unknown reason."
+        );
+    }
+
     $: {
         (async () => {
             if (selectedReport && selectedReport.id !== prev?.id) {
@@ -138,8 +145,8 @@
             {/if}
             {#if report && report.status === "failure"}
                 <div class="alert alert-danger" style="text-align: center">
-                    <i class="ri-information-line" /> An error occured while generating
-                    the coverage report.
+                    <i class="ri-information-line" /> Failed to generate report:
+                    {getReportFailureReason(report)}
                 </div>
             {/if}
             {#if report && report.status === "success"}
