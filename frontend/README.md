@@ -21,6 +21,27 @@ npm run dev
 npm run dev -- --open
 ```
 
+## 🔧 Environment
+
+Copy `.env.example` to `.env` before local development or builds:
+
+```bash
+cp .env.example .env
+```
+
+- `PUBLIC_ENDPOINT`: CoreCheck API base URL used by the app.
+- `PUBLIC_DASHBOARD_GITHUB_URL`
+- `PUBLIC_DASHBOARD_TESTS_URL`
+- `PUBLIC_DASHBOARD_BENCHMARKS_URL`
+- `PUBLIC_DASHBOARD_JOBS_URL`
+
+The `PUBLIC_DASHBOARD_*` variables override the public Grafana dashboard URLs
+used by the app. If left blank, the frontend falls back to the deterministic
+Grafana hostnames provisioned by Terraform (`grafana.corecheck.dev` for default
+and `grafana-dev.corecheck.dev` for dev). The Terraform stack also exposes a
+`public_dashboard_env_overrides` output with the exact deployed URLs if you want
+to inject them explicitly at runtime.
+
 ## 📦 Build
 
 ```bash

@@ -1,0 +1,52 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y awscli curl docker
+systemctl enable --now docker
+
+install -d -m 0755 \
+  /opt/corecheck/grafana/provisioning/datasources \
+  /opt/corecheck/grafana/provisioning/dashboards \
+  /opt/corecheck/grafana/dashboards \
+  /opt/corecheck/grafana/data
+
+aws s3 cp "s3://${bootstrap_bucket}/provisioning/datasources/corecheck.yaml" "/opt/corecheck/grafana/provisioning/datasources/corecheck.yaml" --region "${aws_region}"
+aws s3 cp "s3://${bootstrap_bucket}/provisioning/dashboards/corecheck.yaml" "/opt/corecheck/grafana/provisioning/dashboards/corecheck.yaml" --region "${aws_region}"
+aws s3 sync "s3://${bootstrap_bucket}/dashboards/" "/opt/corecheck/grafana/dashboards/" --delete --region "${aws_region}"
+
+chown -R 472:472 /opt/corecheck/grafana
+
+docker rm -f corecheck-grafana || true
+docker pull "${grafana_image}"
+docker run -d \
+  --name corecheck-grafana \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e GF_SERVER_ROOT_URL="https://${grafana_domain}" \
+  -e GF_SERVER_DOMAIN="${grafana_domain}" \
+  -e GF_SERVER_ENFORCE_DOMAIN="true" \
+  -e GF_SECURITY_ALLOW_EMBEDDING="true" \
+  -e GF_SECURITY_COOKIE_SECURE="true" \
+  -e GF_SECURITY_COOKIE_SAMESITE="none" \
+  -e GF_AUTH_ANONYMOUS_ENABLED="true" \
+  -e GF_AUTH_ANONYMOUS_ORG_ROLE="Viewer" \
+  -e GF_AUTH_ANONYMOUS_HIDE_VERSION="true" \
+  -e GF_SECURITY_ADMIN_USER="${admin_user}" \
+  -e GF_SECURITY_ADMIN_PASSWORD="${admin_password}" \
+  -e GF_INSTALL_PLUGINS="grafana-timestream-datasource" \
+  -e CORECHECK_GRAFANA_BOOTSTRAP_REVISION="${bootstrap_revision}" \
+  -v /opt/corecheck/grafana/data:/var/lib/grafana \
+  -v /opt/corecheck/grafana/provisioning:/etc/grafana/provisioning \
+  -v /opt/corecheck/grafana/dashboards:/var/lib/grafana/dashboards \
+  "${grafana_image}"
+
+for attempt in $(seq 1 30); do
+  if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+    exit 0
+  fi
+
+  sleep 10
+done
+
+docker logs corecheck-grafana
+exit 1

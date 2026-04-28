@@ -7,11 +7,79 @@ BASE_COMMIT=$4
 
 set -e
 
-sh -c "sed \"s/api_key:.*/api_key: $DD_API_KEY/\" /etc/datadog-agent/datadog.yaml.example > /etc/datadog-agent/datadog.yaml"
-sh -c "sed -i 's/# site:.*/site: datadoghq.eu/' /etc/datadog-agent/datadog.yaml"
-sh -c "sed -i 's/# hostname:.*/hostname: $HOSTNAME/' /etc/datadog-agent/datadog.yaml"
+TELEMETRY_TIMESTREAM_TABLE=${TELEMETRY_TIMESTREAM_TABLE:-dashboard_metrics}
+telemetry_records=()
 
-/etc/init.d/datadog-agent start
+telemetry_ready() {
+    [ "${TELEMETRY_BACKEND}" = "timestream" ] &&
+        [ -n "${TELEMETRY_TIMESTREAM_DATABASE}" ] &&
+        [ -n "${TELEMETRY_TIMESTREAM_REGION}" ]
+}
+
+sanitize_dimension_name() {
+    local sanitized
+    sanitized=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^[:alnum:]]+/_/g; s/^_+//; s/_+$//')
+    if [ -z "$sanitized" ]; then
+        sanitized="tag"
+    fi
+    printf '%s' "$sanitized"
+}
+
+queue_metric() {
+    if ! telemetry_ready; then
+        return 0
+    fi
+
+    local metric_name=$1
+    local metric_value=$2
+    shift 2
+
+    local dimensions='[]'
+    dimensions=$(printf '%s' "$dimensions" | jq -c --arg value "$metric_name" '. + [{"Name":"metric_name","Value":$value}]')
+
+    while [ "$#" -gt 0 ]; do
+        local tag_name=${1%%=*}
+        local tag_value=${1#*=}
+        local sanitized_tag_name
+        sanitized_tag_name=$(sanitize_dimension_name "$tag_name")
+        dimensions=$(printf '%s' "$dimensions" | jq -c --arg name "$sanitized_tag_name" --arg value "$tag_value" 'map(select(.Name != $name)) + [{"Name":$name,"Value":$value}]')
+        shift
+    done
+
+    telemetry_records+=("$(jq -nc \
+        --argjson dimensions "$dimensions" \
+        --arg value "$metric_value" \
+        --arg time "$(date +%s%3N)" \
+        '{Dimensions:$dimensions, MeasureName:"value", MeasureValue:$value, MeasureValueType:"DOUBLE", Time:$time, TimeUnit:"MILLISECONDS"}')")
+
+    if [ "${#telemetry_records[@]}" -ge 100 ]; then
+        flush_metrics
+    fi
+}
+
+flush_metrics() {
+    if ! telemetry_ready || [ "${#telemetry_records[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    local records_json
+    records_json=$(printf '%s\n' "${telemetry_records[@]}" | jq -cs '.')
+
+    if ! aws timestream-write write-records \
+        --region "${TELEMETRY_TIMESTREAM_REGION}" \
+        --database-name "${TELEMETRY_TIMESTREAM_DATABASE}" \
+        --table-name "${TELEMETRY_TIMESTREAM_TABLE}" \
+        --records "${records_json}" >/dev/null; then
+        echo "Failed to write coverage worker telemetry to Timestream" >&2
+    fi
+
+    telemetry_records=()
+}
+
+if [ "${TELEMETRY_BACKEND}" = "timestream" ] && ! telemetry_ready; then
+    echo "Telemetry backend is timestream but TELEMETRY_TIMESTREAM_* is incomplete; skipping telemetry writes" >&2
+fi
+
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
@@ -88,15 +156,16 @@ else
     
     if [ "$IS_MASTER" == "true" ]; then
         binary_size=$(stat -c %s ./build/bin/bitcoind)
-        echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
+        queue_metric "bitcoin.bitcoin.binary_size" "$binary_size" "commit=$COMMIT"
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
                 test_name="${BASH_REMATCH[1]}";
                 test_duration="${BASH_REMATCH[3]}";
-                echo -n "bitcoin.bitcoin.test.functional.duration:$test_duration|g|#test_name:$test_name,#commit:$COMMIT" >/dev/udp/localhost/8125
+                queue_metric "bitcoin.bitcoin.test.functional.duration" "$test_duration" "test_name=$test_name" "commit=$COMMIT"
                 echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
             fi;
         done < "functional-tests.log"
+        flush_metrics
     fi
     
     # Merge all the raw profile data into a single file

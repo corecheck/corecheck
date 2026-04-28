@@ -1,0 +1,188 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_TIMESTREAM",
+      "label": "Timestream",
+      "description": "Amazon Timestream datasource used for the Corecheck public dashboard migration",
+      "type": "datasource",
+      "pluginId": "grafana-timestream-datasource",
+      "pluginName": "Amazon Timestream"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Assumes GitHub stats metrics land in ${timestream_database_name}.${dashboard_metrics_table_name} with the original DataDog metric names preserved in measure_name.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Open, closed, merged, and total pull request counts from the GitHub stats sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT BIN(time, 1d) AS time, measure_name AS metric, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name IN ('bitcoin.bitcoin.pulls.open', 'bitcoin.bitcoin.pulls.closed', 'bitcoin.bitcoin.pulls.merged', 'bitcoin.bitcoin.pulls.total') AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d), measure_name ORDER BY time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Pull request status trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Open, closed, and total issue counts from the GitHub stats sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT BIN(time, 1d) AS time, measure_name AS metric, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name IN ('bitcoin.bitcoin.issues.open', 'bitcoin.bitcoin.issues.closed', 'bitcoin.bitcoin.issues.total') AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d), measure_name ORDER BY time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Issue status trend",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "aws",
+    "corecheck",
+    "github",
+    "public"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-github-overview",
+  "version": 1,
+  "weekStart": ""
+}

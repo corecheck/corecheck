@@ -1,0 +1,44 @@
+output "dashboard_grafana_workspace_endpoint" {
+  description = "Amazon Managed Grafana endpoint for the dashboard workspace"
+  value       = module.monitoring.dashboard_grafana_workspace_endpoint
+}
+
+output "dashboard_grafana_workspace_id" {
+  description = "Amazon Managed Grafana workspace ID for the dashboard workspace"
+  value       = module.monitoring.dashboard_grafana_workspace_id
+}
+
+output "dashboard_timestream_database_name" {
+  description = "Timestream database name for dashboard metrics"
+  value       = module.monitoring.dashboard_timestream_database_name
+}
+
+output "dashboard_timestream_table_names" {
+  description = "Initial Timestream table names for dashboard metrics"
+  value       = module.monitoring.dashboard_timestream_table_names
+}
+
+output "public_dashboard_template_catalog" {
+  description = "Repo-managed importable Grafana dashboard templates for the four public pages"
+  value       = module.monitoring.public_dashboard_template_catalog
+}
+
+output "public_grafana_domain" {
+  description = "Public hostname for the self-hosted Grafana OSS deployment"
+  value       = module.monitoring.public_grafana_domain
+}
+
+output "public_grafana_base_url" {
+  description = "Base URL for the self-hosted Grafana OSS deployment"
+  value       = module.monitoring.public_grafana_base_url
+}
+
+output "public_grafana_dashboard_urls" {
+  description = "Self-hosted Grafana URLs for the four public dashboard pages"
+  value       = module.monitoring.public_grafana_dashboard_urls
+}
+
+output "public_dashboard_env_overrides" {
+  description = "PUBLIC_DASHBOARD_* environment variable values pointing at the self-hosted Grafana dashboards"
+  value       = module.monitoring.public_dashboard_env_overrides
+}

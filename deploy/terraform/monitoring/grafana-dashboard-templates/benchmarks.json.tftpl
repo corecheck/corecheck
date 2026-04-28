@@ -1,0 +1,328 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_CLOUDWATCH",
+      "label": "CloudWatch",
+      "description": "CloudWatch datasource for batch queue health",
+      "type": "datasource",
+      "pluginId": "cloudwatch",
+      "pluginName": "CloudWatch"
+    },
+    {
+      "name": "DS_TIMESTREAM",
+      "label": "Timestream",
+      "description": "Amazon Timestream datasource used for benchmark trend queries",
+      "type": "datasource",
+      "pluginId": "grafana-timestream-datasource",
+      "pluginName": "Amazon Timestream"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Assumes benchmark_name and commit tags are mirrored as Timestream dimensions in ${timestream_database_name}.${dashboard_metrics_table_name}; queue health comes from CloudWatch for ${bench_queue_name}.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Latest number of benchmark series emitted for the most recent master commit.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT MAX(time) AS time, MAX(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name = 'bitcoin.bitcoin.benchmarks.count' AND time BETWEEN ago(30d) AND now()",
+          "refId": "A"
+        }
+      ],
+      "title": "Tracked benchmark series",
+      "type": "stat"
+    },
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Total benchmark count over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT BIN(time, 1d) AS time, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name = 'bitcoin.bitcoin.benchmarks.count' AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d) ORDER BY time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Benchmark count trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Slowest benchmarks by average median elapsed time over the last week.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 7
+      },
+      "id": 3,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT benchmark_name, ROUND(AVG(measure_value::double), 4) AS median_elapsed FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name = 'bitcoin.bitcoin.benchmarks.median_elapsed' AND time BETWEEN ago(7d) AND now() GROUP BY benchmark_name ORDER BY median_elapsed DESC LIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "title": "Slowest benchmarks",
+      "type": "table"
+    },
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Benchmarks with the highest CPU cycle cost over the last week.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 7
+      },
+      "id": 4,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT benchmark_name, ROUND(AVG(measure_value::double), 2) AS median_cpucycles FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name = 'bitcoin.bitcoin.benchmarks.median_cpucycles' AND time BETWEEN ago(7d) AND now() GROUP BY benchmark_name ORDER BY median_cpucycles DESC LIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "title": "Highest CPU cycle benchmarks",
+      "type": "table"
+    },
+    {
+      "datasource": "$${DS_TIMESTREAM}",
+      "description": "Average total runtime trend across emitted benchmarks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT BIN(time, 1d) AS time, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name = 'bitcoin.bitcoin.benchmarks.total_time' AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d) ORDER BY time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Average benchmark total time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "$${DS_CLOUDWATCH}",
+      "description": "Batch queue success/failure counts for the benchmark runner queue.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "succeeded",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": 300,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "failed",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": 300,
+          "refId": "B",
+          "region": "${compute_region}",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Benchmark queue outcomes",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "aws",
+    "benchmarks",
+    "cloudwatch",
+    "corecheck",
+    "public",
+    "timestream"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-benchmarks",
+  "version": 1,
+  "weekStart": ""
+}
