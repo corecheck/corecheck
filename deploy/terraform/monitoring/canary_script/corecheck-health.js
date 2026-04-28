@@ -2,11 +2,18 @@ const synthetics = require('Synthetics');
 const log = require('SyntheticsLogger');
 
 const API_BASE = 'https://api.corecheck.dev';
-const FRONTEND_BASE = 'https://corecheck.dev/bitcoin/bitcoin/pulls';
+const FRONTEND_BASE = 'https://corecheck.dev';
+const PR_FRONTEND_BASE = `${FRONTEND_BASE}/bitcoin/bitcoin/pulls`;
 const MAX_CANDIDATES = 5;
 const MAX_CODE_UPDATE_AGE_MS = 24 * 60 * 60 * 1000;
 const MIN_CODE_UPDATE_AGE_MS = 2 * 60 * 60 * 1000;
 const REPORT_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const DASHBOARD_ROUTES = [
+  { path: '/', label: 'GitHub dashboard' },
+  { path: '/tests', label: 'Tests dashboard' },
+  { path: '/benchmarks', label: 'Benchmarks dashboard' },
+  { path: '/jobs', label: 'Jobs dashboard' },
+];
 
 function describePR(pr) {
   const title = pr.title ? `: "${pr.title}"` : '';
@@ -32,7 +39,7 @@ async function fetchJson(url, errorPrefix) {
 }
 
 async function verifyFrontend(page, pr) {
-  const prUrl = `${FRONTEND_BASE}/${pr.number}`;
+  const prUrl = `${PR_FRONTEND_BASE}/${pr.number}`;
   log.info(`Navigating to ${prUrl}`);
 
   const navResponse = await page.goto(prUrl, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -75,6 +82,31 @@ async function verifyFrontend(page, pr) {
   }
 
   return { prTitle, accordionCount };
+}
+
+async function verifyDashboardRoute(page, route) {
+  const dashboardUrl = `${FRONTEND_BASE}${route.path}`;
+  log.info(`Navigating to ${dashboardUrl}`);
+
+  const navResponse = await page.goto(dashboardUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  if (!navResponse || navResponse.status() >= 400) {
+    throw new Error(
+      `${route.label} returned HTTP ${navResponse ? navResponse.status() : 'null'} for ${dashboardUrl}`,
+    );
+  }
+
+  await page.waitForSelector('iframe', { timeout: 15000 });
+
+  const iframeSrc = await page.evaluate(() => {
+    const iframe = document.querySelector('iframe');
+    return iframe ? iframe.getAttribute('src')?.trim() ?? null : null;
+  });
+
+  if (!iframeSrc) {
+    throw new Error(`${route.label} did not render an iframe with a src attribute`);
+  }
+
+  return { dashboardUrl, iframeSrc };
 }
 
 exports.handler = async function () {
@@ -164,9 +196,17 @@ exports.handler = async function () {
 
       const { prTitle, accordionCount } = await verifyFrontend(page, targetPR);
 
+      const dashboardChecks = [];
+      for (const dashboardRoute of DASHBOARD_ROUTES) {
+        dashboardChecks.push(await verifyDashboardRoute(page, dashboardRoute));
+      }
+
       log.info(
         `Health check passed using ${prLabel}. Page title: "${prTitle}". ${accordionCount} coverage file(s) visible on the page.`,
       );
+      dashboardChecks.forEach(({ dashboardUrl, iframeSrc }) => {
+        log.info(`Verified dashboard iframe on ${dashboardUrl}: ${iframeSrc}`);
+      });
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

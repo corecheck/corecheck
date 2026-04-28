@@ -94,3 +94,59 @@ resource "aws_iam_role_policy_attachment" "telegram_lambda_basic" {
   role       = aws_iam_role.telegram_lambda[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
+
+data "aws_iam_policy_document" "dashboard_grafana_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["grafana.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "dashboard_grafana" {
+  name               = "${local.dashboard_stack_name}-grafana"
+  assume_role_policy = data.aws_iam_policy_document.dashboard_grafana_assume_role.json
+}
+
+data "aws_iam_policy_document" "dashboard_grafana_timestream" {
+  statement {
+    actions = [
+      "timestream:CancelQuery",
+      "timestream:DescribeEndpoints",
+      "timestream:ListDatabases",
+      "timestream:ListMeasures",
+      "timestream:ListTables",
+      "timestream:Select",
+      "timestream:SelectValues",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    actions   = ["timestream:DescribeDatabase"]
+    resources = [aws_timestreamwrite_database.dashboard.arn]
+  }
+
+  statement {
+    actions   = ["timestream:DescribeTable"]
+    resources = [for table in aws_timestreamwrite_table.dashboard : table.arn]
+  }
+}
+
+resource "aws_iam_policy" "dashboard_grafana_timestream" {
+  name   = "${local.dashboard_stack_name}-grafana-timestream"
+  policy = data.aws_iam_policy_document.dashboard_grafana_timestream.json
+}
+
+resource "aws_iam_role_policy_attachment" "dashboard_grafana_timestream" {
+  role       = aws_iam_role.dashboard_grafana.name
+  policy_arn = aws_iam_policy.dashboard_grafana_timestream.arn
+}
+
+resource "aws_iam_role_policy_attachment" "dashboard_grafana_cloudwatch" {
+  role       = aws_iam_role.dashboard_grafana.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonGrafanaCloudWatchAccess"
+}

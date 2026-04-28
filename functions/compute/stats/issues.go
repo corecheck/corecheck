@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bitcoin-stats-datadog/types"
 	"strconv"
 
-	ddlambda "github.com/DataDog/datadog-lambda-go"
+	"github.com/corecheck/corecheck/functions/compute/stats/types"
+	"github.com/corecheck/corecheck/internal/telemetry"
 )
 
 type NumberOfIssuesConsumer struct {
@@ -29,10 +29,10 @@ func (c *NumberOfIssuesConsumer) ProcessIssue(issue *types.Issue) {
 	c.Total++
 }
 
-func (c *NumberOfIssuesConsumer) SendMetrics() {
-	ddlambda.Metric("bitcoin.bitcoin.issues.open", c.Open)
-	ddlambda.Metric("bitcoin.bitcoin.issues.closed", c.Closed)
-	ddlambda.Metric("bitcoin.bitcoin.issues.total", c.Total)
+func (c *NumberOfIssuesConsumer) SendMetrics(metrics telemetry.Client) {
+	metrics.Metric("bitcoin.bitcoin.issues.open", c.Open)
+	metrics.Metric("bitcoin.bitcoin.issues.closed", c.Closed)
+	metrics.Metric("bitcoin.bitcoin.issues.total", c.Total)
 }
 
 type UniqueIssueUsersConsumer struct {
@@ -49,8 +49,8 @@ func (c *UniqueIssueUsersConsumer) ProcessIssue(issue *types.Issue) {
 	c.Users[issue.Issue.User.Login] = struct{}{}
 }
 
-func (c *UniqueIssueUsersConsumer) SendMetrics() {
-	ddlambda.Metric("bitcoin.bitcoin.issues.unique_users", float64(len(c.Users)))
+func (c *UniqueIssueUsersConsumer) SendMetrics(metrics telemetry.Client) {
+	metrics.Metric("bitcoin.bitcoin.issues.unique_users", float64(len(c.Users)))
 }
 
 type IssuesByUserConsumer struct {
@@ -82,13 +82,13 @@ func (c *IssuesByUserConsumer) ProcessIssue(issue *types.Issue) {
 	}
 }
 
-func (c *IssuesByUserConsumer) SendMetrics() {
+func (c *IssuesByUserConsumer) SendMetrics(metrics telemetry.Client) {
 	for user, count := range c.Open {
-		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_user", count, "user:"+user)
+		metrics.Metric("bitcoin.bitcoin.issues.open.by_user", count, telemetry.NewTag("user", user))
 	}
 
 	for user, count := range c.Closed {
-		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_user", count, "user:"+user)
+		metrics.Metric("bitcoin.bitcoin.issues.closed.by_user", count, telemetry.NewTag("user", user))
 	}
 }
 
@@ -123,13 +123,13 @@ func (c *IssuesByLabelConsumer) ProcessIssue(issue *types.Issue) {
 	}
 }
 
-func (c *IssuesByLabelConsumer) SendMetrics() {
+func (c *IssuesByLabelConsumer) SendMetrics(metrics telemetry.Client) {
 	for label, count := range c.Open {
-		ddlambda.Metric("bitcoin.bitcoin.issues.open.by_label", count, "label:"+label)
+		metrics.Metric("bitcoin.bitcoin.issues.open.by_label", count, telemetry.NewTag("label", label))
 	}
 
 	for label, count := range c.Closed {
-		ddlambda.Metric("bitcoin.bitcoin.issues.closed.by_label", count, "label:"+label)
+		metrics.Metric("bitcoin.bitcoin.issues.closed.by_label", count, telemetry.NewTag("label", label))
 	}
 }
 
@@ -151,10 +151,10 @@ func (c *TotalCommentsIssueConsumer) ProcessIssue(issue *types.Issue) {
 	}
 }
 
-func (c *TotalCommentsIssueConsumer) SendMetrics() {
+func (c *TotalCommentsIssueConsumer) SendMetrics(metrics telemetry.Client) {
 	for issue, count := range c.Comments {
-		ddlambda.Metric("bitcoin.bitcoin.issues.comments", float64(count), "issue:"+strconv.Itoa(issue))
+		metrics.Metric("bitcoin.bitcoin.issues.comments", float64(count), telemetry.NewTag("issue", strconv.Itoa(issue)))
 	}
 
-	ddlambda.Metric("bitcoin.bitcoin.issues.comments.total", float64(len(c.Comments)))
+	metrics.Metric("bitcoin.bitcoin.issues.comments.total", float64(len(c.Comments)))
 }

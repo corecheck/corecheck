@@ -67,7 +67,31 @@ variable "lambda_bucket" {
   description = "lambda bucket"
 }
 
-variable "datadog_api_key" {
+variable "telemetry_backend" {
   type        = string
-  description = "datadog api key"
+  description = "telemetry backend used by compute workloads"
+  default     = "timestream"
+
+  validation {
+    condition     = contains(["datadog", "timestream"], var.telemetry_backend)
+    error_message = "telemetry_backend must be either datadog or timestream."
+  }
+}
+
+variable "telemetry_timestream_database" {
+  type        = string
+  description = "timestream database name for telemetry metrics"
+  default     = ""
+}
+
+variable "telemetry_timestream_table" {
+  type        = string
+  description = "timestream table name for telemetry metrics"
+  default     = ""
+}
+
+variable "telemetry_timestream_region" {
+  type        = string
+  description = "AWS region for the timestream telemetry backend"
+  default     = ""
 }

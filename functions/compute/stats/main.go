@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
-	"time"
 
-	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/corecheck/corecheck/internal/telemetry"
 )
 
 const (
@@ -40,10 +40,9 @@ func handleMetrics(ctx context.Context) (string, error) {
 }
 
 func main() {
-	lambda.Start(ddlambda.WrapFunction(handleMetrics, &ddlambda.Config{
-		DebugLogging:    true,
-		Site:            "datadoghq.eu",
-		BatchInterval:   time.Millisecond * 500,
-		EnhancedMetrics: true,
-	}))
+	if err := telemetry.ConfigureDefaultFromEnv(); err != nil {
+		log.Fatalf("Error configuring telemetry: %s", err)
+	}
+
+	lambda.Start(handleMetrics)
 }

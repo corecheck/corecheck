@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bitcoin-stats-datadog/types"
 	"strconv"
 
-	ddlambda "github.com/DataDog/datadog-lambda-go"
+	"github.com/corecheck/corecheck/functions/compute/stats/types"
+	"github.com/corecheck/corecheck/internal/telemetry"
 )
 
 type NumberOfPullsConsumer struct {
@@ -33,11 +33,11 @@ func (c *NumberOfPullsConsumer) ProcessPull(pull *types.Pull) {
 	c.Total++
 }
 
-func (c *NumberOfPullsConsumer) SendMetrics() {
-	ddlambda.Metric("bitcoin.bitcoin.pulls.open", c.Open)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.closed", c.Closed)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.merged", c.Merged)
-	ddlambda.Metric("bitcoin.bitcoin.pulls.total", c.Total)
+func (c *NumberOfPullsConsumer) SendMetrics(metrics telemetry.Client) {
+	metrics.Metric("bitcoin.bitcoin.pulls.open", c.Open)
+	metrics.Metric("bitcoin.bitcoin.pulls.closed", c.Closed)
+	metrics.Metric("bitcoin.bitcoin.pulls.merged", c.Merged)
+	metrics.Metric("bitcoin.bitcoin.pulls.total", c.Total)
 }
 
 type UniqueAuthorsConsumer struct {
@@ -58,8 +58,8 @@ func (c *UniqueAuthorsConsumer) ProcessPull(pull *types.Pull) {
 	c.Users[pull.Pull.User.Login] = struct{}{}
 }
 
-func (c *UniqueAuthorsConsumer) SendMetrics() {
-	ddlambda.Metric("bitcoin.bitcoin.pulls.unique_authors", float64(len(c.Users)))
+func (c *UniqueAuthorsConsumer) SendMetrics(metrics telemetry.Client) {
+	metrics.Metric("bitcoin.bitcoin.pulls.unique_authors", float64(len(c.Users)))
 }
 
 type PullsByUserConsumer struct {
@@ -100,15 +100,15 @@ func (c *PullsByUserConsumer) ProcessPull(pull *types.Pull) {
 	}
 }
 
-func (c *PullsByUserConsumer) SendMetrics() {
+func (c *PullsByUserConsumer) SendMetrics(metrics telemetry.Client) {
 	for user, count := range c.Open {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_user", count, "user:"+user)
+		metrics.Metric("bitcoin.bitcoin.pulls.open.by_user", count, telemetry.NewTag("user", user))
 	}
 	for user, count := range c.Closed {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_user", count, "user:"+user)
+		metrics.Metric("bitcoin.bitcoin.pulls.closed.by_user", count, telemetry.NewTag("user", user))
 	}
 	for user, count := range c.Merged {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_user", count, "user:"+user)
+		metrics.Metric("bitcoin.bitcoin.pulls.merged.by_user", count, telemetry.NewTag("user", user))
 	}
 }
 
@@ -152,15 +152,15 @@ func (c *PullsByLabelConsumer) ProcessPull(pull *types.Pull) {
 	}
 }
 
-func (c *PullsByLabelConsumer) SendMetrics() {
+func (c *PullsByLabelConsumer) SendMetrics(metrics telemetry.Client) {
 	for label, count := range c.Open {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.open.by_label", count, "label:"+label)
+		metrics.Metric("bitcoin.bitcoin.pulls.open.by_label", count, telemetry.NewTag("label", label))
 	}
 	for label, count := range c.Closed {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.closed.by_label", count, "label:"+label)
+		metrics.Metric("bitcoin.bitcoin.pulls.closed.by_label", count, telemetry.NewTag("label", label))
 	}
 	for label, count := range c.Merged {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.merged.by_label", count, "label:"+label)
+		metrics.Metric("bitcoin.bitcoin.pulls.merged.by_label", count, telemetry.NewTag("label", label))
 	}
 }
 
@@ -186,14 +186,14 @@ func (c *TotalCommentsAndReviewsByPullConsumer) ProcessPull(pull *types.Pull) {
 	}
 }
 
-func (c *TotalCommentsAndReviewsByPullConsumer) SendMetrics() {
+func (c *TotalCommentsAndReviewsByPullConsumer) SendMetrics(metrics telemetry.Client) {
 	for pull, count := range c.Comments {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.comments", count, "pull:"+strconv.Itoa(pull))
+		metrics.Metric("bitcoin.bitcoin.pulls.comments", count, telemetry.NewTag("pull", strconv.Itoa(pull)))
 	}
 	for pull, count := range c.Reviews {
-		ddlambda.Metric("bitcoin.bitcoin.pulls.reviews", count, "pull:"+strconv.Itoa(pull))
+		metrics.Metric("bitcoin.bitcoin.pulls.reviews", count, telemetry.NewTag("pull", strconv.Itoa(pull)))
 	}
 
-	ddlambda.Metric("bitcoin.bitcoin.pulls.comments.total", float64(len(c.Comments)))
-	ddlambda.Metric("bitcoin.bitcoin.pulls.reviews.total", float64(len(c.Reviews)))
+	metrics.Metric("bitcoin.bitcoin.pulls.comments.total", float64(len(c.Comments)))
+	metrics.Metric("bitcoin.bitcoin.pulls.reviews.total", float64(len(c.Reviews)))
 }

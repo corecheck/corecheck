@@ -1,5 +1,17 @@
 locals {
   bench_array_size = 10
+  telemetry_environment = {
+    TELEMETRY_BACKEND             = var.telemetry_backend
+    TELEMETRY_TIMESTREAM_DATABASE = var.telemetry_timestream_database
+    TELEMETRY_TIMESTREAM_TABLE    = var.telemetry_timestream_table
+    TELEMETRY_TIMESTREAM_REGION   = var.telemetry_timestream_region
+  }
+  telemetry_environment_list = [
+    for name, value in local.telemetry_environment : {
+      name  = name
+      value = value
+    }
+  ]
 
   state_machine_lambdas = [
     "github-sync",
@@ -86,7 +98,7 @@ locals {
       memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
-        variables = {
+        variables = merge({
           DATABASE_HOST     = var.db_host
           DATABASE_PORT     = var.db_port
           DATABASE_USER     = var.db_user
@@ -96,8 +108,7 @@ locals {
 
           BENCH_ARRAY_SIZE = local.bench_array_size
           BUCKET_DATA_URL  = var.corecheck_data_bucket_url
-          DD_API_KEY       = var.datadog_api_key
-        }
+        }, local.telemetry_environment)
       }
     },
     "handle-mutation" = {
@@ -140,9 +151,7 @@ locals {
       ephemeral_storage_size = 10240
 
       environment = {
-        variables = {
-          DD_API_KEY = var.datadog_api_key
-        }
+        variables = local.telemetry_environment
       }
     }
   }
