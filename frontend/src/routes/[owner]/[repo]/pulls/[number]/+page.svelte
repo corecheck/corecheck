@@ -19,6 +19,7 @@
     let prev = selectedReport;
 
     let fetching = false;
+    let showDebugInfo = false;
 
     function getReportFailureReason(report: { failure_reason?: string } | null | undefined) {
         return (
@@ -31,6 +32,7 @@
         (async () => {
             if (selectedReport && selectedReport.id !== prev?.id) {
                 prev = selectedReport;
+                showDebugInfo = false;
                 fetching = true;
                 report = await _fetchReport(
                     fetch,
@@ -106,22 +108,6 @@
                     <span class="report-meta-description">
                         used for coverage and benchmarks
                     </span>
-                </div>
-            {/if}
-            {#if report}
-                <div
-                    id="report-debug-trace"
-                    hidden
-                    aria-hidden="true"
-                    data-report-id={report.id}
-                    data-report-commit={report.commit}
-                    data-step-function-execution-arn={report.step_function_execution_arn ||
-                        ""}
-                    data-coverage-batch-job-id={report.coverage_batch_job_id || ""}
-                >
-                    step_function_execution_arn={report.step_function_execution_arn ||
-                        ""}; coverage_batch_job_id={report.coverage_batch_job_id ||
-                        ""}
                 </div>
             {/if}
         </div>
@@ -235,6 +221,54 @@
                 </div>
             {/if}
         {/if}
+        {#if report}
+            <div class="debug-info-footer">
+                <button
+                    class="debug-info-toggle link-primary txt-xs"
+                    type="button"
+                    aria-controls="report-debug-trace"
+                    aria-expanded={showDebugInfo}
+                    on:click={() => (showDebugInfo = !showDebugInfo)}
+                >
+                    {showDebugInfo ? "Hide debug info" : "Debug info"}
+                </button>
+                <div
+                    id="report-debug-trace"
+                    class="debug-info-panel"
+                    hidden={!showDebugInfo}
+                    aria-hidden={!showDebugInfo}
+                    data-report-id={report.id}
+                    data-report-commit={report.commit}
+                    data-step-function-execution-arn={report.step_function_execution_arn ||
+                        ""}
+                    data-coverage-batch-job-id={report.coverage_batch_job_id || ""}
+                >
+                    <div class="debug-info-row">
+                        <span class="debug-info-label">Report ID</span>
+                        <code class="debug-info-value txt-mono">{report.id}</code>
+                    </div>
+                    <div class="debug-info-row">
+                        <span class="debug-info-label">Commit</span>
+                        <code class="debug-info-value txt-mono">{report.commit}</code>
+                    </div>
+                    <div class="debug-info-row">
+                        <span class="debug-info-label"
+                            >Step Functions execution ARN</span
+                        >
+                        <code class="debug-info-value txt-mono"
+                            >{report.step_function_execution_arn ||
+                                "Not available"}</code
+                        >
+                    </div>
+                    <div class="debug-info-row">
+                        <span class="debug-info-label">Coverage batch job ID</span>
+                        <code class="debug-info-value txt-mono"
+                            >{report.coverage_batch_job_id || "Not available"}</code
+                        >
+                    </div>
+                </div>
+            </div>
+        {/if}
         <div class="clearfix m-b-base" />
     </main>
 </div>
@@ -266,5 +300,56 @@
 
     .report-meta-description {
         color: #65717d;
+    }
+
+    .debug-info-footer {
+        margin-top: 1.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--baseAlt2Color);
+    }
+
+    .debug-info-toggle {
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .debug-info-panel {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--baseAlt1Color);
+        border: 1px solid var(--baseAlt2Color);
+    }
+
+    .debug-info-row {
+        display: grid;
+        grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+        gap: 0.5rem 1rem;
+        align-items: start;
+    }
+
+    .debug-info-row + .debug-info-row {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--baseAlt2Color);
+    }
+
+    .debug-info-label {
+        color: var(--txtHintColor);
+        font-size: var(--xsFontSize);
+    }
+
+    .debug-info-value {
+        display: block;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    @media (max-width: 700px) {
+        .debug-info-row {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
