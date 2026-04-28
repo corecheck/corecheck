@@ -26,6 +26,11 @@ type DifferentialCoverage struct {
 	Results map[string]CoverageByFile
 }
 
+var (
+	fetchPullSourceFiles   = fetchAllFiles
+	fetchMasterSourceFiles = fetchAllFilesMaster
+)
+
 func isLineModifiedByDiff(filename string, lineNumber int, diff *diffparser.Diff) bool {
 	for _, file := range diff.Files {
 		if file.OrigName == filename {
@@ -388,8 +393,8 @@ func isContextLine(baseline bool, lineNumber int, lines []CoverageLine) bool {
 }
 
 func (diffCoverage *DifferentialCoverage) CreateHunks(report *db.CoverageReport) []*db.CoverageFileHunk {
-	pullSourceFiles := fetchAllFiles(report.PRNumber, diffCoverage.Coverage.ListFiles(), report.Commit)
-	masterSourceFiles := fetchAllFilesMaster(diffCoverage.BaseCoverage.ListFiles(), report.BaseCommit)
+	pullSourceFiles := fetchPullSourceFiles(report.PRNumber, diffCoverage.Coverage.ListFiles(), report.Commit)
+	masterSourceFiles := fetchMasterSourceFiles(diffCoverage.BaseCoverage.ListFiles(), report.BaseCommit)
 
 	var coverageHunks []*db.CoverageFileHunk
 	for coverageType, files := range diffCoverage.Results {

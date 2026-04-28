@@ -1,0 +1,62 @@
+diff --git a/src/uncovered_new_code.cpp b/src/uncovered_new_code.cpp
+index 1111111..2222222 100644
+--- a/src/uncovered_new_code.cpp
++++ b/src/uncovered_new_code.cpp
+@@ -1 +1,2 @@
+ int existing_uncovered() { return 1; }
++int added_uncovered() { return 10; }
+diff --git a/src/covered_new_code.cpp b/src/covered_new_code.cpp
+index 3333333..4444444 100644
+--- a/src/covered_new_code.cpp
++++ b/src/covered_new_code.cpp
+@@ -1 +1,2 @@
+ int existing_covered() { return 2; }
++int added_covered() { return 20; }
+diff --git a/src/lost_baseline.cpp b/src/lost_baseline.cpp
+index 5555555..6666666 100644
+--- a/src/lost_baseline.cpp
++++ b/src/lost_baseline.cpp
+@@ -1,6 +1,6 @@
+ int lost_baseline_value() {
+     int stable = 1;
+     return stable;
+ }
+ 
+-int changed_anchor() { return 1; }
++int changed_anchor() { return 2; }
+diff --git a/src/gained_baseline.cpp b/src/gained_baseline.cpp
+index 7777777..8888888 100644
+--- a/src/gained_baseline.cpp
++++ b/src/gained_baseline.cpp
+@@ -1,6 +1,6 @@
+ int gained_baseline_value() {
+     int stable = 2;
+     return stable;
+ }
+ 
+-int changed_anchor() { return 1; }
++int changed_anchor() { return 2; }
+diff --git a/src/uncovered_included.cpp b/src/uncovered_included.cpp
+index 9999999..aaaaaaa 100644
+--- a/src/uncovered_included.cpp
++++ b/src/uncovered_included.cpp
+@@ -1,6 +1,6 @@
+ int included_uncovered_value() {
+     int newly_tracked = 4;
+     return newly_tracked;
+ }
+ 
+-int changed_anchor() { return 1; }
++int changed_anchor() { return 2; }
+diff --git a/src/covered_included.cpp b/src/covered_included.cpp
+index bbbbbbb..ccccccc 100644
+--- a/src/covered_included.cpp
++++ b/src/covered_included.cpp
+@@ -1,6 +1,6 @@
+ int included_covered_value() {
+     int newly_tracked = 5;
+     return newly_tracked;
+ }
+ 
+-int changed_anchor() { return 1; }
++int changed_anchor() { return 2; }

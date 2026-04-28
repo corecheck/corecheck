@@ -5,6 +5,7 @@ locals {
     "github-sync",
     "migrate",
     "handle-coverage",
+    "handle-coverage-failure",
     "handle-benchmarks",
     "handle-mutation",
     "rerun-all",
@@ -62,6 +63,21 @@ locals {
           GITHUB_ACCESS_TOKEN = var.github_token
 
           BUCKET_DATA_URL = var.corecheck_data_bucket_url
+        }
+      }
+    },
+    "handle-coverage-failure" = {
+      timeout                = 60
+      memory_size            = 128
+      ephemeral_storage_size = 512
+      environment = {
+        variables = {
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
         }
       }
     },
@@ -333,8 +349,15 @@ resource "aws_sfn_state_machine" "state_machine" {
         "JobName": "coverage",
         "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
       },
-      "Next": "Handle coverage",
-      "ResultPath": "$.coverage_job"
+      "ResultPath": "$.coverage_job",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.coverage_error",
+          "Next": "Handle coverage failure"
+        }
+      ],
+      "Next": "Handle coverage"
     },
     "Handle coverage": {
       "Type": "Task",
@@ -347,8 +370,29 @@ resource "aws_sfn_state_machine" "state_machine" {
           "step_function_execution_arn.$": "$$.Execution.Id"
         }
       },
-      "Next": "Parallel",
-      "ResultPath": "$.coverage_result"
+      "ResultPath": "$.coverage_result",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.coverage_error",
+          "Next": "Handle coverage failure"
+        }
+      ],
+      "Next": "Parallel"
+    },
+    "Handle coverage failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "handle-coverage-failure-${terraform.workspace}:$LATEST",
+        "Payload.$": "$"
+      },
+      "ResultPath": "$.coverage_failure_result",
+      "Next": "Coverage failed"
+    },
+    "Coverage failed": {
+      "Type": "Fail",
+      "Cause": "Coverage report generation failed"
     },
     "Parallel": {
       "Type": "Parallel",

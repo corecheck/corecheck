@@ -1,0 +1,97 @@
+{
+  "gcovr/format_version": "0.14",
+  "files": [
+    {
+      "file": "src/uncovered_new_code.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 1,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "11111111111111111111111111111111",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/covered_new_code.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 1,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "22222222222222222222222222222222",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/lost_baseline.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "33333333333333333333333333333333",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "44444444444444444444444444444444",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/gained_baseline.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 0,
+          "gcovr/md5": "66666666666666666666666666666666",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "77777777777777777777777777777777",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/uncovered_included.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "99999999999999999999999999999999",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/covered_included.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "branches": []
+        }
+      ]
+    }
+  ]
+}

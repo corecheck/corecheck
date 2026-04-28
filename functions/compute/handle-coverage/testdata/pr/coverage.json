@@ -1,0 +1,125 @@
+{
+  "gcovr/format_version": "0.14",
+  "files": [
+    {
+      "file": "src/uncovered_new_code.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 1,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "dddddddddddddddddddddddddddddddd",
+          "branches": []
+        },
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 0,
+          "gcovr/md5": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/covered_new_code.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 1,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "ffffffffffffffffffffffffffffffff",
+          "branches": []
+        },
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 4,
+          "gcovr/md5": "12121212121212121212121212121212",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/lost_baseline.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 0,
+          "gcovr/md5": "13131313131313131313131313131313",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "14141414141414141414141414141414",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/gained_baseline.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 3,
+          "gcovr/md5": "16161616161616161616161616161616",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "17171717171717171717171717171717",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/uncovered_included.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 0,
+          "gcovr/md5": "19191919191919191919191919191919",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "20202020202020202020202020202020",
+          "branches": []
+        }
+      ]
+    },
+    {
+      "file": "src/covered_included.cpp",
+      "functions": [],
+      "lines": [
+        {
+          "line_number": 2,
+          "function_name": null,
+          "count": 5,
+          "gcovr/md5": "22222222222222222222222222222221",
+          "branches": []
+        },
+        {
+          "line_number": 3,
+          "function_name": null,
+          "count": 1,
+          "gcovr/md5": "23232323232323232323232323232323",
+          "branches": []
+        }
+      ]
+    }
+  ]
+}
