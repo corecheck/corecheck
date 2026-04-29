@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 const (
@@ -19,9 +18,9 @@ type CoverageReport struct {
 	Status                   string                                   `json:"status" gorm:"default:pending"`
 	FailureReason            string                                   `json:"failure_reason"`
 	BenchmarkStatus          string                                   `json:"benchmark_status" gorm:"default:pending"`
-	IsMaster                 bool                                     `json:"is_master"`
-	PRNumber                 int                                      `json:"pr_number"`
-	Commit                   string                                   `json:"commit"`
+	IsMaster                 bool                                     `json:"is_master" gorm:"index:idx_coverage_reports_commit_is_master,priority:2"`
+	PRNumber                 int                                      `json:"pr_number" gorm:"index:idx_coverage_reports_pr_number_created_at,priority:1"`
+	Commit                   string                                   `json:"commit" gorm:"index:idx_coverage_reports_commit_is_master,priority:1"`
 	BaseCommit               string                                   `json:"base_commit"`
 	StepFunctionExecutionARN string                                   `json:"step_function_execution_arn"`
 	CoverageBatchJobID       string                                   `json:"coverage_batch_job_id"`
@@ -30,12 +29,12 @@ type CoverageReport struct {
 	BenchmarksGrouped        map[string]*BenchmarkResult              `json:"benchmarks_grouped" gorm:"-"`
 	Hunks                    []CoverageFileHunk                       `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	Coverage                 map[string]map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
-	CreatedAt                time.Time                                `json:"created_at"`
+	CreatedAt                time.Time                                `json:"created_at" gorm:"index:idx_coverage_reports_pr_number_created_at,priority:2,sort:desc"`
 }
 
 type CoverageFileHunkLine struct {
 	ID                 int    `json:"id,omitempty" gorm:"primaryKey"`
-	CoverageFileHunkID int    `json:"hunk_id"`
+	CoverageFileHunkID int    `json:"hunk_id" gorm:"index"`
 	LineNumber         int    `json:"line_number"`
 	Content            string `json:"content"`
 	Highlight          bool   `json:"highlight"`
@@ -46,11 +45,15 @@ type CoverageFileHunkLine struct {
 
 type CoverageFileHunk struct {
 	ID               int `json:"id,omitempty" gorm:"primaryKey"`
-	CoverageReportID int `json:"coverage_report_id"`
+	CoverageReportID int `json:"coverage_report_id" gorm:"index"`
 
 	CoverageType string                 `json:"coverage_type"`
 	Filename     string                 `json:"filename"`
 	Lines        []CoverageFileHunkLine `json:"lines" gorm:"foreignKey:CoverageFileHunkID;constraint:OnDelete:CASCADE"`
+}
+
+func coverageReportWithDetails() *gorm.DB {
+	return DB.Preload("Benchmarks").Preload("Hunks").Preload("Hunks.Lines")
 }
 
 func CreateCoverageReport(report *CoverageReport) error {
@@ -59,7 +62,7 @@ func CreateCoverageReport(report *CoverageReport) error {
 
 func GetCoverageReport(id int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("id = ?", id).First(&report).Error
+	err := coverageReportWithDetails().Where("id = ?", id).First(&report).Error
 	return &report, err
 }
 
@@ -188,7 +191,7 @@ func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 
 func GetLatestPullCoverageReport(prNum int) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload(clause.Associations).Preload("Hunks.Lines").Where("pr_number = ? AND status IN ?", prNum, []string{
+	err := coverageReportWithDetails().Where("pr_number = ? AND status IN ?", prNum, []string{
 		COVERAGE_REPORT_STATUS_SUCCESS,
 		COVERAGE_REPORT_STATUS_PENDING,
 		COVERAGE_REPORT_STATUS_FAILURE,

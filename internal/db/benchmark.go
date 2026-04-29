@@ -2,7 +2,7 @@ package db
 
 type BenchmarkResult struct {
 	ID               int `json:"id,omitempty" gorm:"primaryKey"`
-	CoverageReportID int `json:"coverage_report_id"`
+	CoverageReportID int `json:"coverage_report_id" gorm:"index"`
 
 	Name                                   string  `json:"name"`
 	Title                                  string  `json:"title"`
