@@ -1,5 +1,6 @@
 resource "aws_api_gateway_rest_api" "api" {
-  name = "api-${terraform.workspace}"
+  name                     = "api-${terraform.workspace}"
+  minimum_compression_size = 1024
 }
 
 resource "aws_api_gateway_resource" "pulls" {
