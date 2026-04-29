@@ -6,6 +6,7 @@
     export let data;
 
     $: report = data.report;
+    $: coverageTotals = data.coverageTotals || [];
 
     function formatDate(value) {
         if (!value) return "—";
@@ -51,6 +52,17 @@
                 </div>
             {/if}
         </div>
+
+        {#if coverageTotals.length}
+            <div class="coverage-totals">
+                {#each coverageTotals as total}
+                    <div class="coverage-total-card">
+                        <span class="coverage-total-label">{total.label}</span>
+                        <span class="coverage-total-value txt-mono">{total.value}</span>
+                    </div>
+                {/each}
+            </div>
+        {/if}
 
         {#if !report}
             <div class="card alert alert-info">
@@ -170,6 +182,38 @@
         min-width: min(220px, 100%);
     }
 
+    .coverage-totals {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+        gap: 12px;
+    }
+
+    .coverage-total-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .coverage-total-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .coverage-total-value {
+        color: #0f172a;
+        font-size: 1.05rem;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
     .meta-label {
         font-size: 0.75rem;
         font-weight: 700;
@@ -224,6 +268,10 @@
 
         .meta-card {
             min-width: 100%;
+        }
+
+        .coverage-total-card {
+            padding: 14px 16px;
         }
 
         .report-actions {
