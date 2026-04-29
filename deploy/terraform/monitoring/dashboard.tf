@@ -13,10 +13,12 @@ locals {
 }
 
 resource "aws_timestreamwrite_database" "dashboard" {
+  provider      = aws.compute_region
   database_name = local.dashboard_stack_name
 }
 
 resource "aws_timestreamwrite_table" "dashboard" {
+  provider = aws.compute_region
   for_each = local.dashboard_timestream_tables
 
   database_name = aws_timestreamwrite_database.dashboard.database_name

@@ -29,7 +29,7 @@ locals {
       "provisioning/datasources/corecheck.yaml" = templatefile("${path.module}/public-grafana-bootstrap/datasources.yaml.tftpl", {
         cloudwatch_name = local.public_grafana_datasource_names.cloudwatch
         timestream_name = local.public_grafana_datasource_names.timestream
-        default_region  = data.aws_region.current.name
+        default_region  = var.dashboard_compute_region
         database_name   = aws_timestreamwrite_database.dashboard.database_name
       })
       "provisioning/dashboards/corecheck.yaml" = templatefile("${path.module}/public-grafana-bootstrap/dashboards.yaml.tftpl", {})
