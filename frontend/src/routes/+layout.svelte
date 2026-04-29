@@ -85,6 +85,16 @@
             </a>
             <a
                 data-sveltekit-preload-code="eager"
+                href="/master-coverage"
+                class="menu-item"
+                aria-label="Master coverage"
+                class:active={$page.url.pathname.includes("/master-coverage")}
+                use:tooltip={{ text: "Master coverage", position: "right" }}
+            >
+                <i style="font-size: 25px; text-align: center" class="ri-file-chart-line" />
+            </a>
+            <a
+                data-sveltekit-preload-code="eager"
                 href="/jobs"
                 class="menu-item"
                 aria-label="Jobs"

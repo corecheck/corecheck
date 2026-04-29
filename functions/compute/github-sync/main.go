@@ -31,57 +31,24 @@ type StateMachineInput struct {
 	Params types.JobParams `json:"params"`
 }
 
-func checkMasterCoverage(c *github.Client) error {
-	log.Info("Checking master coverage...")
-	master, _, err := c.Repositories.GetBranch(context.Background(), "bitcoin", "bitcoin", "master", 0)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	log.Debug("Latest commit: %s", master.GetCommit().GetSHA())
-
-	hasReport, err := db.HasCoverageReportForCommitMaster(master.GetCommit().GetSHA())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	if hasReport {
-		log.Info("Master has coverage for latest commit")
-		return nil
-	}
-
-	log.Info("Master does not have coverage for latest commit, adding to queue")
-
-	report := &db.CoverageReport{
-		Commit:     master.GetCommit().GetSHA(),
-		IsMaster:   true,
-		BaseCommit: master.GetCommit().GetSHA(),
-	}
-
-	err = db.CreateCoverageReport(report)
-	if err != nil {
-		log.Errorf("Error creating coverage report: %s", err)
-		return err
-	}
-
+func startMasterCoverageExecution(report *db.CoverageReport, commit string) error {
 	params := StateMachineInput{
 		Params: types.JobParams{
-			Commit:     master.GetCommit().GetSHA(),
+			Commit:     commit,
 			IsMaster:   "true",
 			PRNumber:   "0",
-			BaseCommit: master.GetCommit().GetSHA(),
+			BaseCommit: commit,
 		},
 	}
-	paramsJson, err := json.Marshal(params)
+	paramsJSON, err := json.Marshal(params)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
+
 	execution, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
 		StateMachineArn: aws.String(cfg.StateMachineARN),
-		Input:           aws.String(string(paramsJson)),
+		Input:           aws.String(string(paramsJSON)),
 	})
 	if err != nil {
 		log.Error(err)
@@ -94,6 +61,58 @@ func checkMasterCoverage(c *github.Client) error {
 		return err
 	}
 
+	return nil
+}
+
+func checkMasterCoverage(c *github.Client) error {
+	log.Info("Checking master coverage...")
+	master, _, err := c.Repositories.GetBranch(context.Background(), "bitcoin", "bitcoin", "master", 0)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	log.Debug("Latest commit: %s", master.GetCommit().GetSHA())
+
+	commit := master.GetCommit().GetSHA()
+	report, err := db.GetCoverageReportByCommitMaster(commit)
+	if err == nil {
+		if report.Status == db.COVERAGE_REPORT_STATUS_PENDING {
+			log.Info("Master coverage is already pending for latest commit")
+			return nil
+		}
+		if report.GeneratedAt != nil {
+			log.Info("Master has coverage for latest commit")
+			return nil
+		}
+
+		log.Info("Master coverage exists but the HTML report is missing, re-running coverage")
+		return startMasterCoverageExecution(report, commit)
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Error(err)
+		return err
+	}
+
+	log.Info("Master does not have coverage for latest commit, adding to queue")
+
+	report = &db.CoverageReport{
+		Commit:     commit,
+		IsMaster:   true,
+		BaseCommit: commit,
+	}
+
+	err = db.CreateCoverageReport(report)
+	if err != nil {
+		log.Errorf("Error creating coverage report: %s", err)
+		return err
+	}
+
+	err = startMasterCoverageExecution(report, commit)
+	if err != nil {
+		return err
+	}
+
 	err, runMutations := isTimeToRunMutationsAgain()
 	if err != nil {
 		log.Error(err)
@@ -103,15 +122,29 @@ func checkMasterCoverage(c *github.Client) error {
 	if runMutations {
 		log.Info("Time to run mutations again")
 
+		params := StateMachineInput{
+			Params: types.JobParams{
+				Commit:     commit,
+				IsMaster:   "true",
+				PRNumber:   "0",
+				BaseCommit: commit,
+			},
+		}
+		paramsJSON, err := json.Marshal(params)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
 		_, err = stateMachine.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(cfg.MutationMachineARN),
-			Input:           aws.String(string(paramsJson)),
+			Input:           aws.String(string(paramsJSON)),
 		})
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		err = createPendingMutationResult(params.Params.Commit)
+		err = createPendingMutationResult(commit)
 		if err != nil {
 			log.Error(err)
 			return err

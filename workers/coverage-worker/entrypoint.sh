@@ -30,20 +30,34 @@ if [ "$IS_MASTER" != "true" ]; then
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/src
+    S3_COVERAGE_HTML_REPORT_PREFIX=
+    S3_COVERAGE_HTML_REPORT_INDEX=
 else
-   git checkout $COMMIT
+    git checkout $COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/master/$COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/master/$COMMIT/src
+    S3_COVERAGE_HTML_REPORT_PREFIX=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage-report
+    S3_COVERAGE_HTML_REPORT_INDEX=$S3_COVERAGE_HTML_REPORT_PREFIX/index.html
 fi
 
 set +e
 coverage_exists=$(aws s3 ls $S3_COVERAGE_FILE)
 set -e
 
-if [ "$coverage_exists" != "" ]; then
+master_html_exists=""
+if [ "$IS_MASTER" == "true" ]; then
+    set +e
+    master_html_exists=$(aws s3 ls $S3_COVERAGE_HTML_REPORT_INDEX)
+    set -e
+fi
+
+if [ "$coverage_exists" != "" ] && { [ "$IS_MASTER" != "true" ] || [ "$master_html_exists" != "" ]; }; then
     echo "Coverage data already exists for this commit"
 else
+    if [ "$coverage_exists" != "" ] && [ "$IS_MASTER" == "true" ]; then
+        echo "Coverage JSON exists but HTML report is missing; regenerating master coverage artifacts"
+    fi
 
     ./test/get_previous_releases.py
 
@@ -95,8 +109,14 @@ else
     time llvm-cov export --format=lcov --object=build/bin/test_bitcoin --object=build/bin/bitcoind --instr-profile=build/coverage.profdata --ignore-filename-regex="src/crc32c/|src/leveldb/|src/minisketch/|src/secp256k1/|src/test/" -Xdemangler=llvm-cxxfilt > build/coverage.info
     
     python3 /convert_lcov_to_gcovr.py build/coverage.info coverage.json
-    
+
     aws s3 cp coverage.json $S3_COVERAGE_FILE
+
+    if [ "$IS_MASTER" == "true" ]; then
+        rm -rf build/coverage-html
+        time llvm-cov show build/bin/test_bitcoin --object=build/bin/bitcoind --instr-profile=build/coverage.profdata --ignore-filename-regex="src/crc32c/|src/leveldb/|src/minisketch/|src/secp256k1/|src/test/" -Xdemangler=llvm-cxxfilt --format=html --output-dir=build/coverage-html
+        aws s3 sync --delete build/coverage-html $S3_COVERAGE_HTML_REPORT_PREFIX
+    fi
 fi
 
 set +e

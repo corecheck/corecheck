@@ -29,6 +29,7 @@ type CoverageReport struct {
 	BenchmarksGrouped        map[string]*BenchmarkResult              `json:"benchmarks_grouped" gorm:"-"`
 	Hunks                    []CoverageFileHunk                       `json:"-" gorm:"foreignKey:CoverageReportID;constraint:OnDelete:CASCADE"`
 	Coverage                 map[string]map[string][]CoverageFileHunk `json:"coverage" gorm:"-"`
+	GeneratedAt              *time.Time                               `json:"generated_at"`
 	CreatedAt                time.Time                                `json:"created_at" gorm:"index:idx_coverage_reports_pr_number_created_at,priority:2,sort:desc"`
 }
 
@@ -152,6 +153,10 @@ func UpdateCoverageReportTrace(reportID int, stepFunctionExecutionARN string, co
 	}
 
 	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Updates(updates).Error
+}
+
+func UpdateCoverageReportGeneratedAt(reportID int, generatedAt time.Time) error {
+	return DB.Model(&CoverageReport{}).Where("id = ?", reportID).Update("generated_at", generatedAt).Error
 }
 
 func HasCoverageReportForCommitMaster(commit string) (bool, error) {

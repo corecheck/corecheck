@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/corecheck/corecheck/internal/config"
@@ -41,6 +42,12 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 		err = db.UpdateCoverageReport(report.ID, db.COVERAGE_REPORT_STATUS_SUCCESS, report.BenchmarkStatus, report.BaseCommit)
 		if err != nil {
 			log.Error("Error updating coverage report", err)
+			return err
+		}
+
+		err = db.UpdateCoverageReportGeneratedAt(report.ID, time.Now().UTC())
+		if err != nil {
+			log.Error("Error setting coverage report generation time", err)
 			return err
 		}
 
@@ -95,6 +102,12 @@ func handleCodeCoverageSuccess(job *types.JobParams) error {
 	log.Debugf("Updating coverage data for PR %d", job.PRNumber)
 	err = db.UpdateCoverageReport(report.ID, report.Status, report.BenchmarkStatus, report.BaseCommit)
 	if err != nil {
+		return err
+	}
+
+	err = db.UpdateCoverageReportGeneratedAt(report.ID, time.Now().UTC())
+	if err != nil {
+		log.Error("Error setting coverage report generation time", err)
 		return err
 	}
 
