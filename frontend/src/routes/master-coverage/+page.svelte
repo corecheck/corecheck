@@ -23,13 +23,11 @@
 <div class="master-coverage-page">
     <div class="page-shell">
         <div class="page-header card">
-            <div>
-                <div class="eyebrow">Master coverage</div>
-                <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
-                <p class="subtitle">
-                    RAW HTML Coverage report generated with `llvm-cov show --format=html`
-                </p>
-            </div>
+            <div class="eyebrow">Master coverage</div>
+            <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
+            <p class="subtitle">
+                RAW HTML Coverage report generated with `llvm-cov show --format=html`
+            </p>
 
             {#if report}
                 <div class="meta-grid">
@@ -47,12 +45,6 @@
                     <div class="meta-card">
                         <span class="meta-label">Generated</span>
                         <span class="meta-value">{getGeneratedLabel(report)}</span>
-                    </div>
-                    <div class="meta-card">
-                        <span class="meta-label">Status</span>
-                        <span class="meta-value status-pill status-{report.status}">
-                            {report.status}
-                        </span>
                     </div>
                 </div>
             {/if}
@@ -124,6 +116,10 @@
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
 
+    .page-header {
+        padding: clamp(16px, 1.75vw, 20px);
+    }
+
     .eyebrow {
         font-size: 0.8rem;
         font-weight: 700;
@@ -135,31 +131,32 @@
 
     h1 {
         margin: 0;
-        font-size: 2rem;
+        font-size: clamp(1.65rem, 2.2vw, 1.9rem);
         line-height: 1.2;
     }
 
     .subtitle {
-        margin: 12px 0 0;
+        margin: 8px 0 0;
         color: #5f6b7a;
         max-width: 60rem;
     }
 
     .meta-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+        display: flex;
+        flex-wrap: wrap;
         gap: 12px;
-        margin-top: 24px;
+        margin-top: 14px;
     }
 
     .meta-card {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 14px 16px;
+        padding: 12px 14px;
         display: flex;
         flex-direction: column;
         gap: 6px;
+        min-width: min(220px, 100%);
     }
 
     .meta-label {
@@ -174,30 +171,6 @@
         color: #0f172a;
         font-weight: 600;
         word-break: break-word;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        width: fit-content;
-        padding: 4px 10px;
-        border-radius: 999px;
-        text-transform: capitalize;
-    }
-
-    .status-success {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .status-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .status-failure {
-        background: #fee2e2;
-        color: #b91c1c;
     }
 
     .report-frame {
@@ -226,7 +199,11 @@
 
     @media (max-width: 768px) {
         h1 {
-            font-size: clamp(1.35rem, 4vw, 1.6rem);
+            font-size: clamp(1.35rem, 4vw, 1.55rem);
+        }
+
+        .meta-card {
+            min-width: 100%;
         }
 
         .report-actions {
