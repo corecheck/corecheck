@@ -8,14 +8,9 @@ output "dashboard_grafana_workspace_id" {
   value       = module.monitoring.dashboard_grafana_workspace_id
 }
 
-output "dashboard_timestream_database_name" {
-  description = "Timestream database name for dashboard metrics"
-  value       = module.monitoring.dashboard_timestream_database_name
-}
-
-output "dashboard_timestream_table_names" {
-  description = "Initial Timestream table names for dashboard metrics"
-  value       = module.monitoring.dashboard_timestream_table_names
+output "dashboard_cloudwatch_namespace" {
+  description = "CloudWatch namespace used for dashboard telemetry metrics"
+  value       = module.monitoring.dashboard_cloudwatch_namespace
 }
 
 output "public_dashboard_template_catalog" {

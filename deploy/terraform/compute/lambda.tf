@@ -73,33 +73,31 @@ resource "aws_iam_role_policy_attachment" "lambda_invoke_policy_attachment" {
   policy_arn = aws_iam_policy.function_invoke_policy.arn
 }
 
-data "aws_iam_policy_document" "allow_lambda_timestream_write" {
-  count = var.telemetry_backend == "timestream" ? 1 : 0
+data "aws_iam_policy_document" "allow_lambda_cloudwatch_write" {
+  count = var.telemetry_backend == "cloudwatch" ? 1 : 0
 
   statement {
     effect    = "Allow"
-    actions   = ["timestream:DescribeEndpoints"]
+    actions   = ["cloudwatch:PutMetricData"]
     resources = ["*"]
-  }
 
-  statement {
-    effect  = "Allow"
-    actions = ["timestream:WriteRecords"]
-    resources = [
-      "arn:aws:timestream:${var.telemetry_timestream_region}:${data.aws_caller_identity.current.account_id}:database/${var.telemetry_timestream_database}/table/${var.telemetry_timestream_table}",
-    ]
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = [var.telemetry_cloudwatch_namespace]
+    }
   }
 }
 
-resource "aws_iam_policy" "function_timestream_write_policy" {
-  count       = var.telemetry_backend == "timestream" ? 1 : 0
-  name        = "AllowLambdaTimestreamWritePolicy-${terraform.workspace}"
-  description = "Policy for lambda to write telemetry metrics to timestream"
-  policy      = data.aws_iam_policy_document.allow_lambda_timestream_write[0].json
+resource "aws_iam_policy" "function_cloudwatch_write_policy" {
+  count       = var.telemetry_backend == "cloudwatch" ? 1 : 0
+  name        = "AllowLambdaCloudWatchWritePolicy-${terraform.workspace}"
+  description = "Policy for lambda to write telemetry metrics to CloudWatch"
+  policy      = data.aws_iam_policy_document.allow_lambda_cloudwatch_write[0].json
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_timestream_write_policy_attachment" {
-  count      = var.telemetry_backend == "timestream" ? 1 : 0
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_write_policy_attachment" {
+  count      = var.telemetry_backend == "cloudwatch" ? 1 : 0
   role       = aws_iam_role.lambda.id
-  policy_arn = aws_iam_policy.function_timestream_write_policy[0].arn
+  policy_arn = aws_iam_policy.function_cloudwatch_write_policy[0].arn
 }

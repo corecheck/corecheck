@@ -8,14 +8,9 @@ output "dashboard_grafana_workspace_id" {
   value       = aws_grafana_workspace.dashboard.id
 }
 
-output "dashboard_timestream_database_name" {
-  description = "Timestream database name for dashboard metrics"
-  value       = aws_timestreamwrite_database.dashboard.database_name
-}
-
-output "dashboard_timestream_table_names" {
-  description = "Initial Timestream table names for dashboard metrics"
-  value       = { for name, table in aws_timestreamwrite_table.dashboard : name => table.table_name }
+output "dashboard_cloudwatch_namespace" {
+  description = "CloudWatch namespace used for dashboard telemetry metrics"
+  value       = local.dashboard_cloudwatch_namespace
 }
 
 output "public_dashboard_template_catalog" {

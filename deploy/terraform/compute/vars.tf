@@ -70,28 +70,22 @@ variable "lambda_bucket" {
 variable "telemetry_backend" {
   type        = string
   description = "telemetry backend used by compute workloads"
-  default     = "timestream"
+  default     = "cloudwatch"
 
   validation {
-    condition     = contains(["datadog", "timestream"], var.telemetry_backend)
-    error_message = "telemetry_backend must be either datadog or timestream."
+    condition     = contains(["cloudwatch"], var.telemetry_backend)
+    error_message = "telemetry_backend must be cloudwatch."
   }
 }
 
-variable "telemetry_timestream_database" {
+variable "telemetry_cloudwatch_namespace" {
   type        = string
-  description = "timestream database name for telemetry metrics"
+  description = "CloudWatch namespace for telemetry metrics"
   default     = ""
 }
 
-variable "telemetry_timestream_table" {
+variable "telemetry_cloudwatch_region" {
   type        = string
-  description = "timestream table name for telemetry metrics"
-  default     = ""
-}
-
-variable "telemetry_timestream_region" {
-  type        = string
-  description = "AWS region for the timestream telemetry backend"
+  description = "AWS region for the CloudWatch telemetry backend"
   default     = ""
 }
