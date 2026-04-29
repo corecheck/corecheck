@@ -33,7 +33,6 @@ docker run -d \
   -e GF_AUTH_ANONYMOUS_HIDE_VERSION="true" \
   -e GF_SECURITY_ADMIN_USER="${admin_user}" \
   -e GF_SECURITY_ADMIN_PASSWORD="${admin_password}" \
-  -e GF_INSTALL_PLUGINS="grafana-timestream-datasource" \
   -e CORECHECK_GRAFANA_BOOTSTRAP_REVISION="${bootstrap_revision}" \
   -v /opt/corecheck/grafana/data:/var/lib/grafana \
   -v /opt/corecheck/grafana/provisioning:/etc/grafana/provisioning \

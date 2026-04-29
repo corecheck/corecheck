@@ -7,13 +7,14 @@ BASE_COMMIT=$4
 
 set -e
 
-TELEMETRY_TIMESTREAM_TABLE=${TELEMETRY_TIMESTREAM_TABLE:-dashboard_metrics}
+TELEMETRY_CLOUDWATCH_NAMESPACE=${TELEMETRY_CLOUDWATCH_NAMESPACE:-Corecheck}
+TELEMETRY_CLOUDWATCH_REGION=${TELEMETRY_CLOUDWATCH_REGION:-${AWS_REGION:-${AWS_DEFAULT_REGION:-}}}
 telemetry_records=()
 
 telemetry_ready() {
-    [ "${TELEMETRY_BACKEND}" = "timestream" ] &&
-        [ -n "${TELEMETRY_TIMESTREAM_DATABASE}" ] &&
-        [ -n "${TELEMETRY_TIMESTREAM_REGION}" ]
+    [ "${TELEMETRY_BACKEND}" = "cloudwatch" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_NAMESPACE}" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
 }
 
 sanitize_dimension_name() {
@@ -35,7 +36,6 @@ queue_metric() {
     shift 2
 
     local dimensions='[]'
-    dimensions=$(printf '%s' "$dimensions" | jq -c --arg value "$metric_name" '. + [{"Name":"metric_name","Value":$value}]')
 
     while [ "$#" -gt 0 ]; do
         local tag_name=${1%%=*}
@@ -48,11 +48,11 @@ queue_metric() {
 
     telemetry_records+=("$(jq -nc \
         --argjson dimensions "$dimensions" \
+        --arg metric_name "$metric_name" \
         --arg value "$metric_value" \
-        --arg time "$(date +%s%3N)" \
-        '{Dimensions:$dimensions, MeasureName:"value", MeasureValue:$value, MeasureValueType:"DOUBLE", Time:$time, TimeUnit:"MILLISECONDS"}')")
+        '{MetricName:$metric_name, Dimensions:$dimensions, Value:($value | tonumber)}')")
 
-    if [ "${#telemetry_records[@]}" -ge 100 ]; then
+    if [ "${#telemetry_records[@]}" -ge 20 ]; then
         flush_metrics
     fi
 }
@@ -65,19 +65,18 @@ flush_metrics() {
     local records_json
     records_json=$(printf '%s\n' "${telemetry_records[@]}" | jq -cs '.')
 
-    if ! aws timestream-write write-records \
-        --region "${TELEMETRY_TIMESTREAM_REGION}" \
-        --database-name "${TELEMETRY_TIMESTREAM_DATABASE}" \
-        --table-name "${TELEMETRY_TIMESTREAM_TABLE}" \
-        --records "${records_json}" >/dev/null; then
-        echo "Failed to write coverage worker telemetry to Timestream" >&2
+    if ! aws cloudwatch put-metric-data \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --namespace "${TELEMETRY_CLOUDWATCH_NAMESPACE}" \
+        --metric-data "${records_json}" >/dev/null; then
+        echo "Failed to write coverage worker telemetry to CloudWatch" >&2
     fi
 
     telemetry_records=()
 }
 
-if [ "${TELEMETRY_BACKEND}" = "timestream" ] && ! telemetry_ready; then
-    echo "Telemetry backend is timestream but TELEMETRY_TIMESTREAM_* is incomplete; skipping telemetry writes" >&2
+if [ "${TELEMETRY_BACKEND}" = "cloudwatch" ] && ! telemetry_ready; then
+    echo "Telemetry backend is cloudwatch but TELEMETRY_CLOUDWATCH_* is incomplete; skipping telemetry writes" >&2
 fi
 
 ccache --show-stats
@@ -156,13 +155,13 @@ else
     
     if [ "$IS_MASTER" == "true" ]; then
         binary_size=$(stat -c %s ./build/bin/bitcoind)
-        queue_metric "bitcoin.bitcoin.binary_size" "$binary_size" "commit=$COMMIT"
+        queue_metric "bitcoin.bitcoin.binary_size" "$binary_size"
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
                 test_name="${BASH_REMATCH[1]}";
                 test_duration="${BASH_REMATCH[3]}";
-                queue_metric "bitcoin.bitcoin.test.functional.duration" "$test_duration" "test_name=$test_name" "commit=$COMMIT"
-                echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
+                queue_metric "bitcoin.bitcoin.test.functional.duration" "$test_duration" "test_name=$test_name"
+                echo "test_name:$test_name,duration:$test_duration"
             fi;
         done < "functional-tests.log"
         flush_metrics

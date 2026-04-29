@@ -1,10 +1,9 @@
 locals {
   bench_array_size = 10
   telemetry_environment = {
-    TELEMETRY_BACKEND             = var.telemetry_backend
-    TELEMETRY_TIMESTREAM_DATABASE = var.telemetry_timestream_database
-    TELEMETRY_TIMESTREAM_TABLE    = var.telemetry_timestream_table
-    TELEMETRY_TIMESTREAM_REGION   = var.telemetry_timestream_region
+    TELEMETRY_BACKEND              = var.telemetry_backend
+    TELEMETRY_CLOUDWATCH_NAMESPACE = var.telemetry_cloudwatch_namespace
+    TELEMETRY_CLOUDWATCH_REGION    = var.telemetry_cloudwatch_region
   }
   telemetry_environment_list = [
     for name, value in local.telemetry_environment : {

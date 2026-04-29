@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	BackendTimestream = "timestream"
+	BackendCloudWatch = "cloudwatch"
 
-	EnvBackend             = "TELEMETRY_BACKEND"
-	EnvTimestreamDatabase  = "TELEMETRY_TIMESTREAM_DATABASE"
-	EnvTimestreamTable     = "TELEMETRY_TIMESTREAM_TABLE"
-	EnvTimestreamRegion    = "TELEMETRY_TIMESTREAM_REGION"
-	DefaultTimestreamTable = "dashboard_metrics"
+	EnvBackend                 = "TELEMETRY_BACKEND"
+	EnvCloudWatchNamespace     = "TELEMETRY_CLOUDWATCH_NAMESPACE"
+	EnvCloudWatchRegion        = "TELEMETRY_CLOUDWATCH_REGION"
+	DefaultCloudWatchNamespace = "Corecheck"
 )
 
 type Tag struct {
@@ -42,8 +41,8 @@ func NewClientFromEnv() (Client, error) {
 	}
 
 	switch backend {
-	case BackendTimestream:
-		return NewTimestreamClientFromEnv()
+	case BackendCloudWatch:
+		return NewCloudWatchClientFromEnv()
 	default:
 		return nil, fmt.Errorf("unsupported telemetry backend %q", backend)
 	}
@@ -79,11 +78,11 @@ func Metric(name string, value float64, tags ...Tag) {
 func backendFromEnv() (string, error) {
 	backend := strings.ToLower(strings.TrimSpace(os.Getenv(EnvBackend)))
 	if backend == "" {
-		return BackendTimestream, nil
+		return BackendCloudWatch, nil
 	}
 
 	switch backend {
-	case BackendTimestream:
+	case BackendCloudWatch:
 		return backend, nil
 	default:
 		return "", fmt.Errorf("unsupported telemetry backend %q", backend)

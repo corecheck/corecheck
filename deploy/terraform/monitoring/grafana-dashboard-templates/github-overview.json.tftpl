@@ -1,12 +1,12 @@
 {
   "__inputs": [
     {
-      "name": "DS_TIMESTREAM",
-      "label": "Timestream",
-      "description": "Amazon Timestream datasource used for the Corecheck public dashboard migration",
+      "name": "DS_CLOUDWATCH",
+      "label": "CloudWatch",
+      "description": "CloudWatch datasource used for the Corecheck public dashboard migration",
       "type": "datasource",
-      "pluginId": "grafana-timestream-datasource",
-      "pluginName": "Amazon Timestream"
+      "pluginId": "cloudwatch",
+      "pluginName": "CloudWatch"
     }
   ],
   "annotations": {
@@ -30,7 +30,7 @@
       }
     ]
   },
-  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Assumes GitHub stats metrics land in ${timestream_database_name}.${dashboard_metrics_table_name} with the original DataDog metric names preserved in measure_name.",
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Assumes GitHub stats metrics are published to CloudWatch custom metrics in the ${telemetry_namespace} namespace.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -39,7 +39,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "$${DS_TIMESTREAM}",
+      "datasource": "$${DS_CLOUDWATCH}",
       "description": "Open, closed, merged, and total pull request counts from the GitHub stats sync.",
       "fieldConfig": {
         "defaults": {
@@ -91,17 +91,59 @@
       },
       "targets": [
         {
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT BIN(time, 1d) AS time, measure_name AS metric, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name IN ('bitcoin.bitcoin.pulls.open', 'bitcoin.bitcoin.pulls.closed', 'bitcoin.bitcoin.pulls.merged', 'bitcoin.bitcoin.pulls.total') AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d), measure_name ORDER BY time ASC",
-          "refId": "A"
+          "dimensions": {},
+          "label": "open",
+          "metricName": "bitcoin.bitcoin.pulls.open",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "dimensions": {},
+          "label": "closed",
+          "metricName": "bitcoin.bitcoin.pulls.closed",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "B",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "dimensions": {},
+          "label": "merged",
+          "metricName": "bitcoin.bitcoin.pulls.merged",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "C",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "dimensions": {},
+          "label": "total",
+          "metricName": "bitcoin.bitcoin.pulls.total",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "D",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
         }
       ],
       "title": "Pull request status trend",
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_TIMESTREAM}",
+      "datasource": "$${DS_CLOUDWATCH}",
       "description": "Open, closed, and total issue counts from the GitHub stats sync.",
       "fieldConfig": {
         "defaults": {
@@ -153,10 +195,40 @@
       },
       "targets": [
         {
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT BIN(time, 1d) AS time, measure_name AS metric, AVG(measure_value::double) AS value FROM \\\"${timestream_database_name}\\\".\\\"${dashboard_metrics_table_name}\\\" WHERE measure_name IN ('bitcoin.bitcoin.issues.open', 'bitcoin.bitcoin.issues.closed', 'bitcoin.bitcoin.issues.total') AND time BETWEEN ago(30d) AND now() GROUP BY BIN(time, 1d), measure_name ORDER BY time ASC",
-          "refId": "A"
+          "dimensions": {},
+          "label": "open",
+          "metricName": "bitcoin.bitcoin.issues.open",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "dimensions": {},
+          "label": "closed",
+          "metricName": "bitcoin.bitcoin.issues.closed",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "B",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "dimensions": {},
+          "label": "total",
+          "metricName": "bitcoin.bitcoin.issues.total",
+          "namespace": "${telemetry_namespace}",
+          "period": 86400,
+          "refId": "C",
+          "region": "${compute_region}",
+          "statistics": [
+            "Average"
+          ]
         }
       ],
       "title": "Issue status trend",
@@ -168,6 +240,7 @@
   "style": "dark",
   "tags": [
     "aws",
+    "cloudwatch",
     "corecheck",
     "github",
     "public"

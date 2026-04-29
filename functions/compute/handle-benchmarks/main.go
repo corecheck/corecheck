@@ -74,7 +74,6 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 
 			tags := []telemetry.Tag{
 				telemetry.NewTag("benchmark_name", name),
-				telemetry.NewTag("commit", job.Commit),
 			}
 
 			metrics.Metric("bitcoin.bitcoin.benchmarks.batch", avg.Batch, tags...)
@@ -100,7 +99,7 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 			metrics.Metric("bitcoin.bitcoin.benchmarks.total_time", avg.TotalTime, tags...)
 		}
 
-		metrics.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)), telemetry.NewTag("commit", job.Commit))
+		metrics.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)))
 	}
 
 	log.Info("Creating benchmark results")

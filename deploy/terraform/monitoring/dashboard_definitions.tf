@@ -50,10 +50,8 @@ locals {
   }
 
   public_dashboard_template_context = merge(local.dashboard_job_resources, {
-    timestream_database_name     = aws_timestreamwrite_database.dashboard.database_name
-    dashboard_metrics_table_name = aws_timestreamwrite_table.dashboard["dashboard_metrics"].table_name
-    dashboard_rollups_table_name = aws_timestreamwrite_table.dashboard["dashboard_rollups"].table_name
-    compute_region               = var.dashboard_compute_region
+    telemetry_namespace = local.dashboard_cloudwatch_namespace
+    compute_region      = var.dashboard_compute_region
   })
 
   # Keep these as importable Grafana JSON templates for now. Provisioning workspace-local
@@ -82,28 +80,23 @@ locals {
 
   public_grafana_datasource_names = {
     cloudwatch = "Corecheck CloudWatch"
-    timestream = "Corecheck Timestream"
   }
 
   provisioned_public_dashboard_templates = {
     for key, dashboard in local.public_dashboard_templates : key => replace(
-      replace(
-        templatefile(
-          "${path.module}/${dashboard.template_file}",
-          merge(local.public_dashboard_template_context, {
-            route                   = dashboard.route
-            title                   = dashboard.title
-            datadog_dashboard_id    = dashboard.datadog_dashboard_id
-            datadog_dashboard_title = dashboard.datadog_dashboard_title
-            datadog_widget_count    = dashboard.datadog_widget_count
-            public_dashboard_env    = dashboard.public_dashboard_env
-          })
-        ),
-        "\"$${DS_CLOUDWATCH}\"",
-        "\"${local.public_grafana_datasource_names.cloudwatch}\""
+      templatefile(
+        "${path.module}/${dashboard.template_file}",
+        merge(local.public_dashboard_template_context, {
+          route                   = dashboard.route
+          title                   = dashboard.title
+          datadog_dashboard_id    = dashboard.datadog_dashboard_id
+          datadog_dashboard_title = dashboard.datadog_dashboard_title
+          datadog_widget_count    = dashboard.datadog_widget_count
+          public_dashboard_env    = dashboard.public_dashboard_env
+        })
       ),
-      "\"$${DS_TIMESTREAM}\"",
-      "\"${local.public_grafana_datasource_names.timestream}\""
+      "\"$${DS_CLOUDWATCH}\"",
+      "\"${local.public_grafana_datasource_names.cloudwatch}\""
     )
   }
 

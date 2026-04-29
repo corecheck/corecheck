@@ -8,12 +8,3 @@ datasources:
     jsonData:
       authType: default
       defaultRegion: ${default_region}
-  - name: ${timestream_name}
-    uid: corecheck-timestream
-    type: grafana-timestream-datasource
-    access: proxy
-    editable: false
-    jsonData:
-      authType: default
-      defaultRegion: ${default_region}
-      database: ${database_name}

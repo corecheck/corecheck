@@ -28,9 +28,7 @@ locals {
     {
       "provisioning/datasources/corecheck.yaml" = templatefile("${path.module}/public-grafana-bootstrap/datasources.yaml.tftpl", {
         cloudwatch_name = local.public_grafana_datasource_names.cloudwatch
-        timestream_name = local.public_grafana_datasource_names.timestream
         default_region  = var.dashboard_compute_region
-        database_name   = aws_timestreamwrite_database.dashboard.database_name
       })
       "provisioning/dashboards/corecheck.yaml" = templatefile("${path.module}/public-grafana-bootstrap/dashboards.yaml.tftpl", {})
     },
@@ -126,11 +124,6 @@ resource "aws_iam_role_policy_attachment" "public_grafana_bootstrap" {
 resource "aws_iam_role_policy_attachment" "public_grafana_cloudwatch" {
   role       = aws_iam_role.public_grafana.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonGrafanaCloudWatchAccess"
-}
-
-resource "aws_iam_role_policy_attachment" "public_grafana_timestream" {
-  role       = aws_iam_role.public_grafana.name
-  policy_arn = aws_iam_policy.dashboard_grafana_timestream.arn
 }
 
 resource "aws_iam_role_policy_attachment" "public_grafana_ssm" {

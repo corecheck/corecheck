@@ -20,11 +20,11 @@ variable "github_token" {}
 variable "telemetry_backend" {
   description = "Telemetry backend for compute workloads"
   type        = string
-  default     = "timestream"
+  default     = "cloudwatch"
 
   validation {
-    condition     = contains(["datadog", "timestream"], var.telemetry_backend)
-    error_message = "telemetry_backend must be either datadog or timestream."
+    condition     = contains(["cloudwatch"], var.telemetry_backend)
+    error_message = "telemetry_backend must be cloudwatch."
   }
 }
 

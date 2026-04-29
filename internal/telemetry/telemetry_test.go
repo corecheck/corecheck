@@ -4,40 +4,37 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/timestreamwrite"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
 
-type stubTimestreamWriter struct {
-	input *timestreamwrite.WriteRecordsInput
+type stubCloudWatchClient struct {
+	input *cloudwatch.PutMetricDataInput
 	err   error
 }
 
-func (s *stubTimestreamWriter) WriteRecords(input *timestreamwrite.WriteRecordsInput) (*timestreamwrite.WriteRecordsOutput, error) {
+func (s *stubCloudWatchClient) PutMetricData(input *cloudwatch.PutMetricDataInput) (*cloudwatch.PutMetricDataOutput, error) {
 	s.input = input
-	return &timestreamwrite.WriteRecordsOutput{}, s.err
+	return &cloudwatch.PutMetricDataOutput{}, s.err
 }
 
-func TestNewClientFromEnvDefaultsToTimestream(t *testing.T) {
+func TestNewClientFromEnvDefaultsToCloudWatch(t *testing.T) {
 	t.Setenv(EnvBackend, "")
-	t.Setenv(EnvTimestreamDatabase, "corecheck")
-	t.Setenv(EnvTimestreamRegion, "eu-west-3")
+	t.Setenv(EnvCloudWatchNamespace, "Corecheck/dev")
+	t.Setenv(EnvCloudWatchRegion, "eu-west-3")
 
-	originalFactory := newTimestreamWriteAPI
+	originalFactory := newCloudWatchAPI
 	t.Cleanup(func() {
-		newTimestreamWriteAPI = originalFactory
+		newCloudWatchAPI = originalFactory
 	})
 
-	newTimestreamWriteAPI = func(cfg TimestreamConfig) (timestreamWriteAPI, error) {
-		if cfg.Database != "corecheck" {
-			t.Fatalf("unexpected database %q", cfg.Database)
-		}
-		if cfg.Table != DefaultTimestreamTable {
-			t.Fatalf("unexpected table %q", cfg.Table)
+	newCloudWatchAPI = func(cfg CloudWatchConfig) (cloudWatchAPI, error) {
+		if cfg.Namespace != "Corecheck/dev" {
+			t.Fatalf("unexpected namespace %q", cfg.Namespace)
 		}
 		if cfg.Region != "eu-west-3" {
 			t.Fatalf("unexpected region %q", cfg.Region)
 		}
-		return &stubTimestreamWriter{}, nil
+		return &stubCloudWatchClient{}, nil
 	}
 
 	client, err := NewClientFromEnv()
@@ -45,33 +42,29 @@ func TestNewClientFromEnvDefaultsToTimestream(t *testing.T) {
 		t.Fatalf("NewClientFromEnv() error = %v", err)
 	}
 
-	if _, ok := client.(timestreamClient); !ok {
-		t.Fatalf("expected timestreamClient, got %T", client)
+	if _, ok := client.(cloudWatchClient); !ok {
+		t.Fatalf("expected cloudWatchClient, got %T", client)
 	}
 }
 
-func TestNewClientFromEnvBuildsTimestreamClient(t *testing.T) {
-	t.Setenv(EnvBackend, BackendTimestream)
-	t.Setenv(EnvTimestreamDatabase, "corecheck")
-	t.Setenv(EnvTimestreamRegion, "eu-west-3")
-	t.Setenv(EnvTimestreamTable, "")
+func TestNewClientFromEnvBuildsCloudWatchClient(t *testing.T) {
+	t.Setenv(EnvBackend, BackendCloudWatch)
+	t.Setenv(EnvCloudWatchNamespace, "Corecheck/prod")
+	t.Setenv(EnvCloudWatchRegion, "eu-west-3")
 
-	originalFactory := newTimestreamWriteAPI
+	originalFactory := newCloudWatchAPI
 	t.Cleanup(func() {
-		newTimestreamWriteAPI = originalFactory
+		newCloudWatchAPI = originalFactory
 	})
 
-	newTimestreamWriteAPI = func(cfg TimestreamConfig) (timestreamWriteAPI, error) {
-		if cfg.Database != "corecheck" {
-			t.Fatalf("unexpected database %q", cfg.Database)
-		}
-		if cfg.Table != DefaultTimestreamTable {
-			t.Fatalf("unexpected table %q", cfg.Table)
+	newCloudWatchAPI = func(cfg CloudWatchConfig) (cloudWatchAPI, error) {
+		if cfg.Namespace != "Corecheck/prod" {
+			t.Fatalf("unexpected namespace %q", cfg.Namespace)
 		}
 		if cfg.Region != "eu-west-3" {
 			t.Fatalf("unexpected region %q", cfg.Region)
 		}
-		return &stubTimestreamWriter{}, nil
+		return &stubCloudWatchClient{}, nil
 	}
 
 	client, err := NewClientFromEnv()
@@ -79,25 +72,24 @@ func TestNewClientFromEnvBuildsTimestreamClient(t *testing.T) {
 		t.Fatalf("NewClientFromEnv() error = %v", err)
 	}
 
-	if _, ok := client.(timestreamClient); !ok {
-		t.Fatalf("expected timestreamClient, got %T", client)
+	if _, ok := client.(cloudWatchClient); !ok {
+		t.Fatalf("expected cloudWatchClient, got %T", client)
 	}
 }
 
 func TestNewClientFromEnvRejectsInvalidBackend(t *testing.T) {
-	t.Setenv(EnvBackend, "cloudwatch")
+	t.Setenv(EnvBackend, "invalid")
 
 	if _, err := NewClientFromEnv(); err == nil {
 		t.Fatal("expected invalid backend error")
 	}
 }
 
-func TestTimestreamClientMetricWritesExpectedRecord(t *testing.T) {
-	writer := &stubTimestreamWriter{}
-	client := timestreamClient{
-		writer:   writer,
-		database: "corecheck",
-		table:    "dashboard_metrics",
+func TestCloudWatchClientMetricWritesExpectedRecord(t *testing.T) {
+	writer := &stubCloudWatchClient{}
+	client := cloudWatchClient{
+		client:    writer,
+		namespace: "Corecheck/dev",
 		now: func() time.Time {
 			return time.UnixMilli(1700000000000)
 		},
@@ -106,41 +98,32 @@ func TestTimestreamClientMetricWritesExpectedRecord(t *testing.T) {
 	client.Metric("bitcoin.bitcoin.issues.open.by_label", 42, NewTag("Pull Number", "7"), NewTag("pull-number", "9"))
 
 	if writer.input == nil {
-		t.Fatal("expected WriteRecords to be called")
+		t.Fatal("expected PutMetricData to be called")
 	}
-	if got := *writer.input.DatabaseName; got != "corecheck" {
-		t.Fatalf("unexpected database %q", got)
+	if got := *writer.input.Namespace; got != "Corecheck/dev" {
+		t.Fatalf("unexpected namespace %q", got)
 	}
-	if got := *writer.input.TableName; got != "dashboard_metrics" {
-		t.Fatalf("unexpected table %q", got)
-	}
-	if len(writer.input.Records) != 1 {
-		t.Fatalf("expected 1 record, got %d", len(writer.input.Records))
+	if len(writer.input.MetricData) != 1 {
+		t.Fatalf("expected 1 metric datum, got %d", len(writer.input.MetricData))
 	}
 
-	record := writer.input.Records[0]
-	if got := *record.MeasureName; got != "value" {
-		t.Fatalf("unexpected measure name %q", got)
+	datum := writer.input.MetricData[0]
+	if got := *datum.MetricName; got != "bitcoin.bitcoin.issues.open.by_label" {
+		t.Fatalf("unexpected metric name %q", got)
 	}
-	if got := *record.MeasureValue; got != "42" {
-		t.Fatalf("unexpected measure value %q", got)
+	if got := *datum.Value; got != 42 {
+		t.Fatalf("unexpected value %v", got)
 	}
-	if got := *record.Time; got != "1700000000000" {
-		t.Fatalf("unexpected time %q", got)
+	if got := datum.Timestamp.UnixMilli(); got != 1700000000000 {
+		t.Fatalf("unexpected timestamp %d", got)
 	}
-	if len(record.Dimensions) != 2 {
-		t.Fatalf("expected 2 dimensions, got %d", len(record.Dimensions))
+	if len(datum.Dimensions) != 1 {
+		t.Fatalf("expected 1 dimension, got %d", len(datum.Dimensions))
 	}
-	if got := *record.Dimensions[0].Name; got != "metric_name" {
-		t.Fatalf("unexpected first dimension name %q", got)
+	if got := *datum.Dimensions[0].Name; got != "pull_number" {
+		t.Fatalf("unexpected dimension name %q", got)
 	}
-	if got := *record.Dimensions[0].Value; got != "bitcoin.bitcoin.issues.open.by_label" {
-		t.Fatalf("unexpected first dimension value %q", got)
-	}
-	if got := *record.Dimensions[1].Name; got != "pull_number" {
-		t.Fatalf("unexpected tag dimension name %q", got)
-	}
-	if got := *record.Dimensions[1].Value; got != "9" {
-		t.Fatalf("unexpected tag dimension value %q", got)
+	if got := *datum.Dimensions[0].Value; got != "9" {
+		t.Fatalf("unexpected dimension value %q", got)
 	}
 }
