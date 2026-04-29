@@ -54,14 +54,17 @@
         </div>
 
         {#if coverageTotals.length}
-            <div class="coverage-totals">
-                {#each coverageTotals as total}
-                    <div class="coverage-total-card">
-                        <span class="coverage-total-label">{total.label}</span>
-                        <span class="coverage-total-value txt-mono">{total.value}</span>
-                    </div>
-                {/each}
-            </div>
+            <section class="coverage-totals-section" aria-labelledby="coverage-totals-heading">
+                <h2 id="coverage-totals-heading" class="section-heading">Totals</h2>
+                <div class="coverage-totals">
+                    {#each coverageTotals as total}
+                        <div class="coverage-total-card">
+                            <span class="coverage-total-label">{total.label}</span>
+                            <span class="coverage-total-value txt-mono">{total.value}</span>
+                        </div>
+                    {/each}
+                </div>
+            </section>
         {/if}
 
         {#if !report}
@@ -186,6 +189,22 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
         gap: 12px;
+    }
+
+    .coverage-totals-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: -4px;
+    }
+
+    .section-heading {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #64748b;
     }
 
     .coverage-total-card {
