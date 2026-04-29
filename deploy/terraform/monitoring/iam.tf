@@ -94,24 +94,3 @@ resource "aws_iam_role_policy_attachment" "telegram_lambda_basic" {
   role       = aws_iam_role.telegram_lambda[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
-
-data "aws_iam_policy_document" "dashboard_grafana_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["grafana.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "dashboard_grafana" {
-  name               = "${local.dashboard_stack_name}-grafana"
-  assume_role_policy = data.aws_iam_policy_document.dashboard_grafana_assume_role.json
-}
-
-resource "aws_iam_role_policy_attachment" "dashboard_grafana_cloudwatch" {
-  role       = aws_iam_role.dashboard_grafana.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonGrafanaCloudWatchAccess"
-}
