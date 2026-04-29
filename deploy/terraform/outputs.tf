@@ -1,13 +1,3 @@
-output "dashboard_grafana_workspace_endpoint" {
-  description = "Amazon Managed Grafana endpoint for the dashboard workspace"
-  value       = module.monitoring.dashboard_grafana_workspace_endpoint
-}
-
-output "dashboard_grafana_workspace_id" {
-  description = "Amazon Managed Grafana workspace ID for the dashboard workspace"
-  value       = module.monitoring.dashboard_grafana_workspace_id
-}
-
 output "dashboard_cloudwatch_namespace" {
   description = "CloudWatch namespace used for dashboard telemetry metrics"
   value       = module.monitoring.dashboard_cloudwatch_namespace

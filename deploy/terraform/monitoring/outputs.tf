@@ -1,13 +1,3 @@
-output "dashboard_grafana_workspace_endpoint" {
-  description = "Amazon Managed Grafana endpoint for the dashboard workspace"
-  value       = aws_grafana_workspace.dashboard.endpoint
-}
-
-output "dashboard_grafana_workspace_id" {
-  description = "Amazon Managed Grafana workspace ID for the dashboard workspace"
-  value       = aws_grafana_workspace.dashboard.id
-}
-
 output "dashboard_cloudwatch_namespace" {
   description = "CloudWatch namespace used for dashboard telemetry metrics"
   value       = local.dashboard_cloudwatch_namespace
