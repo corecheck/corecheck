@@ -14,74 +14,37 @@
 
 <div class="app-layout">
     <aside class="app-sidebar">
-        <a data-sveltekit-preload-code="eager" href="/" class="logo logo-sm">
-            <img
-                src="{import.meta.env.BASE_URL}images/logo.png"
-                alt="Bitcoin Core Coverage"
-                width="40"
-                height="40"
-            />
+        <a
+            data-sveltekit-preload-code="eager"
+            href="/"
+            class="menu-item"
+            aria-label="GitHub overview"
+            class:active={$page.url.pathname === "/"}
+            use:tooltip={{ text: "GitHub overview", position: "right" }}
+        >
+            <span class="menu-item-icon">
+                <img
+                    src="{import.meta.env.BASE_URL}images/logo.png"
+                    alt="GitHub overview"
+                    width="40"
+                    height="40"
+                />
+            </span>
+            <span class="menu-item-label">GitHub overview</span>
         </a>
 
         <nav data-sveltekit-preload-data="hover" class="main-menu">
             <a
                 href="/bitcoin/bitcoin/pulls"
                 class="menu-item"
-                aria-label="Pull requests"
+                aria-label="PR coverage"
                 class:active={$page.url.pathname.includes("/pulls")}
-                use:tooltip={{ text: "Pull requests", position: "right" }}
+                use:tooltip={{ text: "PR coverage", position: "right" }}
             >
-                <img
-                    style="text-align: center"
-                    height="25"
-                    alt="pr"
-                    src="/icons/svg/pull-request.svg"
-                />
-            </a>
-            <a
-                data-sveltekit-preload-code="eager"
-                href="/tests"
-                class="menu-item"
-                aria-label="Tests"
-                class:active={$page.url.pathname.includes("/tests")}
-                use:tooltip={{ text: "Tests", position: "right" }}
-            >
-                <img
-                    style="text-align: center"
-                    height="25"
-                    alt="Tests"
-                    src="/icons/svg/ci.svg"
-                />
-            </a>
-            <a
-                data-sveltekit-preload-code="eager"
-                href="/benchmarks"
-                class="menu-item"
-                aria-label="Benchmarks"
-                class:active={$page.url.pathname.includes("/benchmarks")}
-                use:tooltip={{ text: "Benchmarks", position: "right" }}
-            >
-                <img
-                    style="text-align: center"
-                    height="25"
-                    alt="Benchmarks"
-                    src="/icons/svg/stats.svg"
-                />
-            </a>
-            <a
-                data-sveltekit-preload-code="eager"
-                href="/mutation"
-                class="menu-item"
-                aria-label="Mutation"
-                class:active={$page.url.pathname.includes("/mutation")}
-                use:tooltip={{ text: "Mutation", position: "right" }}
-            >
-                <img
-                    style="text-align: center"
-                    height="25"
-                    alt="Mutations"
-                    src="/icons/png/mutation.png"
-                />
+                <span class="menu-item-icon">
+                    <img height="25" alt="PR coverage" src="/icons/svg/pull-request.svg" />
+                </span>
+                <span class="menu-item-label">PR coverage</span>
             </a>
             <a
                 data-sveltekit-preload-code="eager"
@@ -91,35 +54,82 @@
                 class:active={$page.url.pathname.includes("/master-coverage")}
                 use:tooltip={{ text: "Master coverage", position: "right" }}
             >
-                <i style="font-size: 25px; text-align: center" class="ri-file-chart-line" />
+                <span class="menu-item-icon">
+                    <i class="ri-file-chart-line" />
+                </span>
+                <span class="menu-item-label">Master coverage</span>
             </a>
+            <a
+                data-sveltekit-preload-code="eager"
+                href="/tests"
+                class="menu-item"
+                aria-label="Tests"
+                class:active={$page.url.pathname.includes("/tests")}
+                use:tooltip={{ text: "Tests", position: "right" }}
+            >
+                <span class="menu-item-icon">
+                    <img height="25" alt="Tests" src="/icons/svg/ci.svg" />
+                </span>
+                <span class="menu-item-label">Tests</span>
+            </a>
+            <a
+                data-sveltekit-preload-code="eager"
+                href="/benchmarks"
+                class="menu-item"
+                aria-label="Benchmarks"
+                class:active={$page.url.pathname.includes("/benchmarks")}
+                use:tooltip={{ text: "Benchmarks", position: "right" }}
+            >
+                <span class="menu-item-icon">
+                    <img height="25" alt="Benchmarks" src="/icons/svg/stats.svg" />
+                </span>
+                <span class="menu-item-label">Benchmarks</span>
+            </a>
+            <a
+                data-sveltekit-preload-code="eager"
+                href="/mutation"
+                class="menu-item"
+                aria-label="Mutation"
+                class:active={$page.url.pathname.includes("/mutation")}
+                use:tooltip={{ text: "Mutation", position: "right" }}
+            >
+                <span class="menu-item-icon">
+                    <img height="25" alt="Mutations" src="/icons/png/mutation.png" />
+                </span>
+                <span class="menu-item-label">Mutation</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer-links">
             <a
                 data-sveltekit-preload-code="eager"
                 href="/jobs"
                 class="menu-item"
-                aria-label="Jobs"
+                aria-label="Site health"
                 class:active={$page.url.pathname.includes("/jobs")}
-                use:tooltip={{ text: "Jobs", position: "right" }}
+                use:tooltip={{ text: "Site health", position: "right" }}
             >
-                <img
-                    style="text-align: center"
-                    height="25"
-                    alt="jobs"
-                    src="/icons/svg/activity.svg"
-                />
+                <span class="menu-item-icon">
+                    <img height="25" alt="Site health" src="/icons/svg/activity.svg" />
+                </span>
+                <span class="menu-item-label">Site health</span>
             </a>
-        </nav>
 
-        {#key user}
-        <a
-            href="https://github.com/corecheck/corecheck"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="menu-item"
-        >
-            <i style="font-size: 50px; margin-bottom: 10px" class="ri-github-fill" />
-        </a>
-        {/key}
+            {#key user}
+            <a
+                href="https://github.com/corecheck/corecheck"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="menu-item menu-item-icon-only"
+                aria-label="GitHub repo"
+                use:tooltip={{ text: "GitHub repo", position: "right" }}
+            >
+                <span class="menu-item-icon">
+                    <i class="ri-github-fill" />
+                </span>
+            </a>
+            {/key}
+        </div>
     </aside>
 
     <div class="app-body">

@@ -12,41 +12,6 @@
     row-gap: 10px;
     font-size: var(--xlFontSize);
     color: var(--txtPrimaryColor);
-    i {
-        font-size: 24px;
-        line-height: 1;
-    }
-    .menu-item {
-        position: relative;
-        outline: 0;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
-        user-select: none;
-        color: inherit;
-        min-width: var(--menuItemSize);
-        min-height: var(--menuItemSize);
-        border: 2px solid transparent;
-        border-radius: var(--lgRadius);
-        transition: background var(--baseAnimationSpeed),
-                    border var(--baseAnimationSpeed);
-        &:focus-visible,
-        &:hover {
-            background: var(--baseAlt1Color);
-        }
-        &:active {
-            background: var(--baseAlt2Color);
-            transition-duration: var(--activeAnimationSpeed);
-        }
-        &.active,
-        &.current-route {
-            background: var(--baseColor);
-            border-color: var(--primaryColor);
-        }
-    }
 }
 
 .app-sidebar {
@@ -61,6 +26,76 @@
     padding: var(--smSpacing) 0px var(--smSpacing);
     background: var(--baseColor);
     border-right: 1px solid var(--baseAlt2Color);
+    .menu-item {
+        position: relative;
+        outline: 0;
+        cursor: pointer;
+        text-decoration: none;
+        box-sizing: border-box;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+        gap: 6px;
+        user-select: none;
+        color: inherit;
+        width: calc(100% - 8px);
+        min-width: var(--menuItemSize, 45px);
+        min-height: 64px;
+        padding: 8px 6px;
+        border: 2px solid transparent;
+        border-radius: var(--lgRadius);
+        transition: background var(--baseAnimationSpeed),
+                    border var(--baseAnimationSpeed);
+        i {
+            font-size: 24px;
+            line-height: 1;
+        }
+        .menu-item-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 25px;
+            min-height: 25px;
+            img {
+                display: block;
+            }
+        }
+        .menu-item-label {
+            font-size: 0.68rem;
+            line-height: 1.15;
+            color: var(--txtHintColor);
+            white-space: normal;
+        }
+        &:focus-visible,
+        &:hover {
+            background: var(--baseAlt1Color);
+            .menu-item-label {
+                color: inherit;
+            }
+        }
+        &:active {
+            background: var(--baseAlt2Color);
+            transition-duration: var(--activeAnimationSpeed);
+        }
+        &.active,
+        &.current-route {
+            background: var(--baseColor);
+            border-color: var(--primaryColor);
+            .menu-item-label {
+                color: inherit;
+            }
+        }
+        &.menu-item-icon-only {
+            min-height: var(--menuItemSize, 45px);
+            padding: 8px;
+            gap: 0;
+            .menu-item-icon i {
+                font-size: 40px;
+            }
+        }
+    }
     .main-menu {
         flex-grow: 1;
         justify-content: flex-start;
@@ -70,6 +105,13 @@
         // "visual" vertical alignment
         margin-top: 34px;
         margin-bottom: var(--baseSpacing);
+    }
+    .sidebar-footer-links {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
     }
 }
 
@@ -130,6 +172,18 @@
             overflow-y: visible;
             scrollbar-width: none;
             &::-webkit-scrollbar { display: none; }
+            .menu-item {
+                width: 88px;
+                flex: 0 0 auto;
+            }
+        }
+        .sidebar-footer-links {
+            flex-direction: row;
+            gap: 2px;
+            .menu-item {
+                width: 88px;
+                flex: 0 0 auto;
+            }
         }
     }
 }
