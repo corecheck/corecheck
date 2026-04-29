@@ -28,6 +28,11 @@ module "monitoring" {
   dashboard_compute_region      = data.aws_region.compute_region.name
   public_grafana_admin_user     = var.public_grafana_admin_user
   public_grafana_admin_password = var.public_grafana_admin_password
+
+  providers = {
+    aws                = aws
+    aws.compute_region = aws.compute_region
+  }
 }
 
 module "compute" {
