@@ -23,11 +23,13 @@
 <div class="master-coverage-page">
     <div class="page-shell">
         <div class="page-header card">
-            <div class="eyebrow">Master coverage</div>
-            <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
-            <p class="subtitle">
-                RAW HTML Coverage report generated with `llvm-cov show --format=html`
-            </p>
+            <div class="title-copy">
+                <div class="eyebrow">Master coverage</div>
+                <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
+                <p class="subtitle">
+                    RAW HTML Coverage report generated with `llvm-cov show --format=html`
+                </p>
+            </div>
 
             {#if report}
                 <div class="meta-grid">
@@ -117,7 +119,15 @@
     }
 
     .page-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 16px 24px;
         padding: clamp(16px, 1.75vw, 20px);
+    }
+
+    .title-copy {
+        min-width: 0;
     }
 
     .eyebrow {
@@ -145,7 +155,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 14px;
+        justify-content: flex-end;
+        align-self: start;
     }
 
     .meta-card {
@@ -198,8 +209,17 @@
     }
 
     @media (max-width: 768px) {
+        .page-header {
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
         h1 {
             font-size: clamp(1.35rem, 4vw, 1.55rem);
+        }
+
+        .meta-grid {
+            justify-content: flex-start;
         }
 
         .meta-card {
