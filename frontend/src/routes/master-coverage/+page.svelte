@@ -27,8 +27,7 @@
                 <div class="eyebrow">Master coverage</div>
                 <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
                 <p class="subtitle">
-                    The latest successful master coverage run, embedded directly from
-                    the generated HTML artifact.
+                    RAW HTML Coverage report generated with `llvm-cov show --format=html`
                 </p>
             </div>
 
@@ -102,7 +101,9 @@
 
 <style lang="scss">
     .master-coverage-page {
-        padding: 24px;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: clamp(12px, 2vw, 24px);
         height: 100%;
         overflow: auto;
     }
@@ -110,15 +111,16 @@
     .page-shell {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: clamp(16px, 2vw, 20px);
         min-height: 100%;
+        min-width: 0;
     }
 
     .page-header,
     .report-frame {
         background: #fff;
         border-radius: 16px;
-        padding: 24px;
+        padding: clamp(18px, 2vw, 24px);
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
 
@@ -145,7 +147,7 @@
 
     .meta-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
         gap: 12px;
         margin-top: 24px;
     }
@@ -204,6 +206,7 @@
         flex-direction: column;
         gap: 16px;
         min-height: 70vh;
+        min-width: 0;
     }
 
     .report-actions {
@@ -212,26 +215,26 @@
     }
 
     iframe {
+        display: block;
         flex: 1;
         width: 100%;
-        min-height: 70vh;
+        min-height: clamp(28rem, 70vh, 64rem);
         border: 1px solid #e2e8f0;
         border-radius: 12px;
         background: #fff;
     }
 
     @media (max-width: 768px) {
-        .master-coverage-page {
-            padding: 16px;
-        }
-
-        .page-header,
-        .report-frame {
-            padding: 18px;
-        }
-
         h1 {
-            font-size: 1.6rem;
+            font-size: clamp(1.35rem, 4vw, 1.6rem);
+        }
+
+        .report-actions {
+            justify-content: flex-start;
+        }
+
+        iframe {
+            min-height: 60vh;
         }
     }
 </style>
