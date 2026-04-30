@@ -85,12 +85,19 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "metricName": "bitcoin.bitcoin.benchmarks.count",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Maximum",
           "statistics": [
             "Maximum"
           ]
@@ -130,12 +137,19 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "metricName": "bitcoin.bitcoin.benchmarks.count",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
@@ -163,6 +177,7 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_elapsed`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -191,6 +206,7 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_cpucycles`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -231,6 +247,7 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.total_time`) FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name)",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -271,29 +288,43 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
           "label": "succeeded",
           "metricName": "SucceededJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
           "label": "failed",
           "metricName": "FailedJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]

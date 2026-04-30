@@ -69,43 +69,64 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
           "label": "started",
           "metricName": "ExecutionsStarted",
           "namespace": "AWS/States",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
           "label": "succeeded",
           "metricName": "ExecutionsSucceeded",
           "namespace": "AWS/States",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
           "label": "failed",
           "metricName": "ExecutionsFailed",
           "namespace": "AWS/States",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "C",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
@@ -146,29 +167,43 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
           "label": "avg duration",
           "metricName": "ExecutionTime",
           "namespace": "AWS/States",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
           "label": "max duration",
           "metricName": "ExecutionTime",
           "namespace": "AWS/States",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Maximum",
           "statistics": [
             "Maximum"
           ]
@@ -208,43 +243,64 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
           "label": "submitted",
           "metricName": "SubmittedJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
           "label": "runnable",
           "metricName": "RunnableJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
           "label": "running",
           "metricName": "RunningJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "C",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
@@ -284,29 +340,43 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
           "label": "succeeded",
           "metricName": "SucceededJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
           "label": "failed",
           "metricName": "FailedJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
@@ -346,29 +416,43 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
           "label": "succeeded",
           "metricName": "SucceededJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
           "label": "failed",
           "metricName": "FailedJobs",
           "namespace": "AWS/Batch",
-          "period": 300,
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
           "statistics": [
             "Sum"
           ]

@@ -91,49 +91,77 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "open",
           "metricName": "bitcoin.bitcoin.pulls.open",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "closed",
           "metricName": "bitcoin.bitcoin.pulls.closed",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "merged",
           "metricName": "bitcoin.bitcoin.pulls.merged",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "C",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "total",
           "metricName": "bitcoin.bitcoin.pulls.total",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "D",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
@@ -195,37 +223,58 @@
       },
       "targets": [
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "open",
           "metricName": "bitcoin.bitcoin.issues.open",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "closed",
           "metricName": "bitcoin.bitcoin.issues.closed",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
         },
         {
+          "datasource": "$${DS_CLOUDWATCH}",
           "dimensions": {},
           "label": "total",
           "metricName": "bitcoin.bitcoin.issues.total",
           "namespace": "${telemetry_namespace}",
-          "period": 86400,
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
           "refId": "C",
           "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
           "statistics": [
             "Average"
           ]
