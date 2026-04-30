@@ -83,21 +83,26 @@ locals {
   }
 
   provisioned_public_dashboard_templates = {
-    for key, dashboard in local.public_dashboard_templates : key => replace(
-      templatefile(
-        "${path.module}/${dashboard.template_file}",
-        merge(local.public_dashboard_template_context, {
-          route                   = dashboard.route
-          title                   = dashboard.title
-          datadog_dashboard_id    = dashboard.datadog_dashboard_id
-          datadog_dashboard_title = dashboard.datadog_dashboard_title
-          datadog_widget_count    = dashboard.datadog_widget_count
-          public_dashboard_env    = dashboard.public_dashboard_env
+    for key, dashboard in local.public_dashboard_templates : key => jsonencode({
+      for k, v in jsondecode(replace(
+        templatefile(
+          "${path.module}/${dashboard.template_file}",
+          merge(local.public_dashboard_template_context, {
+            route                   = dashboard.route
+            title                   = dashboard.title
+            datadog_dashboard_id    = dashboard.datadog_dashboard_id
+            datadog_dashboard_title = dashboard.datadog_dashboard_title
+            datadog_widget_count    = dashboard.datadog_widget_count
+            public_dashboard_env    = dashboard.public_dashboard_env
+          })
+        ),
+        "\"$${DS_CLOUDWATCH}\"",
+        jsonencode({
+          type = "cloudwatch"
+          uid  = "corecheck-cloudwatch"
         })
-      ),
-      "\"$${DS_CLOUDWATCH}\"",
-      "\"${local.public_grafana_datasource_names.cloudwatch}\""
-    )
+      )) : k => v if k != "__inputs"
+    })
   }
 
   public_grafana_dashboard_urls = {
