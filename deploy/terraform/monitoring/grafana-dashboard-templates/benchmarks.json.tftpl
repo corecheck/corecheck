@@ -29,7 +29,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Latest number of benchmark series emitted for the most recent master sync.",
       "fieldConfig": {
         "defaults": {
@@ -75,7 +75,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "dimensions": {},
           "metricName": "bitcoin.bitcoin.benchmarks.count",
           "namespace": "${telemetry_namespace}",
@@ -97,7 +97,7 @@
       "type": "stat"
     },
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Total benchmark count over time.",
       "fieldConfig": {
         "defaults": {
@@ -127,7 +127,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "dimensions": {},
           "metricName": "bitcoin.bitcoin.benchmarks.count",
           "namespace": "${telemetry_namespace}",
@@ -149,7 +149,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Slowest benchmarks by average median elapsed time over the last week.",
       "fieldConfig": {
         "defaults": {},
@@ -167,7 +167,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_elapsed`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -178,7 +178,7 @@
       "type": "table"
     },
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Benchmarks with the highest CPU cycle cost over the last week.",
       "fieldConfig": {
         "defaults": {},
@@ -196,7 +196,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_cpucycles`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -207,7 +207,7 @@
       "type": "table"
     },
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Average total runtime trend across emitted benchmarks.",
       "fieldConfig": {
         "defaults": {
@@ -237,7 +237,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.total_time`) FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name)",
           "queryMode": "MetricsInsights",
           "refId": "A",
@@ -248,7 +248,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "corecheck-cloudwatch",
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Batch queue success/failure counts for the benchmark runner queue.",
       "fieldConfig": {
         "defaults": {
@@ -278,7 +278,7 @@
       },
       "targets": [
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
@@ -299,7 +299,7 @@
           ]
         },
         {
-          "datasource": "corecheck-cloudwatch",
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
