@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_CLOUDWATCH",
-      "label": "CloudWatch",
-      "description": "CloudWatch datasource used for Corecheck execution dashboards",
-      "type": "datasource",
-      "pluginId": "cloudwatch",
-      "pluginName": "CloudWatch"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -39,7 +29,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Primary workflow execution outcomes.",
       "fieldConfig": {
         "defaults": {
@@ -69,7 +59,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
@@ -90,7 +80,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
@@ -111,7 +101,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${workflow_state_machine_arn}"
           },
@@ -136,7 +126,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Mutation workflow execution outcomes.",
       "fieldConfig": {
         "defaults": {
@@ -166,7 +156,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${mutation_state_machine_arn}"
           },
@@ -187,7 +177,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${mutation_state_machine_arn}"
           },
@@ -208,7 +198,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "StateMachineArn": "${mutation_state_machine_arn}"
           },
@@ -233,7 +223,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Runnable backlog across the four AWS Batch queues.",
       "fieldConfig": {
         "defaults": {
@@ -263,7 +253,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
@@ -284,7 +274,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
@@ -305,7 +295,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
@@ -326,7 +316,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${mutation_queue_name}"
           },
@@ -351,7 +341,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Running jobs across the four AWS Batch queues.",
       "fieldConfig": {
         "defaults": {
@@ -381,7 +371,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
@@ -402,7 +392,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
@@ -423,7 +413,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
@@ -444,7 +434,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${mutation_queue_name}"
           },
@@ -469,7 +459,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Succeeded job counts across the four AWS Batch queues.",
       "fieldConfig": {
         "defaults": {
@@ -499,7 +489,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
@@ -520,7 +510,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
@@ -541,7 +531,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
@@ -562,7 +552,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${mutation_queue_name}"
           },
@@ -587,7 +577,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Failed job counts across the four AWS Batch queues.",
       "fieldConfig": {
         "defaults": {
@@ -617,7 +607,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${coverage_queue_name}"
           },
@@ -638,7 +628,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${sonar_queue_name}"
           },
@@ -659,7 +649,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${bench_queue_name}"
           },
@@ -680,7 +670,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {
             "JobQueue": "${mutation_queue_name}"
           },

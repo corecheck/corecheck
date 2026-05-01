@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_CLOUDWATCH",
-      "label": "CloudWatch",
-      "description": "CloudWatch datasource used for the Corecheck public dashboard migration",
-      "type": "datasource",
-      "pluginId": "cloudwatch",
-      "pluginName": "CloudWatch"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -39,7 +29,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Open, closed, merged, and total pull request counts from the GitHub stats sync.",
       "fieldConfig": {
         "defaults": {
@@ -91,7 +81,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "open",
           "metricName": "bitcoin.bitcoin.pulls.open",
@@ -110,7 +100,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "closed",
           "metricName": "bitcoin.bitcoin.pulls.closed",
@@ -129,7 +119,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "merged",
           "metricName": "bitcoin.bitcoin.pulls.merged",
@@ -148,7 +138,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "total",
           "metricName": "bitcoin.bitcoin.pulls.total",
@@ -171,7 +161,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "$${DS_CLOUDWATCH}",
+      "datasource": "corecheck-cloudwatch",
       "description": "Open, closed, and total issue counts from the GitHub stats sync.",
       "fieldConfig": {
         "defaults": {
@@ -223,7 +213,7 @@
       },
       "targets": [
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "open",
           "metricName": "bitcoin.bitcoin.issues.open",
@@ -242,7 +232,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "closed",
           "metricName": "bitcoin.bitcoin.issues.closed",
@@ -261,7 +251,7 @@
           ]
         },
         {
-          "datasource": "$${DS_CLOUDWATCH}",
+          "datasource": "corecheck-cloudwatch",
           "dimensions": {},
           "label": "total",
           "metricName": "bitcoin.bitcoin.issues.total",
