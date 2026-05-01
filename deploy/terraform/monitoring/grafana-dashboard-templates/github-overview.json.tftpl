@@ -1,0 +1,300 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Assumes GitHub stats metrics are published to CloudWatch custom metrics in the ${telemetry_namespace} namespace.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Open, closed, merged, and total pull request counts from the GitHub stats sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "open",
+          "metricName": "bitcoin.bitcoin.pulls.open",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "closed",
+          "metricName": "bitcoin.bitcoin.pulls.closed",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "merged",
+          "metricName": "bitcoin.bitcoin.pulls.merged",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "total",
+          "metricName": "bitcoin.bitcoin.pulls.total",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "D",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        }
+      ],
+      "title": "Pull request status trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Open, closed, and total issue counts from the GitHub stats sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "open",
+          "metricName": "bitcoin.bitcoin.issues.open",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "closed",
+          "metricName": "bitcoin.bitcoin.issues.closed",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "label": "total",
+          "metricName": "bitcoin.bitcoin.issues.total",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        }
+      ],
+      "title": "Issue status trend",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "aws",
+    "cloudwatch",
+    "corecheck",
+    "github",
+    "public"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-github-overview",
+  "version": 1,
+  "weekStart": ""
+}

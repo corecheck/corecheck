@@ -67,7 +67,7 @@ resource "aws_batch_job_definition" "coverage_job" {
       }
     ]
 
-    environment = [
+    environment = concat([
       {
         name  = "SCCACHE_BUCKET",
         value = aws_s3_bucket.corecheck-ccache.id
@@ -95,12 +95,8 @@ resource "aws_batch_job_definition" "coverage_job" {
       {
         name  = "S3_BUCKET_ARTIFACTS",
         value = aws_s3_bucket.corecheck-artifacts.id
-      },
-      {
-        name  = "DD_API_KEY",
-        value = var.datadog_api_key
       }
-    ]
+    ], local.telemetry_environment_list)
 
     command = [
       "/entrypoint.sh",

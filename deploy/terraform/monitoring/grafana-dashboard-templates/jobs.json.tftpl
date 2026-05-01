@@ -1,0 +1,721 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. This first pass captures workflow and queue health from CloudWatch; per-execution drilldowns and log parity can be layered on later.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Primary workflow execution outcomes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${workflow_state_machine_arn}"
+          },
+          "label": "started",
+          "metricName": "ExecutionsStarted",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${workflow_state_machine_arn}"
+          },
+          "label": "succeeded",
+          "metricName": "ExecutionsSucceeded",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${workflow_state_machine_arn}"
+          },
+          "label": "failed",
+          "metricName": "ExecutionsFailed",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Primary workflow executions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Mutation workflow execution outcomes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${mutation_state_machine_arn}"
+          },
+          "label": "started",
+          "metricName": "ExecutionsStarted",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${mutation_state_machine_arn}"
+          },
+          "label": "succeeded",
+          "metricName": "ExecutionsSucceeded",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "StateMachineArn": "${mutation_state_machine_arn}"
+          },
+          "label": "failed",
+          "metricName": "ExecutionsFailed",
+          "namespace": "AWS/States",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Mutation workflow executions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Runnable backlog across the four AWS Batch queues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${coverage_queue_name}"
+          },
+          "label": "coverage",
+          "metricName": "RunnableJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${sonar_queue_name}"
+          },
+          "label": "sonar",
+          "metricName": "RunnableJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "bench",
+          "metricName": "RunnableJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${mutation_queue_name}"
+          },
+          "label": "mutation",
+          "metricName": "RunnableJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "D",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        }
+      ],
+      "title": "Queue backlog",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Running jobs across the four AWS Batch queues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${coverage_queue_name}"
+          },
+          "label": "coverage",
+          "metricName": "RunningJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${sonar_queue_name}"
+          },
+          "label": "sonar",
+          "metricName": "RunningJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "bench",
+          "metricName": "RunningJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${mutation_queue_name}"
+          },
+          "label": "mutation",
+          "metricName": "RunningJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "D",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        }
+      ],
+      "title": "Running jobs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Succeeded job counts across the four AWS Batch queues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 9
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${coverage_queue_name}"
+          },
+          "label": "coverage",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${sonar_queue_name}"
+          },
+          "label": "sonar",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "bench",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${mutation_queue_name}"
+          },
+          "label": "mutation",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "D",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Succeeded jobs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Failed job counts across the four AWS Batch queues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${coverage_queue_name}"
+          },
+          "label": "coverage",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${sonar_queue_name}"
+          },
+          "label": "sonar",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "bench",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "C",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${mutation_queue_name}"
+          },
+          "label": "mutation",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "matchExact": true,
+          "refId": "D",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Failed jobs",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "aws",
+    "cloudwatch",
+    "corecheck",
+    "jobs",
+    "public"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-jobs",
+  "version": 1,
+  "weekStart": ""
+}
