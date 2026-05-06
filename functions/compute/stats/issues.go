@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/corecheck/corecheck/functions/compute/stats/types"
 	"github.com/corecheck/corecheck/internal/telemetry"
@@ -157,4 +158,35 @@ func (c *TotalCommentsIssueConsumer) SendMetrics(metrics telemetry.Client) {
 	}
 
 	metrics.Metric("bitcoin.bitcoin.issues.comments.total", float64(len(c.Comments)))
+}
+
+// PeriodCommentsIssueConsumer emits comment counts for the rolling 30-day window so
+// dashboards can show activity for the selected time period rather than all-time totals.
+type PeriodCommentsIssueConsumer struct {
+	Comments map[int]float64
+	since    time.Time
+}
+
+func (c *PeriodCommentsIssueConsumer) Init() {
+	c.Comments = make(map[int]float64)
+	c.since = time.Now().UTC().Add(-commentsPeriod)
+}
+
+func (c *PeriodCommentsIssueConsumer) ProcessPull(pull *types.Pull) {}
+
+func (c *PeriodCommentsIssueConsumer) ProcessIssue(issue *types.Issue) {
+	for _, event := range issue.Events {
+		if event.CreatedAt.Before(c.since) {
+			continue
+		}
+		if event.Event == "commented" {
+			c.Comments[issue.Issue.Number]++
+		}
+	}
+}
+
+func (c *PeriodCommentsIssueConsumer) SendMetrics(metrics telemetry.Client) {
+	for issue, count := range c.Comments {
+		metrics.Metric("bitcoin.bitcoin.issues.comments_period", count, telemetry.NewTag("issue", strconv.Itoa(issue)))
+	}
 }

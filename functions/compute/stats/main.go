@@ -32,8 +32,8 @@ func handleMetrics(ctx context.Context) (string, error) {
 	}
 
 	bc := BitcoinCoreData{Path: dest + "/github-metadata-backup-bitcoin-bitcoin-master"}
-	bc.AddConsumers(&NumberOfPullsConsumer{}, &UniqueAuthorsConsumer{}, &PullsByUserConsumer{}, &PullsByLabelConsumer{}, &TotalCommentsAndReviewsByPullConsumer{})
-	bc.AddConsumers(&NumberOfIssuesConsumer{}, &UniqueIssueUsersConsumer{}, &IssuesByUserConsumer{}, &IssuesByLabelConsumer{}, &TotalCommentsIssueConsumer{})
+	bc.AddConsumers(&NumberOfPullsConsumer{}, &UniqueAuthorsConsumer{}, &PullsByUserConsumer{}, &PullsByLabelConsumer{}, &TotalCommentsAndReviewsByPullConsumer{}, &PeriodCommentsAndReviewsByPullConsumer{})
+	bc.AddConsumers(&NumberOfIssuesConsumer{}, &UniqueIssueUsersConsumer{}, &IssuesByUserConsumer{}, &IssuesByLabelConsumer{}, &TotalCommentsIssueConsumer{}, &PeriodCommentsIssueConsumer{})
 	bc.Run()
 
 	return "OK", nil

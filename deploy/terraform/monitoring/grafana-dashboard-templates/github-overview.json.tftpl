@@ -28,56 +28,173 @@
   "links": [],
   "liveNow": false,
   "panels": [
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "title": "Pull Requests",
+      "type": "row"
+    },
+
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Open, closed, merged, and total pull request counts from the GitHub stats sync.",
+      "description": "Current total number of open pull requests.",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "blue", "value": null}]
           },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.pulls.open",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Open pull requests",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Number of pull requests merged during the selected time window (net change in the merged counter).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "green", "value": null}]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["delta"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.pulls.merged",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Merged pull requests (period)",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Unique GitHub users who have authored a merged pull request (current snapshot).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "purple", "value": null}]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.pulls.unique_authors",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Unique PR authors",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Running total of all pull requests ever created. The slope shows how many new PRs were opened during the selected window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 12,
+            "fillOpacity": 10,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 4,
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
+            "spanNulls": true
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 11,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 1},
+      "id": 4,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
       },
       "targets": [
         {
@@ -93,32 +210,7 @@
           "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "label": "closed",
-          "metricName": "bitcoin.bitcoin.pulls.closed",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
-          "refId": "B",
-          "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
@@ -131,14 +223,9 @@
           "metricEditorMode": 0,
           "metricQueryType": 0,
           "matchExact": true,
-          "refId": "C",
+          "refId": "B",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
@@ -151,69 +238,286 @@
           "metricEditorMode": 0,
           "metricQueryType": 0,
           "matchExact": true,
-          "refId": "D",
+          "refId": "C",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "title": "Pull request status trend",
+      "title": "Pull request trends",
       "type": "timeseries"
     },
+
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Open, closed, and total issue counts from the GitHub stats sync.",
+      "description": "Distribution of currently open pull requests across GitHub labels.",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 5},
+      "id": 5,
+      "options": {
+        "displayLabels": ["name"],
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(\"bitcoin.bitcoin.pulls.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Open pull requests by label",
+      "type": "piechart"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Distribution of merged pull requests across GitHub labels.",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 5},
+      "id": 6,
+      "options": {
+        "displayLabels": ["name"],
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(\"bitcoin.bitcoin.pulls.merged.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Merged pull requests by label",
+      "type": "piechart"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Pull requests with the most comments and reviews in the last 30 days. Click a row to open the PR on GitHub.",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": false,
+            "inspect": false
           },
+          "links": [
+            {
+              "title": "Open on GitHub",
+              "url": "https://github.com/bitcoin/bitcoin/pull/$${__data.fields.pull}"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+      "id": 7,
+      "options": {
+        "footer": {"show": false},
+        "showHeader": true,
+        "sortBy": [{"desc": true, "displayName": "bitcoin.bitcoin.pulls.comments_period"}]
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT SUM(\"bitcoin.bitcoin.pulls.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY pull ORDER BY SUM() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most commented pull requests (last 30 days)",
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17},
+      "id": 200,
+      "title": "Issues",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Current total number of open issues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "orange", "value": null}]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 18},
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.issues.open",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Open issues",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Number of issues closed during the selected time window (net change in the closed counter).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "green", "value": null}]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 18},
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["delta"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.issues.closed",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Closed issues (period)",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Unique GitHub users who have opened an issue (current snapshot).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "purple", "value": null}]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 18},
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.issues.unique_users",
+          "namespace": "${telemetry_namespace}",
+          "period": "86400",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Unique issue authors",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Running totals of open, closed, and all issues. The slope of the total line shows new issues opened during the selected window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 12,
+            "fillOpacity": 10,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 4,
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
+            "spanNulls": true
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 11,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 2,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "id": 14,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
       },
       "targets": [
         {
@@ -229,12 +533,7 @@
           "matchExact": true,
           "refId": "A",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
@@ -249,12 +548,7 @@
           "matchExact": true,
           "refId": "B",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
@@ -269,17 +563,118 @@
           "matchExact": true,
           "refId": "C",
           "region": "${compute_region}",
-          "expression": "",
-          "id": "",
-          "statistic": "Average",
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "title": "Issue status trend",
+      "title": "Issue trends",
       "type": "timeseries"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Distribution of currently open issues across GitHub labels.",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 22},
+      "id": 15,
+      "options": {
+        "displayLabels": ["name"],
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(\"bitcoin.bitcoin.issues.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Open issues by label",
+      "type": "piechart"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Distribution of closed issues across GitHub labels.",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 22},
+      "id": 16,
+      "options": {
+        "displayLabels": ["name"],
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(\"bitcoin.bitcoin.issues.closed.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Closed issues by label",
+      "type": "piechart"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Issues with the most comments in the last 30 days. Click a row to open the issue on GitHub.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": false,
+            "inspect": false
+          },
+          "links": [
+            {
+              "title": "Open on GitHub",
+              "url": "https://github.com/bitcoin/bitcoin/issues/$${__data.fields.issue}"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "id": 17,
+      "options": {
+        "footer": {"show": false},
+        "showHeader": true,
+        "sortBy": [{"desc": true, "displayName": "bitcoin.bitcoin.issues.comments_period"}]
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT SUM(\"bitcoin.bitcoin.issues.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY issue ORDER BY SUM() DESC LIMIT 20",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricQueryType": 1,
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most commented issues (last 30 days)",
+      "type": "table"
     }
+
   ],
   "refresh": "1h",
   "schemaVersion": 39,
