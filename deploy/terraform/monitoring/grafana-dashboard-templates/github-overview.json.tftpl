@@ -262,7 +262,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT AVG(\"bitcoin.bitcoin.pulls.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.pulls.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
@@ -292,7 +292,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT AVG(\"bitcoin.bitcoin.pulls.merged.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.pulls.merged.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
@@ -337,7 +337,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT SUM(\"bitcoin.bitcoin.pulls.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY pull ORDER BY SUM() DESC LIMIT 20",
+          "sqlExpression": "SELECT SUM(\"bitcoin.bitcoin.pulls.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY pull ORDER BY SUM() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
@@ -585,7 +585,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT AVG(\"bitcoin.bitcoin.issues.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.issues.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
@@ -615,7 +615,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT AVG(\"bitcoin.bitcoin.issues.closed.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.issues.closed.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
@@ -660,7 +660,7 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "SELECT SUM(\"bitcoin.bitcoin.issues.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY issue ORDER BY SUM() DESC LIMIT 20",
+          "sqlExpression": "SELECT SUM(\"bitcoin.bitcoin.issues.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY issue ORDER BY SUM() DESC LIMIT 20",
           "hide": false,
           "id": "",
           "matchExact": true,
