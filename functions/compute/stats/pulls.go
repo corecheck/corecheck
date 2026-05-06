@@ -2,10 +2,14 @@ package main
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/corecheck/corecheck/functions/compute/stats/types"
 	"github.com/corecheck/corecheck/internal/telemetry"
 )
+
+// commentsPeriod is the rolling window used for period-scoped comment/review metrics.
+const commentsPeriod = 30 * 24 * time.Hour
 
 type NumberOfPullsConsumer struct {
 	Total  float64
@@ -196,4 +200,59 @@ func (c *TotalCommentsAndReviewsByPullConsumer) SendMetrics(metrics telemetry.Cl
 
 	metrics.Metric("bitcoin.bitcoin.pulls.comments.total", float64(len(c.Comments)))
 	metrics.Metric("bitcoin.bitcoin.pulls.reviews.total", float64(len(c.Reviews)))
+}
+
+// parseEventTime converts the pull timeline event created_at field (typed as any because
+// some event kinds omit it) into a time.Time. Returns false when the value is absent or
+// unparseable.
+func parseEventTime(v any) (time.Time, bool) {
+	if v == nil {
+		return time.Time{}, false
+	}
+	s, ok := v.(string)
+	if !ok {
+		return time.Time{}, false
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	return t, err == nil
+}
+
+// PeriodCommentsAndReviewsByPullConsumer emits comment and review counts for the rolling
+// 30-day window so dashboards can show activity for the selected time period rather than
+// all-time totals.
+type PeriodCommentsAndReviewsByPullConsumer struct {
+	Comments map[int]float64
+	Reviews  map[int]float64
+	since    time.Time
+}
+
+func (c *PeriodCommentsAndReviewsByPullConsumer) Init() {
+	c.Comments = make(map[int]float64)
+	c.Reviews = make(map[int]float64)
+	c.since = time.Now().UTC().Add(-commentsPeriod)
+}
+
+func (c *PeriodCommentsAndReviewsByPullConsumer) ProcessIssue(issue *types.Issue) {}
+
+func (c *PeriodCommentsAndReviewsByPullConsumer) ProcessPull(pull *types.Pull) {
+	for _, event := range pull.Events {
+		t, ok := parseEventTime(event.CreatedAt)
+		if !ok || t.Before(c.since) {
+			continue
+		}
+		if event.Event == "commented" {
+			c.Comments[pull.Pull.Number]++
+		} else if event.Event == "reviewed" {
+			c.Reviews[pull.Pull.Number]++
+		}
+	}
+}
+
+func (c *PeriodCommentsAndReviewsByPullConsumer) SendMetrics(metrics telemetry.Client) {
+	for pull, count := range c.Comments {
+		metrics.Metric("bitcoin.bitcoin.pulls.comments_period", count, telemetry.NewTag("pull", strconv.Itoa(pull)))
+	}
+	for pull, count := range c.Reviews {
+		metrics.Metric("bitcoin.bitcoin.pulls.reviews_period", count, telemetry.NewTag("pull", strconv.Itoa(pull)))
+	}
 }
