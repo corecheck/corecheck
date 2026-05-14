@@ -84,6 +84,7 @@ func (p *EventStreamProducer) Run() error {
 		}
 		events = append(events, evts...)
 	}
+	log.Printf("eventstream: processed pulls, %d events so far", len(events))
 
 	for _, relPath := range p.listFiles("issues") {
 		evts, err := p.processIssue(relPath)
@@ -93,6 +94,7 @@ func (p *EventStreamProducer) Run() error {
 		}
 		events = append(events, evts...)
 	}
+	log.Printf("eventstream: processed issues, %d total events (cutoff: %s)", len(events), p.cutoff.Format(time.RFC3339))
 
 	if len(events) == 0 {
 		log.Println("eventstream: no new events to write")
