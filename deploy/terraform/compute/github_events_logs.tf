@@ -4,9 +4,9 @@ resource "aws_cloudwatch_log_group" "github_events" {
   retention_in_days = var.github_events_log_retention_days
 }
 
-resource "aws_ssm_parameter" "github_events_git_sha" {
+resource "aws_ssm_parameter" "github_events_last_run" {
   provider = aws.compute_region
-  name     = "/corecheck/${terraform.workspace}/github-events-git-sha"
+  name     = "/corecheck/${terraform.workspace}/github-events-last-run"
   type     = "String"
   value    = "initial"
 
@@ -23,13 +23,13 @@ data "aws_iam_policy_document" "allow_stats_ssm" {
       "ssm:GetParameter",
       "ssm:PutParameter",
     ]
-    resources = [aws_ssm_parameter.github_events_git_sha.arn]
+    resources = [aws_ssm_parameter.github_events_last_run.arn]
   }
 }
 
 resource "aws_iam_policy" "stats_ssm_policy" {
   name        = "AllowStatsSSMPolicy-${terraform.workspace}"
-  description = "Allow the stats lambda to read/write the github-events git SHA in SSM"
+  description = "Allow the stats lambda to read/write the github-events last-run timestamp in SSM"
   policy      = data.aws_iam_policy_document.allow_stats_ssm.json
 }
 

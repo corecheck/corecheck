@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -24,26 +25,32 @@ func newSSMClient(region string) (ssmAPI, error) {
 	return ssm.New(sess), nil
 }
 
-// GetGitSHA reads the stored HEAD commit SHA from SSM Parameter Store.
-// Returns "" when the parameter does not exist yet (first run).
-func GetGitSHA(client ssmAPI, paramName string) (string, error) {
+// GetLastRunTime reads the last successful run timestamp from SSM.
+// Returns zero time when the parameter is missing or its value is not a valid RFC3339 timestamp
+// (e.g. the placeholder "initial" written at first Terraform apply).
+func GetLastRunTime(client ssmAPI, paramName string) (time.Time, error) {
 	out, err := client.GetParameter(&ssm.GetParameterInput{
 		Name: aws.String(paramName),
 	})
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == ssm.ErrCodeParameterNotFound {
-			return "", nil
+			return time.Time{}, nil
 		}
-		return "", fmt.Errorf("ssm: get parameter %q: %w", paramName, err)
+		return time.Time{}, fmt.Errorf("ssm: get parameter %q: %w", paramName, err)
 	}
-	return aws.StringValue(out.Parameter.Value), nil
+	t, err := time.Parse(time.RFC3339, aws.StringValue(out.Parameter.Value))
+	if err != nil {
+		// Uninitialised placeholder — treat as first run.
+		return time.Time{}, nil
+	}
+	return t, nil
 }
 
-// SetGitSHA writes sha to SSM Parameter Store, overwriting any existing value.
-func SetGitSHA(client ssmAPI, paramName, sha string) error {
+// SetLastRunTime writes t as an RFC3339 string to SSM Parameter Store.
+func SetLastRunTime(client ssmAPI, paramName string, t time.Time) error {
 	_, err := client.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(paramName),
-		Value:     aws.String(sha),
+		Value:     aws.String(t.UTC().Format(time.RFC3339)),
 		Type:      aws.String(ssm.ParameterTypeString),
 		Overwrite: aws.Bool(true),
 	})

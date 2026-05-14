@@ -1,118 +1,101 @@
 package main
 
 import (
+	"archive/zip"
 	"fmt"
 	"io"
+	"net/http"
+	"os"
 	"path/filepath"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"strings"
 )
 
-// GitClone performs a shallow clone of url into dest and returns the HEAD commit SHA.
-// depth=100 is enough to span many hours of an hourly lambda, giving enough history
-// to compare against a previously stored SHA.
-func GitClone(url, dest string) (string, error) {
-	r, err := git.PlainClone(dest, false, &git.CloneOptions{
-		URL:          url,
-		Depth:        100,
-		SingleBranch: true,
-	})
-	if err != nil {
-		return "", fmt.Errorf("git clone: %w", err)
+// DownloadAndExtract downloads the zip archive from url, extracts it into destDir,
+// and returns the path of the top-level extracted directory.
+func DownloadAndExtract(url, destDir string) (string, error) {
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return "", fmt.Errorf("mkdir %s: %w", destDir, err)
 	}
 
-	head, err := r.Head()
+	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
-		return "", fmt.Errorf("git head: %w", err)
+		return "", fmt.Errorf("download: %w", err)
 	}
-	return head.Hash().String(), nil
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("download: HTTP %d", resp.StatusCode)
+	}
+
+	tmpZip := filepath.Join(destDir, "archive.zip")
+	f, err := os.Create(tmpZip)
+	if err != nil {
+		return "", fmt.Errorf("create temp zip: %w", err)
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		os.Remove(tmpZip)
+		return "", fmt.Errorf("write zip: %w", err)
+	}
+	f.Close()
+
+	extracted, err := extractZip(tmpZip, destDir)
+	os.Remove(tmpZip)
+	return extracted, err
 }
 
-// GitChangedFiles returns the list of file paths that differ between prevSHA and HEAD.
-// The second return value is false when prevSHA is not present in the shallow history,
-// signalling that the caller should fall back to a full first-run scan.
-func GitChangedFiles(repo, prevSHA string) ([]string, bool) {
-	r, err := git.PlainOpen(repo)
+func extractZip(src, dest string) (string, error) {
+	r, err := zip.OpenReader(src)
 	if err != nil {
-		return nil, false
+		return "", fmt.Errorf("open zip: %w", err)
 	}
+	defer r.Close()
 
-	head, err := r.Head()
-	if err != nil {
-		return nil, false
-	}
-	headCommit, err := r.CommitObject(head.Hash())
-	if err != nil {
-		return nil, false
-	}
-	prevCommit, err := r.CommitObject(plumbing.NewHash(prevSHA))
-	if err != nil {
-		// prevSHA not in shallow history.
-		return nil, false
-	}
+	cleanDest := filepath.Clean(dest) + string(os.PathSeparator)
+	var topDir string
 
-	headTree, err := headCommit.Tree()
-	if err != nil {
-		return nil, false
-	}
-	prevTree, err := prevCommit.Tree()
-	if err != nil {
-		return nil, false
-	}
-
-	changes, err := object.DiffTree(prevTree, headTree)
-	if err != nil {
-		return nil, false
-	}
-
-	seen := make(map[string]struct{})
-	for _, ch := range changes {
-		if ch.To.Name != "" {
-			seen[ch.To.Name] = struct{}{}
+	for _, f := range r.File {
+		outPath := filepath.Join(dest, filepath.FromSlash(f.Name))
+		if !strings.HasPrefix(outPath, cleanDest) {
+			return "", fmt.Errorf("zip path traversal: %s", f.Name)
 		}
-		if ch.From.Name != "" {
-			seen[ch.From.Name] = struct{}{}
+
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(outPath, 0755); err != nil {
+				return "", err
+			}
+			if topDir == "" {
+				topDir = strings.SplitN(f.Name, "/", 2)[0]
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+			return "", err
+		}
+		if err := extractFile(f, outPath); err != nil {
+			return "", err
 		}
 	}
 
-	files := make([]string, 0, len(seen))
-	for f := range seen {
-		files = append(files, f)
+	if topDir == "" {
+		return dest, nil
 	}
-	return files, true
+	return filepath.Join(dest, topDir), nil
 }
 
-// GitShowFile returns the raw bytes of relPath at the given commit SHA.
-func GitShowFile(repo, sha, relPath string) ([]byte, error) {
-	r, err := git.PlainOpen(repo)
+func extractFile(f *zip.File, outPath string) error {
+	rc, err := f.Open()
 	if err != nil {
-		return nil, fmt.Errorf("open repo: %w", err)
-	}
-
-	commit, err := r.CommitObject(plumbing.NewHash(sha))
-	if err != nil {
-		return nil, fmt.Errorf("commit %s: %w", sha, err)
-	}
-
-	tree, err := commit.Tree()
-	if err != nil {
-		return nil, fmt.Errorf("tree at %s: %w", sha, err)
-	}
-
-	// relPath may use OS separators; normalise to forward slashes for git tree lookup.
-	relPath = filepath.ToSlash(relPath)
-	file, err := tree.File(relPath)
-	if err != nil {
-		return nil, fmt.Errorf("file %s at %s: %w", relPath, sha, err)
-	}
-
-	rc, err := file.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("reader %s: %w", relPath, err)
+		return err
 	}
 	defer rc.Close()
 
-	return io.ReadAll(rc)
+	out, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, rc)
+	return err
 }
