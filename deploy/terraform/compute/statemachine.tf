@@ -150,7 +150,10 @@ locals {
       ephemeral_storage_size = 10240
 
       environment = {
-        variables = local.telemetry_environment
+        variables = merge(local.telemetry_environment, {
+          GITHUB_EVENTS_LOG_GROUP = aws_cloudwatch_log_group.github_events.name
+          GITHUB_EVENTS_SHA_PARAM = aws_ssm_parameter.github_events_git_sha.name
+        })
       }
     }
   }

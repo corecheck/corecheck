@@ -89,3 +89,10 @@ variable "telemetry_cloudwatch_region" {
   description = "AWS region for the CloudWatch telemetry backend"
   default     = ""
 }
+
+variable "github_events_log_retention_days" {
+  type        = number
+  description = "Retention in days for the GitHub events CloudWatch Logs log group"
+  default     = 731
+}
+
