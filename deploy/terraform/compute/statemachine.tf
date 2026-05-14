@@ -146,13 +146,13 @@ locals {
     },
     "stats" = {
       timeout                = 900
-      memory_size            = 1024
+      memory_size            = 2048
       ephemeral_storage_size = 10240
 
       environment = {
         variables = merge(local.telemetry_environment, {
-          GITHUB_EVENTS_LOG_GROUP = aws_cloudwatch_log_group.github_events.name
-          GITHUB_EVENTS_SHA_PARAM = aws_ssm_parameter.github_events_git_sha.name
+          GITHUB_EVENTS_LOG_GROUP      = aws_cloudwatch_log_group.github_events.name
+          GITHUB_EVENTS_LAST_RUN_PARAM = aws_ssm_parameter.github_events_last_run.name
         })
       }
     }
