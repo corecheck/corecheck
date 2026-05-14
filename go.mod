@@ -1,6 +1,6 @@
 module github.com/corecheck/corecheck
 
-go 1.21.1
+go 1.26.3
 
 require (
 	github.com/aws/aws-lambda-go v1.46.0
