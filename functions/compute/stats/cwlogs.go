@@ -57,19 +57,24 @@ func NewCWLogsWriter(region, logGroupName string) (*CWLogsWriter, error) {
 }
 
 // Write sorts events chronologically (required by CloudWatch Logs) then sends
-// them in batches of cwLogsBatchSize.
-// Events must have timestamps within the last 14 days (CloudWatch Logs limit).
+// them in batches that respect both the 500-event limit and the 24-hour span limit.
 func (w *CWLogsWriter) Write(events []*cloudwatchlogs.InputLogEvent) error {
 	sort.Slice(events, func(i, j int) bool {
 		return aws.Int64Value(events[i].Timestamp) < aws.Int64Value(events[j].Timestamp)
 	})
 
-	for i := 0; i < len(events); i += cwLogsBatchSize {
-		end := i + cwLogsBatchSize
-		if end > len(events) {
-			end = len(events)
+	const maxSpanMs = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+
+	start := 0
+	for start < len(events) {
+		batchStart := aws.Int64Value(events[start].Timestamp)
+		end := start + 1
+		for end < len(events) &&
+			end-start < cwLogsBatchSize &&
+			aws.Int64Value(events[end].Timestamp)-batchStart < maxSpanMs {
+			end++
 		}
-		batch := events[i:end]
+		batch := events[start:end]
 
 		_, err := w.client.PutLogEvents(&cloudwatchlogs.PutLogEventsInput{
 			LogGroupName:  aws.String(w.logGroupName),
@@ -77,8 +82,9 @@ func (w *CWLogsWriter) Write(events []*cloudwatchlogs.InputLogEvent) error {
 			LogEvents:     batch,
 		})
 		if err != nil {
-			return fmt.Errorf("cwlogs: put log events (batch starting %d): %w", i, err)
+			return fmt.Errorf("cwlogs: put log events (batch starting %d): %w", start, err)
 		}
+		start = end
 	}
 	return nil
 }
