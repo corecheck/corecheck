@@ -8,7 +8,7 @@ resource "aws_ssm_parameter" "github_events_git_sha" {
   provider = aws.compute_region
   name     = "/corecheck/${terraform.workspace}/github-events-git-sha"
   type     = "String"
-  value    = ""
+  value    = "initial"
 
   lifecycle {
     # The lambda updates this value at runtime; ignore post-creation changes.
