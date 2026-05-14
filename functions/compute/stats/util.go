@@ -1,72 +1,118 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"os/exec"
-	"strings"
+	"io"
+	"path/filepath"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // GitClone performs a shallow clone of url into dest and returns the HEAD commit SHA.
-// depth=100 is enough to span many hours of an hourly lambda, giving git diff enough
-// history to compare against a previously stored SHA.
+// depth=100 is enough to span many hours of an hourly lambda, giving enough history
+// to compare against a previously stored SHA.
 func GitClone(url, dest string) (string, error) {
-	cmd := exec.Command("git", "clone", "--depth=100", "--single-branch", url, dest)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git clone: %w: %s", err, stderr.String())
+	r, err := git.PlainClone(dest, false, &git.CloneOptions{
+		URL:          url,
+		Depth:        100,
+		SingleBranch: true,
+	})
+	if err != nil {
+		return "", fmt.Errorf("git clone: %w", err)
 	}
 
-	sha, err := gitRevParse(dest, "HEAD")
+	head, err := r.Head()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git head: %w", err)
 	}
-	return sha, nil
+	return head.Hash().String(), nil
 }
 
 // GitChangedFiles returns the list of file paths that differ between prevSHA and HEAD.
 // The second return value is false when prevSHA is not present in the shallow history,
 // signalling that the caller should fall back to a full first-run scan.
 func GitChangedFiles(repo, prevSHA string) ([]string, bool) {
-	cmd := exec.Command("git", "-C", repo, "diff", "--name-only", prevSHA, "HEAD")
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		// prevSHA is likely not in the shallow history.
+	r, err := git.PlainOpen(repo)
+	if err != nil {
 		return nil, false
 	}
 
-	var files []string
-	for _, line := range strings.Split(strings.TrimSpace(stdout.String()), "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			files = append(files, line)
+	head, err := r.Head()
+	if err != nil {
+		return nil, false
+	}
+	headCommit, err := r.CommitObject(head.Hash())
+	if err != nil {
+		return nil, false
+	}
+	prevCommit, err := r.CommitObject(plumbing.NewHash(prevSHA))
+	if err != nil {
+		// prevSHA not in shallow history.
+		return nil, false
+	}
+
+	headTree, err := headCommit.Tree()
+	if err != nil {
+		return nil, false
+	}
+	prevTree, err := prevCommit.Tree()
+	if err != nil {
+		return nil, false
+	}
+
+	changes, err := object.DiffTree(prevTree, headTree)
+	if err != nil {
+		return nil, false
+	}
+
+	seen := make(map[string]struct{})
+	for _, ch := range changes {
+		if ch.To.Name != "" {
+			seen[ch.To.Name] = struct{}{}
 		}
+		if ch.From.Name != "" {
+			seen[ch.From.Name] = struct{}{}
+		}
+	}
+
+	files := make([]string, 0, len(seen))
+	for f := range seen {
+		files = append(files, f)
 	}
 	return files, true
 }
 
 // GitShowFile returns the raw bytes of relPath at the given commit SHA.
 func GitShowFile(repo, sha, relPath string) ([]byte, error) {
-	cmd := exec.Command("git", "-C", repo, "show", sha+":"+relPath)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("git show %s:%s: %w: %s", sha, relPath, err, stderr.String())
+	r, err := git.PlainOpen(repo)
+	if err != nil {
+		return nil, fmt.Errorf("open repo: %w", err)
 	}
-	return stdout.Bytes(), nil
-}
 
-func gitRevParse(repo, ref string) (string, error) {
-	cmd := exec.Command("git", "-C", repo, "rev-parse", ref)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git rev-parse %s: %w: %s", ref, err, stderr.String())
+	commit, err := r.CommitObject(plumbing.NewHash(sha))
+	if err != nil {
+		return nil, fmt.Errorf("commit %s: %w", sha, err)
 	}
-	return strings.TrimSpace(stdout.String()), nil
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("tree at %s: %w", sha, err)
+	}
+
+	// relPath may use OS separators; normalise to forward slashes for git tree lookup.
+	relPath = filepath.ToSlash(relPath)
+	file, err := tree.File(relPath)
+	if err != nil {
+		return nil, fmt.Errorf("file %s at %s: %w", relPath, sha, err)
+	}
+
+	rc, err := file.Reader()
+	if err != nil {
+		return nil, fmt.Errorf("reader %s: %w", relPath, err)
+	}
+	defer rc.Close()
+
+	return io.ReadAll(rc)
 }
