@@ -84,7 +84,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Number of pull requests merged during the selected time window (net change in the merged counter).",
+      "description": "Number of pull requests merged during the selected time window.",
       "fieldConfig": {
         "defaults": {
           "color": {"mode": "thresholds"},
@@ -104,23 +104,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {"calcs": ["delta"], "fields": "", "values": false},
+        "reduceOptions": {"calcs": ["sum"], "fields": "/^count$/", "values": false},
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "metricName": "bitcoin.bitcoin.pulls.merged",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
+          "expression": "filter source_type = \"pull\" and event_type = \"merged\" | stats count(*) as count",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}",
-          "statistic": "Average"
+          "region": "${compute_region}"
         }
       ],
       "title": "Merged pull requests (period)",
@@ -129,7 +125,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Unique GitHub users who have authored a merged pull request (current snapshot).",
+      "description": "Unique GitHub users who opened a pull request in the selected time window.",
       "fieldConfig": {
         "defaults": {
           "color": {"mode": "thresholds"},
@@ -149,26 +145,22 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {"calcs": ["sum"], "fields": "/^unique_authors$/", "values": false},
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "metricName": "bitcoin.bitcoin.pulls.unique_authors",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
+          "expression": "filter source_type = \"pull\" and event_type = \"opened\" | stats count_distinct(actor) as unique_authors",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}",
-          "statistic": "Average"
+          "region": "${compute_region}"
         }
       ],
-      "title": "Unique PR authors",
+      "title": "Unique PR authors (period)",
       "type": "stat"
     },
 
@@ -211,45 +203,15 @@
           "refId": "A",
           "region": "${compute_region}",
           "statistic": "Average"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "label": "merged",
-          "metricName": "bitcoin.bitcoin.pulls.merged",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
-          "refId": "B",
-          "region": "${compute_region}",
-          "statistic": "Average"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "label": "total",
-          "metricName": "bitcoin.bitcoin.pulls.total",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
-          "refId": "C",
-          "region": "${compute_region}",
-          "statistic": "Average"
         }
       ],
-      "title": "Pull request trends",
+      "title": "Open pull requests trend",
       "type": "timeseries"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Distribution of currently open pull requests across GitHub labels.",
+      "description": "Labels applied to pull requests in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
       "gridPos": {"h": 8, "w": 6, "x": 0, "y": 5},
       "id": 5,
@@ -262,24 +224,22 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.pulls.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "expression": "filter source_type = \"pull\" and event_type = \"labeled\" | stats count(*) as count by label | sort count desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Open pull requests by label",
+      "title": "Pull request labels (period)",
       "type": "piechart"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Distribution of merged pull requests across GitHub labels.",
+      "description": "Top reviewers of pull requests in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
       "gridPos": {"h": 8, "w": 6, "x": 6, "y": 5},
       "id": 6,
@@ -292,24 +252,22 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.pulls.merged.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "expression": "filter source_type = \"pull\" and event_type = \"reviewed\" | stats count(*) as count by actor | sort count desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Merged pull requests by label",
+      "title": "Top PR reviewers (period)",
       "type": "piechart"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Pull requests with the most comments and reviews in the last 30 days. Click a row to open the PR on GitHub.",
+      "description": "Pull requests with the most comments in the selected time range. Click a row to open the PR on GitHub.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -321,7 +279,7 @@
           "links": [
             {
               "title": "Open on GitHub",
-              "url": "https://github.com/bitcoin/bitcoin/pull/$${__data.fields.pull}"
+              "url": "https://github.com/bitcoin/bitcoin/pull/$${__data.fields.number}"
             }
           ]
         },
@@ -332,23 +290,21 @@
       "options": {
         "footer": {"show": false},
         "showHeader": true,
-        "sortBy": [{"desc": true, "displayName": "bitcoin.bitcoin.pulls.comments_period"}]
+        "sortBy": [{"desc": true, "displayName": "comments"}]
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT SUM(\"bitcoin.bitcoin.pulls.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY pull ORDER BY SUM() DESC LIMIT 20",
+          "expression": "fields number, title | filter source_type = \"pull\" and event_type = \"commented\" | stats count(*) as comments by number, title | sort comments desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Most commented pull requests (last 30 days)",
+      "title": "Most commented pull requests",
       "type": "table"
     },
 
@@ -407,7 +363,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Number of issues closed during the selected time window (net change in the closed counter).",
+      "description": "Number of issues closed during the selected time window.",
       "fieldConfig": {
         "defaults": {
           "color": {"mode": "thresholds"},
@@ -427,23 +383,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {"calcs": ["delta"], "fields": "", "values": false},
+        "reduceOptions": {"calcs": ["sum"], "fields": "/^count$/", "values": false},
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "metricName": "bitcoin.bitcoin.issues.closed",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
+          "expression": "filter source_type = \"issue\" and event_type = \"closed\" | stats count(*) as count",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}",
-          "statistic": "Average"
+          "region": "${compute_region}"
         }
       ],
       "title": "Closed issues (period)",
@@ -452,7 +404,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Unique GitHub users who have opened an issue (current snapshot).",
+      "description": "Unique GitHub users who opened an issue in the selected time window.",
       "fieldConfig": {
         "defaults": {
           "color": {"mode": "thresholds"},
@@ -472,26 +424,22 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "reduceOptions": {"calcs": ["sum"], "fields": "/^unique_authors$/", "values": false},
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "metricName": "bitcoin.bitcoin.issues.unique_users",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
+          "expression": "filter source_type = \"issue\" and event_type = \"opened\" | stats count_distinct(actor) as unique_authors",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}",
-          "statistic": "Average"
+          "region": "${compute_region}"
         }
       ],
-      "title": "Unique issue authors",
+      "title": "Unique issue authors (period)",
       "type": "stat"
     },
 
@@ -534,45 +482,15 @@
           "refId": "A",
           "region": "${compute_region}",
           "statistic": "Average"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "label": "closed",
-          "metricName": "bitcoin.bitcoin.issues.closed",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
-          "refId": "B",
-          "region": "${compute_region}",
-          "statistic": "Average"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "dimensions": {},
-          "label": "total",
-          "metricName": "bitcoin.bitcoin.issues.total",
-          "namespace": "${telemetry_namespace}",
-          "period": "86400",
-          "queryMode": "Metrics",
-          "metricEditorMode": 0,
-          "metricQueryType": 0,
-          "matchExact": true,
-          "refId": "C",
-          "region": "${compute_region}",
-          "statistic": "Average"
         }
       ],
-      "title": "Issue trends",
+      "title": "Open issues trend",
       "type": "timeseries"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Distribution of currently open issues across GitHub labels.",
+      "description": "Labels applied to issues in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
       "gridPos": {"h": 8, "w": 6, "x": 0, "y": 22},
       "id": 15,
@@ -585,24 +503,22 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.issues.open.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "expression": "filter source_type = \"issue\" and event_type = \"labeled\" | stats count(*) as count by label | sort count desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Open issues by label",
+      "title": "Issue labels (period)",
       "type": "piechart"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Distribution of closed issues across GitHub labels.",
+      "description": "Top commenters on issues in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
       "gridPos": {"h": 8, "w": 6, "x": 6, "y": 22},
       "id": 16,
@@ -615,24 +531,22 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT AVG(\"bitcoin.bitcoin.issues.closed.by_label\") FROM \"${telemetry_namespace}\" GROUP BY label ORDER BY AVG() DESC LIMIT 20",
+          "expression": "filter source_type = \"issue\" and event_type = \"commented\" | stats count(*) as count by actor | sort count desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Closed issues by label",
+      "title": "Top issue commenters (period)",
       "type": "piechart"
     },
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Issues with the most comments in the last 30 days. Click a row to open the issue on GitHub.",
+      "description": "Issues with the most comments in the selected time range. Click a row to open the issue on GitHub.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -644,7 +558,7 @@
           "links": [
             {
               "title": "Open on GitHub",
-              "url": "https://github.com/bitcoin/bitcoin/issues/$${__data.fields.issue}"
+              "url": "https://github.com/bitcoin/bitcoin/issues/$${__data.fields.number}"
             }
           ]
         },
@@ -655,24 +569,89 @@
       "options": {
         "footer": {"show": false},
         "showHeader": true,
-        "sortBy": [{"desc": true, "displayName": "bitcoin.bitcoin.issues.comments_period"}]
+        "sortBy": [{"desc": true, "displayName": "comments"}]
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "sqlExpression": "SELECT SUM(\"bitcoin.bitcoin.issues.comments_period\") FROM \"${telemetry_namespace}\" GROUP BY issue ORDER BY SUM() DESC LIMIT 20",
+          "expression": "fields number, title | filter source_type = \"issue\" and event_type = \"commented\" | stats count(*) as comments by number, title | sort comments desc | limit 20",
           "hide": false,
-          "id": "",
-          "matchExact": true,
-          "metricEditorMode": 1,
-          "metricQueryType": 1,
-          "queryMode": "Metrics",
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
         }
       ],
-      "title": "Most commented issues (last 30 days)",
+      "title": "Most commented issues",
       "type": "table"
+    },
+
+    {
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+      "id": 300,
+      "title": "Activity Stream",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": {"group": "A", "mode": "normal"}
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
+      "id": 18,
+      "options": {"tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "fields @timestamp, event_type | filter source_type = \"pull\" | stats count(*) as events by bin(1d), event_type",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Pull request activity (daily)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": {"group": "A", "mode": "normal"}
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
+      "id": 19,
+      "options": {"tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "fields @timestamp, event_type | filter source_type = \"issue\" | stats count(*) as events by bin(1d), event_type",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${github_events_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Issue activity (daily)",
+      "type": "timeseries"
     }
 
   ],

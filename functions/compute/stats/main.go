@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -11,30 +10,77 @@ import (
 )
 
 const (
-	bitcoinDataURL = "https://github.com/bitcoin-data/github-metadata-backup-bitcoin-bitcoin/archive/refs/heads/master.zip"
+	bitcoinDataURL = "https://github.com/bitcoin-data/github-metadata-backup-bitcoin-bitcoin"
 	dest           = "/tmp/data"
 )
 
 func handleMetrics(ctx context.Context) (string, error) {
-
-	// Download zip file
-	err := DownloadFile(bitcoinDataURL)
+	// Clone the bitcoin-data repository (shallow, depth=100).
+	headSHA, err := GitClone(bitcoinDataURL, dest)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalf("git clone: %v", err)
 	}
 
-	// Unzip file
-	err = Unzip("/tmp/bitcoin-data.zip", dest)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	bc := BitcoinCoreData{Path: dest + "/github-metadata-backup-bitcoin-bitcoin-master"}
-	bc.AddConsumers(&NumberOfPullsConsumer{}, &UniqueAuthorsConsumer{}, &PullsByUserConsumer{}, &PullsByLabelConsumer{}, &TotalCommentsAndReviewsByPullConsumer{}, &PeriodCommentsAndReviewsByPullConsumer{})
-	bc.AddConsumers(&NumberOfIssuesConsumer{}, &UniqueIssueUsersConsumer{}, &IssuesByUserConsumer{}, &IssuesByLabelConsumer{}, &TotalCommentsIssueConsumer{}, &PeriodCommentsIssueConsumer{})
+	// Run existing gauge-metric consumers over the full dataset (unchanged).
+	bc := BitcoinCoreData{Path: dest}
+	bc.AddConsumers(&NumberOfPullsConsumer{}, &NumberOfIssuesConsumer{})
 	bc.Run()
+
+	// Event stream — skip silently if env vars are not configured.
+	logGroupName := os.Getenv("GITHUB_EVENTS_LOG_GROUP")
+	shaSsmParam := os.Getenv("GITHUB_EVENTS_SHA_PARAM")
+	awsRegion := os.Getenv("TELEMETRY_CLOUDWATCH_REGION")
+	if awsRegion == "" {
+		awsRegion = os.Getenv("AWS_REGION")
+	}
+	if awsRegion == "" {
+		awsRegion = os.Getenv("AWS_DEFAULT_REGION")
+	}
+
+	if logGroupName == "" || shaSsmParam == "" || awsRegion == "" {
+		log.Println("stats: GITHUB_EVENTS_LOG_GROUP / GITHUB_EVENTS_SHA_PARAM / region not set; skipping event stream")
+		return "OK", nil
+	}
+
+	ssmClient, err := newSSMClient(awsRegion)
+	if err != nil {
+		log.Printf("stats: could not create SSM client: %v; skipping event stream", err)
+		return "OK", nil
+	}
+
+	prevSHA, err := GetGitSHA(ssmClient, shaSsmParam)
+	if err != nil {
+		log.Printf("stats: could not read git SHA from SSM: %v; skipping event stream", err)
+		return "OK", nil
+	}
+
+	// Determine which files changed since the previous run.
+	var changedFiles []string
+	if prevSHA != "" {
+		files, ok := GitChangedFiles(dest, prevSHA)
+		if ok {
+			changedFiles = files
+		} else {
+			log.Printf("stats: prev SHA %s not in shallow history; falling back to 14-day scan", prevSHA)
+			// changedFiles stays nil → EventStreamProducer processes all files
+		}
+	}
+
+	cwWriter, err := NewCWLogsWriter(awsRegion, logGroupName)
+	if err != nil {
+		log.Printf("stats: could not create CW Logs writer: %v; skipping event stream", err)
+		return "OK", nil
+	}
+
+	producer := NewEventStreamProducer(dest, prevSHA, changedFiles, cwWriter)
+	if err := producer.Run(); err != nil {
+		log.Printf("stats: event stream write error: %v", err)
+		return "OK", nil
+	}
+
+	if err := SetGitSHA(ssmClient, shaSsmParam, headSHA); err != nil {
+		log.Printf("stats: could not store git SHA in SSM: %v", err)
+	}
 
 	return "OK", nil
 }
