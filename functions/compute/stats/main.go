@@ -51,10 +51,16 @@ func handleMetrics(ctx context.Context) (string, error) {
 		log.Printf("stats: could not read last run time from SSM: %v; skipping event stream", err)
 		return "OK", nil
 	}
+	if lastRunTime.IsZero() {
+		log.Println("stats: first run — will use 14-day CloudWatch Logs cutoff")
+	} else {
+		log.Printf("stats: last run time: %s", lastRunTime.Format(time.RFC3339))
+	}
 
 	// Capture run time before processing so events emitted during this run are caught next time.
 	runTime := time.Now().UTC()
 
+	log.Printf("stats: creating CloudWatch Logs writer for group %s", logGroupName)
 	cwWriter, err := NewCWLogsWriter(awsRegion, logGroupName)
 	if err != nil {
 		log.Printf("stats: could not create CW Logs writer: %v; skipping event stream", err)
@@ -69,6 +75,8 @@ func handleMetrics(ctx context.Context) (string, error) {
 
 	if err := SetLastRunTime(ssmClient, lastRunParam, runTime); err != nil {
 		log.Printf("stats: could not store last run time in SSM: %v", err)
+	} else {
+		log.Printf("stats: stored last run time %s in SSM", runTime.Format(time.RFC3339))
 	}
 
 	return "OK", nil

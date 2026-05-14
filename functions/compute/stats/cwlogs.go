@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -55,9 +56,14 @@ func NewCWLogsWriter(region, logGroupName string) (*CWLogsWriter, error) {
 	}, nil
 }
 
-// Write sends events to CloudWatch Logs in batches of cwLogsBatchSize.
+// Write sorts events chronologically (required by CloudWatch Logs) then sends
+// them in batches of cwLogsBatchSize.
 // Events must have timestamps within the last 14 days (CloudWatch Logs limit).
 func (w *CWLogsWriter) Write(events []*cloudwatchlogs.InputLogEvent) error {
+	sort.Slice(events, func(i, j int) bool {
+		return aws.Int64Value(events[i].Timestamp) < aws.Int64Value(events[j].Timestamp)
+	})
+
 	for i := 0; i < len(events); i += cwLogsBatchSize {
 		end := i + cwLogsBatchSize
 		if end > len(events) {

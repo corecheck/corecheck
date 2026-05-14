@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +18,7 @@ func DownloadAndExtract(url, destDir string) (string, error) {
 		return "", fmt.Errorf("mkdir %s: %w", destDir, err)
 	}
 
+	log.Printf("stats: downloading zip from %s", url)
 	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
 		return "", fmt.Errorf("download: %w", err)
@@ -31,16 +33,22 @@ func DownloadAndExtract(url, destDir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create temp zip: %w", err)
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
+	written, err := io.Copy(f, resp.Body)
+	f.Close()
+	if err != nil {
 		os.Remove(tmpZip)
 		return "", fmt.Errorf("write zip: %w", err)
 	}
-	f.Close()
+	log.Printf("stats: download complete (%.1f MB)", float64(written)/(1024*1024))
 
+	log.Printf("stats: extracting zip to %s", destDir)
 	extracted, err := extractZip(tmpZip, destDir)
 	os.Remove(tmpZip)
-	return extracted, err
+	if err != nil {
+		return "", err
+	}
+	log.Printf("stats: extraction complete, repo path: %s", extracted)
+	return extracted, nil
 }
 
 func extractZip(src, dest string) (string, error) {
@@ -49,6 +57,8 @@ func extractZip(src, dest string) (string, error) {
 		return "", fmt.Errorf("open zip: %w", err)
 	}
 	defer r.Close()
+
+	log.Printf("stats: zip contains %d entries", len(r.File))
 
 	cleanDest := filepath.Clean(dest) + string(os.PathSeparator)
 	var topDir string
@@ -99,3 +109,4 @@ func extractFile(f *zip.File, outPath string) error {
 	_, err = io.Copy(out, rc)
 	return err
 }
+
