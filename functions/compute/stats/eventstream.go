@@ -14,7 +14,7 @@ import (
 )
 
 // cwLogsMaxAge is the default lookback window used on first run.
-const cwLogsMaxAge = 2 * time.Hour
+const cwLogsMaxAge = 24 * time.Hour
 
 // eventTypesToEmit are the PR/issue event kinds we care about.
 // Structural noise (committed, referenced, subscribed, mentioned, etc.) is excluded.
@@ -56,13 +56,15 @@ type EventStreamProducer struct {
 }
 
 // NewEventStreamProducer creates a producer. lastRunTime is the timestamp stored from the
-// previous successful run; zero means first run. The effective cutoff is
-// max(lastRunTime, now-14days) to satisfy the CloudWatch Logs age limit.
+// previous successful run; zero means first run. On first run the cutoff defaults to
+// now-cwLogsMaxAge. On subsequent runs the cutoff is exactly lastRunTime so that rolling
+// back the SSM parameter re-processes the same events.
 func NewEventStreamProducer(repoPath string, lastRunTime time.Time, writer *CWLogsWriter) *EventStreamProducer {
-	cwCutoff := time.Now().UTC().Add(-cwLogsMaxAge)
-	cutoff := lastRunTime.UTC()
-	if cutoff.Before(cwCutoff) {
-		cutoff = cwCutoff
+	var cutoff time.Time
+	if lastRunTime.IsZero() {
+		cutoff = time.Now().UTC().Add(-cwLogsMaxAge)
+	} else {
+		cutoff = lastRunTime.UTC()
 	}
 	return &EventStreamProducer{
 		repoPath:   repoPath,
