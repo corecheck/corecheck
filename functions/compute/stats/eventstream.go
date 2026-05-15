@@ -13,8 +13,8 @@ import (
 	"github.com/corecheck/corecheck/functions/compute/stats/types"
 )
 
-// cwLogsMaxAge is the CloudWatch Logs maximum lookback for event timestamps.
-const cwLogsMaxAge = 14 * 24 * time.Hour
+// cwLogsMaxAge is the default lookback window used on first run.
+const cwLogsMaxAge = 2 * time.Hour
 
 // eventTypesToEmit are the PR/issue event kinds we care about.
 // Structural noise (committed, referenced, subscribed, mentioned, etc.) is excluded.
