@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -34,9 +35,8 @@ func NewCWLogsWriter(region, logGroupName string) (*CWLogsWriter, error) {
 		return nil, fmt.Errorf("cwlogs: create session: %w", err)
 	}
 
-	streamName := fmt.Sprintf("github-events/%s/%d",
-		time.Now().UTC().Format("2006-01-02"),
-		time.Now().UnixNano(),
+	streamName := fmt.Sprintf("github-events/%s",
+		time.Now().UTC().Format("2006-01-02/15-04-05"),
 	)
 
 	client := cloudwatchlogs.New(sess)
@@ -48,6 +48,7 @@ func NewCWLogsWriter(region, logGroupName string) (*CWLogsWriter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cwlogs: create log stream %q: %w", streamName, err)
 	}
+	log.Printf("cwlogs: writing to log stream %s/%s", logGroupName, streamName)
 
 	return &CWLogsWriter{
 		client:       client,
