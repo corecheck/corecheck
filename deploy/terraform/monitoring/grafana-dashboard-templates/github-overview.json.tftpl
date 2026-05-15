@@ -213,7 +213,7 @@
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Labels applied to pull requests in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 5},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
       "id": 5,
       "options": {
         "displayLabels": ["name"],
@@ -234,34 +234,6 @@
         }
       ],
       "title": "Pull request labels (period)",
-      "type": "piechart"
-    },
-
-    {
-      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Top reviewers of pull requests in the selected time range.",
-      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 5},
-      "id": 6,
-      "options": {
-        "displayLabels": ["name"],
-        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
-        "pieType": "pie",
-        "tooltip": {"mode": "single", "sort": "none"}
-      },
-      "targets": [
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter source_type = \"pull\" and event_type = \"reviewed\" | stats count(*) as count by actor | sort count desc | limit 20",
-          "hide": false,
-          "id": "A",
-          "logGroups": [{"name": "${github_events_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "A",
-          "region": "${compute_region}"
-        }
-      ],
-      "title": "Top PR reviewers (period)",
       "type": "piechart"
     },
 
@@ -520,7 +492,7 @@
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "description": "Labels applied to issues in the selected time range.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 22},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
       "id": 15,
       "options": {
         "displayLabels": ["name"],
@@ -541,34 +513,6 @@
         }
       ],
       "title": "Issue labels (period)",
-      "type": "piechart"
-    },
-
-    {
-      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Top commenters on issues in the selected time range.",
-      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
-      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 22},
-      "id": 16,
-      "options": {
-        "displayLabels": ["name"],
-        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
-        "pieType": "pie",
-        "tooltip": {"mode": "single", "sort": "none"}
-      },
-      "targets": [
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter source_type = \"issue\" and event_type = \"commented\" | stats count(*) as count by actor | sort count desc | limit 20",
-          "hide": false,
-          "id": "A",
-          "logGroups": [{"name": "${github_events_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "A",
-          "region": "${compute_region}"
-        }
-      ],
-      "title": "Top issue commenters (period)",
       "type": "piechart"
     },
 
