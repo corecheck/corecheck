@@ -87,5 +87,15 @@ func main() {
 		log.Fatalf("Error configuring telemetry: %s", err)
 	}
 
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+		// Running locally — invoke the handler directly.
+		result, err := handleMetrics(context.Background())
+		if err != nil {
+			log.Fatalf("handleMetrics: %v", err)
+		}
+		log.Printf("done: %s", result)
+		return
+	}
+
 	lambda.Start(handleMetrics)
 }
