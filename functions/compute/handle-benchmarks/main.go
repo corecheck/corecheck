@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 
-	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/corecheck/corecheck/internal/config"
 	"github.com/corecheck/corecheck/internal/db"
 	"github.com/corecheck/corecheck/internal/logger"
+	"github.com/corecheck/corecheck/internal/telemetry"
 	"github.com/corecheck/corecheck/internal/types"
 )
 
@@ -62,6 +62,7 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 	}
 
 	if job.GetIsMaster() {
+		metrics := telemetry.Default()
 		resultsByBenchmark := make(map[string][]*db.BenchmarkResult)
 		for _, result := range totalBenchmarks {
 			resultsByBenchmark[result.Name] = append(resultsByBenchmark[result.Name], result)
@@ -71,32 +72,34 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 			log.Infof("Calculating benchmark stats for %s", name)
 			avg := db.GetAverageBenchmarkResults(results)
 
-			tags := []string{"benchmark_name:" + name, "commit:" + job.Commit}
+			tags := []telemetry.Tag{
+				telemetry.NewTag("benchmark_name", name),
+			}
 
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.batch", avg.Batch, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.complexity_n", avg.ComplexityN, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.epochs", avg.Epochs, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.clock_resolution", avg.ClockResolution, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.clock_resolution_multiple", avg.ClockResolutionMultiple, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.max_epoch_time", avg.MaxEpochTime, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.min_epoch_time", avg.MinEpochTime, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.min_epoch_iterations", avg.MinEpochIterations, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.epoch_iterations", avg.EpochIterations, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.warmup", avg.Warmup, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.relative", avg.Relative, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_elapsed", avg.MedianElapsed, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_elapsed", avg.MedianAbsolutePercentErrorElapsed, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_instructions", avg.MedianInstructions, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_instructions", avg.MedianAbsolutePercentErrorInstructions, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_cpucycles", avg.MedianCpucycles, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_contextswitches", avg.MedianContextswitches, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_pagefaults", avg.MedianPagefaults, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_branchinstructions", avg.MedianBranchinstructions, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.median_branchmisses", avg.MedianBranchmisses, tags...)
-			ddlambda.Metric("bitcoin.bitcoin.benchmarks.total_time", avg.TotalTime, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.batch", avg.Batch, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.complexity_n", avg.ComplexityN, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.epochs", avg.Epochs, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.clock_resolution", avg.ClockResolution, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.clock_resolution_multiple", avg.ClockResolutionMultiple, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.max_epoch_time", avg.MaxEpochTime, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.min_epoch_time", avg.MinEpochTime, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.min_epoch_iterations", avg.MinEpochIterations, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.epoch_iterations", avg.EpochIterations, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.warmup", avg.Warmup, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.relative", avg.Relative, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_elapsed", avg.MedianElapsed, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_elapsed", avg.MedianAbsolutePercentErrorElapsed, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_instructions", avg.MedianInstructions, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_instructions", avg.MedianAbsolutePercentErrorInstructions, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_cpucycles", avg.MedianCpucycles, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_contextswitches", avg.MedianContextswitches, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_pagefaults", avg.MedianPagefaults, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_branchinstructions", avg.MedianBranchinstructions, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.median_branchmisses", avg.MedianBranchmisses, tags...)
+			metrics.Metric("bitcoin.bitcoin.benchmarks.total_time", avg.TotalTime, tags...)
 		}
 
-		ddlambda.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)), "commit:"+job.Commit)
+		metrics.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)))
 	}
 
 	log.Info("Creating benchmark results")
@@ -143,8 +146,9 @@ func HandleRequest(ctx context.Context, event map[string]interface{}) (string, e
 }
 
 func main() {
-	lambda.Start(ddlambda.WrapFunction(HandleRequest, &ddlambda.Config{
-		Site:            "datadoghq.eu",
-		EnhancedMetrics: true,
-	}))
+	if err := telemetry.ConfigureDefaultFromEnv(); err != nil {
+		log.Fatalf("Error configuring telemetry: %s", err)
+	}
+
+	lambda.Start(HandleRequest)
 }

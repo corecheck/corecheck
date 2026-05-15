@@ -1,0 +1,354 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "description": "Migrated from DataDog dashboard ${datadog_dashboard_id} (${datadog_dashboard_title}, ${datadog_widget_count} widgets) for ${route}. Benchmark telemetry is stored as CloudWatch custom metrics in the ${telemetry_namespace} namespace, while queue health comes from AWS Batch metrics for ${bench_queue_name}.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Latest number of benchmark series emitted for the most recent master sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.benchmarks.count",
+          "namespace": "${telemetry_namespace}",
+          "period": "",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Maximum",
+          "statistics": [
+            "Maximum"
+          ]
+        }
+      ],
+      "title": "Tracked benchmark series",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Total benchmark count over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {},
+          "metricName": "bitcoin.bitcoin.benchmarks.count",
+          "namespace": "${telemetry_namespace}",
+          "period": "",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Average",
+          "statistics": [
+            "Average"
+          ]
+        }
+      ],
+      "title": "Benchmark count trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Slowest benchmarks by average median elapsed time over the last week.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 7
+      },
+      "id": 3,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_elapsed`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
+          "queryMode": "MetricsInsights",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Slowest benchmarks",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Benchmarks with the highest CPU cycle cost over the last week.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 7
+      },
+      "id": 4,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.median_cpucycles`) AS value, benchmark_name FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name) GROUP BY benchmark_name ORDER BY value DESC LIMIT 15",
+          "queryMode": "MetricsInsights",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Highest CPU cycle benchmarks",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average total runtime trend across emitted benchmarks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "SELECT AVG(`bitcoin.bitcoin.benchmarks.total_time`) FROM SCHEMA(\"${telemetry_namespace}\", benchmark_name)",
+          "queryMode": "MetricsInsights",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Average benchmark total time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Batch queue success/failure counts for the benchmark runner queue.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "succeeded",
+          "metricName": "SucceededJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "A",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "dimensions": {
+            "JobQueue": "${bench_queue_name}"
+          },
+          "label": "failed",
+          "metricName": "FailedJobs",
+          "namespace": "AWS/Batch",
+          "period": "300",
+          "queryMode": "Metrics",
+          "metricEditorMode": 0,
+          "metricQueryType": 0,
+          "matchExact": true,
+          "refId": "B",
+          "region": "${compute_region}",
+          "expression": "",
+          "id": "",
+          "statistic": "Sum",
+          "statistics": [
+            "Sum"
+          ]
+        }
+      ],
+      "title": "Benchmark queue outcomes",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "aws",
+    "benchmarks",
+    "cloudwatch",
+    "corecheck",
+    "public"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-benchmarks",
+  "version": 1,
+  "weekStart": ""
+}
