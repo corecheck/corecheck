@@ -349,8 +349,12 @@ type Pull struct {
 		Actor     any    `json:"actor"`
 		CommitID  any    `json:"commit_id"`
 		CommitURL any    `json:"commit_url"`
-		CreatedAt any    `json:"created_at"`
-		HTMLURL   string `json:"html_url,omitempty"`
+		CreatedAt   any    `json:"created_at"`
+		SubmittedAt any    `json:"submitted_at,omitempty"`
+		User        struct {
+			Login string `json:"login"`
+		} `json:"user,omitempty"`
+		HTMLURL string `json:"html_url,omitempty"`
 		Tree      struct {
 			Sha string `json:"sha"`
 			URL string `json:"url"`

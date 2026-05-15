@@ -38,6 +38,7 @@ var eventTypesToEmit = map[string]bool{
 // Keys must be lowercase; lookups use strings.ToLower.
 var botActorsToExclude = map[string]bool{
 	"drahtbot": true,
+	"bitcoin":  true, // GitHub bot that auto-locks old threads
 }
 
 // LogEvent is the JSON object written as a single CloudWatch Logs log line.
@@ -196,17 +197,25 @@ func (p *EventStreamProducer) processPull(relPath string) ([]LogEvent, error) {
 			continue
 		}
 		t, ok := parseEventTime(e.CreatedAt)
+		if !ok && e.Event == "reviewed" {
+			// reviewed events have created_at=null; the real timestamp is in submitted_at.
+			t, ok = parseEventTime(e.SubmittedAt)
+		}
 		if !ok || !t.UTC().After(p.cutoff) {
 			continue
 		}
 		actor := actorLogin(e.Actor)
+		if actor == "" && e.Event == "reviewed" {
+			// reviewed events have actor=null; the reviewer login is in user.login.
+			actor = e.User.Login
+		}
 		if botActorsToExclude[strings.ToLower(actor)] {
 			continue
 		}
 		events = append(events, LogEvent{
 			SourceType: "pull", EventType: e.Event,
 			Number: pull.Pull.Number, Title: pull.Pull.Title,
-			User: user, Actor: actorLogin(e.Actor), Labels: labels, State: pull.Pull.State,
+			User: user, Actor: actor, Labels: labels, State: pull.Pull.State,
 			EventTime: t.UTC().Format(time.RFC3339),
 		})
 	}
