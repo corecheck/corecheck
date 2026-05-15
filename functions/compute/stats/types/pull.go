@@ -56,7 +56,10 @@ type Pull struct {
 		ClosedAt           time.Time `json:"closed_at"`
 		MergeableState     string    `json:"mergeable_state"`
 		MergedAt           time.Time `json:"merged_at"`
-		MergeCommitSha     string    `json:"merge_commit_sha"`
+		MergedBy           struct {
+			Login string `json:"login"`
+		} `json:"merged_by"`
+		MergeCommitSha string `json:"merge_commit_sha"`
 		Assignees          []any     `json:"assignees"`
 		RequestedReviewers []any     `json:"requested_reviewers"`
 		RequestedTeams     []any     `json:"requested_teams"`
