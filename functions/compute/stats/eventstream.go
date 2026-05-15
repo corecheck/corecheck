@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,6 +32,12 @@ var eventTypesToEmit = map[string]bool{
 	"unassigned": true,
 	"locked":     true,
 	"unlocked":   true,
+}
+
+// botActorsToExclude are automated accounts whose events should not be written to the log.
+// Keys must be lowercase; lookups use strings.ToLower.
+var botActorsToExclude = map[string]bool{
+	"drahtbot": true,
 }
 
 // LogEvent is the JSON object written as a single CloudWatch Logs log line.
@@ -192,6 +199,10 @@ func (p *EventStreamProducer) processPull(relPath string) ([]LogEvent, error) {
 		if !ok || !t.UTC().After(p.cutoff) {
 			continue
 		}
+		actor := actorLogin(e.Actor)
+		if botActorsToExclude[strings.ToLower(actor)] {
+			continue
+		}
 		events = append(events, LogEvent{
 			SourceType: "pull", EventType: e.Event,
 			Number: pull.Pull.Number, Title: pull.Pull.Title,
@@ -241,6 +252,9 @@ func (p *EventStreamProducer) processIssue(relPath string) ([]LogEvent, error) {
 			continue
 		}
 		if e.CreatedAt.IsZero() || !e.CreatedAt.UTC().After(p.cutoff) {
+			continue
+		}
+		if botActorsToExclude[strings.ToLower(e.Actor.Login)] {
 			continue
 		}
 		events = append(events, LogEvent{
