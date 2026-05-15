@@ -625,9 +625,15 @@
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "fieldConfig": {
         "defaults": {
+          "color": {"mode": "palette-classic"},
           "custom": {
+            "drawStyle": "line",
             "fillOpacity": 10,
+            "lineInterpolation": "linear",
             "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false,
             "stacking": {"group": "A", "mode": "normal"}
           }
         },
@@ -635,29 +641,39 @@
       },
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
       "id": 18,
-      "options": {"tooltip": {"mode": "multi"}},
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "fields @timestamp, event_type | filter source_type = \"pull\" | stats count(*) as events by bin(1d), event_type",
+          "expression": "fields @timestamp, event_type\n| filter source_type = \"pull\"\n| stats count(*) as Count by event_type, bin($__interval)",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${github_events_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}"
+          "region": "${compute_region}",
+          "statsGroups": ["event_type", "bin($__interval)"]
         }
       ],
-      "title": "Pull request activity (daily)",
+      "title": "Pull request activity",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
       "fieldConfig": {
         "defaults": {
+          "color": {"mode": "palette-classic"},
           "custom": {
+            "drawStyle": "line",
             "fillOpacity": 10,
+            "lineInterpolation": "linear",
             "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false,
             "stacking": {"group": "A", "mode": "normal"}
           }
         },
@@ -665,20 +681,24 @@
       },
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
       "id": 19,
-      "options": {"tooltip": {"mode": "multi"}},
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "fields @timestamp, event_type | filter source_type = \"issue\" | stats count(*) as events by bin(1d), event_type",
+          "expression": "fields @timestamp, event_type\n| filter source_type = \"issue\"\n| stats count(*) as Count by event_type, bin($__interval)",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${github_events_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}"
+          "region": "${compute_region}",
+          "statsGroups": ["event_type", "bin($__interval)"]
         }
       ],
-      "title": "Issue activity (daily)",
+      "title": "Issue activity",
       "type": "timeseries"
     }
 
