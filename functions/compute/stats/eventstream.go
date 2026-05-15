@@ -18,6 +18,8 @@ const cwLogsMaxAge = 24 * time.Hour
 
 // eventTypesToEmit are the PR/issue event kinds we care about.
 // Structural noise (committed, referenced, subscribed, mentioned, etc.) is excluded.
+// "merged" is intentionally absent: merged PRs are captured via the pull.MergedAt lifecycle
+// field, so including it here would produce a duplicate log entry.
 var eventTypesToEmit = map[string]bool{
 	"commented":  true,
 	"reviewed":   true,
@@ -25,7 +27,6 @@ var eventTypesToEmit = map[string]bool{
 	"unlabeled":  true,
 	"closed":     true,
 	"reopened":   true,
-	"merged":     true,
 	"assigned":   true,
 	"unassigned": true,
 	"locked":     true,
@@ -165,7 +166,7 @@ func (p *EventStreamProducer) processPull(relPath string) ([]LogEvent, error) {
 		events = append(events, LogEvent{
 			SourceType: "pull", EventType: "merged",
 			Number: pull.Pull.Number, Title: pull.Pull.Title,
-			User: user, Actor: user, Labels: labels, State: pull.Pull.State,
+			User: user, Actor: pull.Pull.MergedBy.Login, Labels: labels, State: pull.Pull.State,
 			EventTime: pull.Pull.MergedAt.UTC().Format(time.RFC3339),
 		})
 	} else if pull.Pull.State == "closed" && !pull.Pull.ClosedAt.IsZero() && pull.Pull.ClosedAt.UTC().After(p.cutoff) {
@@ -180,6 +181,11 @@ func (p *EventStreamProducer) processPull(relPath string) ([]LogEvent, error) {
 	// Timeline events.
 	for _, e := range pull.Events {
 		if !eventTypesToEmit[e.Event] {
+			continue
+		}
+		// GitHub emits a spurious "closed" timeline event alongside every merge.
+		// Suppress it here — the lifecycle MergedAt check above already emits "merged".
+		if e.Event == "closed" && !pull.Pull.MergedAt.IsZero() {
 			continue
 		}
 		t, ok := parseEventTime(e.CreatedAt)
