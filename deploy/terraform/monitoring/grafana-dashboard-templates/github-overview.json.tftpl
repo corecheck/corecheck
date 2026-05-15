@@ -272,39 +272,67 @@
         "defaults": {
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
+            "cellOptions": {"type": "auto"},
             "filterable": false,
-            "inspect": false
+            "footer": {"reducers": []},
+            "inspect": false,
+            "minWidth": 50,
+            "wrapText": true
           },
           "links": [
             {
               "title": "Open on GitHub",
-              "url": "https://github.com/bitcoin/bitcoin/pull/$${__data.fields.number}"
+              "url": "https://github.com/bitcoin/bitcoin/pull/$${__data.fields.PR}"
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "green", "value": null}, {"color": "red", "value": 80}]
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "PR"},
+            "properties": [{"id": "custom.width", "value": 90}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Comments"},
+            "properties": [{"id": "custom.width", "value": 90}]
+          }
+        ]
       },
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
       "id": 7,
       "options": {
         "footer": {"show": false},
         "showHeader": true,
-        "sortBy": [{"desc": true, "displayName": "comments"}]
+        "sortBy": [{"desc": true, "displayName": "Comments"}]
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "fields number, title | filter source_type = \"pull\" and event_type = \"commented\" | stats count(*) as comments by number, title | sort comments desc | limit 20",
+          "expression": "fields number as PR, title as Title | filter source_type = \"pull\" and event_type = \"commented\" | stats count(*) as Comments by PR, Title | sort Comments desc | limit 20",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${github_events_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}"
+          "region": "${compute_region}",
+          "statsGroups": ["PR", "Title"]
         }
       ],
       "title": "Most commented pull requests",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Value": true},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
       "type": "table"
     },
 
