@@ -234,6 +234,8 @@ func (p *EventStreamProducer) makeEvent(le LogEvent) *cloudwatchlogs.InputLogEve
 	le.IngestedAt = p.ingestedAt
 	body, _ := json.Marshal(le)
 	t, _ := time.Parse(time.RFC3339, le.EventTime)
+	log.Printf("eventstream: [%s] #%d %q — %s (actor: %s, time: %s)",
+		le.SourceType, le.Number, le.Title, le.EventType, le.Actor, le.EventTime)
 	return &cloudwatchlogs.InputLogEvent{
 		Message:   aws.String(string(body)),
 		Timestamp: aws.Int64(t.UnixMilli()),
