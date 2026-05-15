@@ -217,23 +217,37 @@
       "id": 5,
       "options": {
         "displayLabels": ["name"],
-        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
         "pieType": "pie",
+        "reduceOptions": {"calcs": ["max"], "fields": "", "values": true},
+        "sort": "desc",
         "tooltip": {"mode": "single", "sort": "none"}
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter source_type = \"pull\" and event_type = \"labeled\" | stats count(*) as count by label | sort count desc | limit 20",
+          "expression": "filter source_type = \"pull\" and event_type = \"labeled\"\n| fields jsonParse(@message) as msg\n| fields msg.labels as labelsList\n| unnest labelsList into label\n| filter label != \"CI failed\"\n| stats count(*) as Count by label as Label\n| sort Count desc\n| display Label, Count\n| limit 15",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${github_events_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}"
+          "region": "${compute_region}",
+          "statsGroups": ["Label"]
         }
       ],
       "title": "Pull request labels (period)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Value": true},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
       "type": "piechart"
     },
 
@@ -496,23 +510,37 @@
       "id": 15,
       "options": {
         "displayLabels": ["name"],
-        "legend": {"displayMode": "table", "placement": "right", "values": ["value"]},
+        "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
         "pieType": "pie",
+        "reduceOptions": {"calcs": ["max"], "fields": "", "values": true},
+        "sort": "desc",
         "tooltip": {"mode": "single", "sort": "none"}
       },
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter source_type = \"issue\" and event_type = \"labeled\" | stats count(*) as count by label | sort count desc | limit 20",
+          "expression": "filter source_type = \"issue\" and event_type = \"labeled\"\n| fields jsonParse(@message) as msg\n| fields msg.labels as labelsList\n| unnest labelsList into label\n| stats count(*) as Count by label as Label\n| sort Count desc\n| display Label, Count\n| limit 15",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${github_events_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
-          "region": "${compute_region}"
+          "region": "${compute_region}",
+          "statsGroups": ["Label"]
         }
       ],
       "title": "Issue labels (period)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Value": true},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
       "type": "piechart"
     },
 
