@@ -5,6 +5,7 @@ locals {
     TELEMETRY_CLOUDWATCH_NAMESPACE = var.telemetry_cloudwatch_namespace
     TELEMETRY_CLOUDWATCH_REGION    = var.telemetry_cloudwatch_region
     TEST_RESULTS_LOG_GROUP         = aws_cloudwatch_log_group.test_results.name
+    BENCHMARK_RESULTS_LOG_GROUP    = aws_cloudwatch_log_group.benchmark_results.name
   }
   telemetry_environment_list = [
     for name, value in local.telemetry_environment : {

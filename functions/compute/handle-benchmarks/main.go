@@ -62,44 +62,31 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 	}
 
 	if job.GetIsMaster() {
-		metrics := telemetry.Default()
-		resultsByBenchmark := make(map[string][]*db.BenchmarkResult)
-		for _, result := range totalBenchmarks {
-			resultsByBenchmark[result.Name] = append(resultsByBenchmark[result.Name], result)
-		}
-
-		for name, results := range resultsByBenchmark {
-			log.Infof("Calculating benchmark stats for %s", name)
-			avg := db.GetAverageBenchmarkResults(results)
-
-			tags := []telemetry.Tag{
-				telemetry.NewTag("benchmark_name", name),
+		benchLogs, err := newBenchLogsClientFromEnv()
+		if err != nil {
+			log.Warnf("Benchmark logs client unavailable, skipping log emission: %v", err)
+		} else {
+			if err := benchLogs.createLogStream(job.Commit); err != nil {
+				log.Warnf("Failed to create benchmark log stream: %v", err)
 			}
 
-			metrics.Metric("bitcoin.bitcoin.benchmarks.batch", avg.Batch, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.complexity_n", avg.ComplexityN, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.epochs", avg.Epochs, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.clock_resolution", avg.ClockResolution, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.clock_resolution_multiple", avg.ClockResolutionMultiple, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.max_epoch_time", avg.MaxEpochTime, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.min_epoch_time", avg.MinEpochTime, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.min_epoch_iterations", avg.MinEpochIterations, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.epoch_iterations", avg.EpochIterations, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.warmup", avg.Warmup, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.relative", avg.Relative, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_elapsed", avg.MedianElapsed, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_elapsed", avg.MedianAbsolutePercentErrorElapsed, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_instructions", avg.MedianInstructions, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_absolute_percent_error_instructions", avg.MedianAbsolutePercentErrorInstructions, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_cpucycles", avg.MedianCpucycles, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_contextswitches", avg.MedianContextswitches, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_pagefaults", avg.MedianPagefaults, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_branchinstructions", avg.MedianBranchinstructions, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.median_branchmisses", avg.MedianBranchmisses, tags...)
-			metrics.Metric("bitcoin.bitcoin.benchmarks.total_time", avg.TotalTime, tags...)
-		}
+			resultsByBenchmark := make(map[string][]*db.BenchmarkResult)
+			for _, result := range totalBenchmarks {
+				resultsByBenchmark[result.Name] = append(resultsByBenchmark[result.Name], result)
+			}
 
-		metrics.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)))
+			for name, results := range resultsByBenchmark {
+				log.Infof("Emitting benchmark log for %s", name)
+				avg := db.GetAverageBenchmarkResults(results)
+				if err := benchLogs.queueResult(avg, job.Commit); err != nil {
+					log.Warnf("Failed to queue benchmark log for %s: %v", name, err)
+				}
+			}
+
+			if err := benchLogs.flush(job.Commit); err != nil {
+				log.Warnf("Failed to flush benchmark logs: %v", err)
+			}
+		}
 	}
 
 	log.Info("Creating benchmark results")
