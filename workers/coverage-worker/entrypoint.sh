@@ -17,6 +17,11 @@ telemetry_ready() {
         [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
 }
 
+test_logs_ready() {
+    [ -n "${TEST_RESULTS_LOG_GROUP}" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
+}
+
 sanitize_dimension_name() {
     local sanitized
     sanitized=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^[:alnum:]]+/_/g; s/^_+//; s/_+$//')
@@ -73,6 +78,69 @@ flush_metrics() {
     fi
 
     telemetry_records=()
+}
+
+test_log_records=()
+test_log_stream_created=false
+
+create_test_log_stream() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+    aws logs create-log-stream \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${MASTER_COMMIT}" 2>/dev/null || true
+    test_log_stream_created=true
+}
+
+queue_test_log() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+
+    local test_type=$1
+    local test_name=$2
+    local duration_s=$3
+
+    local timestamp_ms
+    timestamp_ms=$(date +%s%3N)
+
+    local message
+    message=$(jq -nc \
+        --arg test_type "$test_type" \
+        --arg test_name "$test_name" \
+        --arg duration_s "$duration_s" \
+        --arg commit "$MASTER_COMMIT" \
+        '{test_type: $test_type, test_name: $test_name, duration_s: ($duration_s | tonumber), commit: $commit}')
+
+    test_log_records+=("$(jq -nc \
+        --argjson timestamp "$timestamp_ms" \
+        --arg message "$message" \
+        '{timestamp: $timestamp, message: $message}')")
+
+    if [ "${#test_log_records[@]}" -ge 100 ]; then
+        flush_test_logs
+    fi
+}
+
+flush_test_logs() {
+    if ! test_logs_ready || [ "${#test_log_records[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    local records_json
+    records_json=$(printf '%s\n' "${test_log_records[@]}" | jq -cs '.')
+
+    if ! aws logs put-log-events \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${MASTER_COMMIT}" \
+        --log-events "${records_json}" >/dev/null; then
+        echo "Failed to write test results to CloudWatch Logs" >&2
+    fi
+
+    test_log_records=()
 }
 
 if [ "${TELEMETRY_BACKEND}" = "cloudwatch" ] && ! telemetry_ready; then
@@ -154,17 +222,33 @@ else
         --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
+        create_test_log_stream
+
         binary_size=$(stat -c %s ./build/bin/bitcoind)
         queue_metric "bitcoin.bitcoin.binary_size" "$binary_size"
+
+        # Emit unit test durations from ctest output
+        while IFS= read -r line; do
+            if [[ $line =~ ^[[:space:]]*[0-9]+/[0-9]+[[:space:]]+Test[[:space:]]+#[0-9]+:[[:space:]]+([^[:space:]]+)[[:space:]]*\.+[[:space:]]+Passed[[:space:]]+([0-9]+\.?[0-9]*)[[:space:]]+sec ]]; then
+                test_name="${BASH_REMATCH[1]}"
+                test_duration="${BASH_REMATCH[2]}"
+                queue_test_log "unit" "$test_name" "$test_duration"
+                echo "unit_test_name:$test_name,duration:$test_duration"
+            fi
+        done < "unit-tests.log"
+
+        # Emit functional test durations from test runner output
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
-                test_name="${BASH_REMATCH[1]}";
-                test_duration="${BASH_REMATCH[3]}";
-                queue_metric "bitcoin.bitcoin.test.functional.duration" "$test_duration" "test_name=$test_name"
-                echo "test_name:$test_name,duration:$test_duration"
-            fi;
+                test_name="${BASH_REMATCH[1]}"
+                test_duration="${BASH_REMATCH[3]}"
+                queue_test_log "functional" "$test_name" "$test_duration"
+                echo "functional_test_name:$test_name,duration:$test_duration"
+            fi
         done < "functional-tests.log"
+
         flush_metrics
+        flush_test_logs
     fi
     
     # Merge all the raw profile data into a single file

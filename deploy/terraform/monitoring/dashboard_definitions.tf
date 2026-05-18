@@ -53,6 +53,7 @@ locals {
     telemetry_namespace     = local.dashboard_cloudwatch_namespace
     compute_region          = var.dashboard_compute_region
     github_events_log_group = "/corecheck/github-events/${terraform.workspace}"
+    test_results_log_group  = "/corecheck/test-results/${terraform.workspace}"
   })
 
   # Keep these as importable Grafana JSON templates for now. Provisioning workspace-local
