@@ -627,14 +627,9 @@
         "defaults": {
           "color": {"mode": "palette-classic"},
           "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {"group": "A", "mode": "normal"}
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1
           }
         },
         "overrides": []
@@ -642,8 +637,17 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
       "id": 18,
       "options": {
+        "barAlignment": 0,
+        "barWidth": 0.97,
+        "fillOpacity": 80,
+        "gradientMode": "none",
+        "groupWidth": 0.7,
         "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
-        "tooltip": {"mode": "multi", "sort": "none"}
+        "orientation": "auto",
+        "stacking": {"group": "A", "mode": "normal"},
+        "tooltip": {"mode": "multi", "sort": "none"},
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "targets": [
         {
@@ -659,7 +663,7 @@
         }
       ],
       "title": "Pull request activity",
-      "type": "timeseries"
+      "type": "barchart"
     },
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
@@ -667,14 +671,9 @@
         "defaults": {
           "color": {"mode": "palette-classic"},
           "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {"group": "A", "mode": "normal"}
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1
           }
         },
         "overrides": []
@@ -682,8 +681,17 @@
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
       "id": 19,
       "options": {
+        "barAlignment": 0,
+        "barWidth": 0.97,
+        "fillOpacity": 80,
+        "gradientMode": "none",
+        "groupWidth": 0.7,
         "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
-        "tooltip": {"mode": "multi", "sort": "none"}
+        "orientation": "auto",
+        "stacking": {"group": "A", "mode": "normal"},
+        "tooltip": {"mode": "multi", "sort": "none"},
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "targets": [
         {
@@ -699,7 +707,7 @@
         }
       ],
       "title": "Issue activity",
-      "type": "timeseries"
+      "type": "barchart"
     }
 
   ],
