@@ -219,7 +219,7 @@ resource "aws_cloudwatch_event_rule" "github_sync" {
   name                = "github-sync-rule-${terraform.workspace}"
   description         = "github-sync"
   schedule_expression = "rate(10 minutes)"
-  is_enabled          = terraform.workspace == "default"
+  is_enabled          = contains(["default", "dev"], terraform.workspace)
 }
 
 # target
@@ -245,7 +245,7 @@ resource "aws_cloudwatch_event_rule" "stats" {
   name                = "stats-rule-${terraform.workspace}"
   description         = "stats"
   schedule_expression = "rate(1 hour)"
-  is_enabled          = terraform.workspace == "default"
+  is_enabled          = contains(["default", "dev"], terraform.workspace)
 }
 
 # target
