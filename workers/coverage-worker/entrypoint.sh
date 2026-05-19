@@ -70,7 +70,8 @@ flush_metrics() {
     local records_json
     records_json=$(printf '%s\n' "${telemetry_records[@]}" | jq -cs '.')
 
-    if ! aws cloudwatch put-metric-data \
+    if ! env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws cloudwatch put-metric-data \
         --region "${TELEMETRY_CLOUDWATCH_REGION}" \
         --namespace "${TELEMETRY_CLOUDWATCH_NAMESPACE}" \
         --metric-data "${records_json}" >/dev/null; then
@@ -87,7 +88,8 @@ create_test_log_stream() {
     if ! test_logs_ready; then
         return 0
     fi
-    aws logs create-log-stream \
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs create-log-stream \
         --region "${TELEMETRY_CLOUDWATCH_REGION}" \
         --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
         --log-stream-name "${MASTER_COMMIT}" 2>/dev/null || true
@@ -132,7 +134,8 @@ flush_test_logs() {
     local records_json
     records_json=$(printf '%s\n' "${test_log_records[@]}" | jq -cs '.')
 
-    if ! aws logs put-log-events \
+    if ! env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs put-log-events \
         --region "${TELEMETRY_CLOUDWATCH_REGION}" \
         --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
         --log-stream-name "${MASTER_COMMIT}" \
