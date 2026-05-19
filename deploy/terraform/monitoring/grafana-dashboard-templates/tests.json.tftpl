@@ -147,6 +147,9 @@
         }
       ],
       "title": "Slowest functional tests (top 25)",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
       "type": "table"
     },
 
@@ -199,7 +202,7 @@
       "transformations": [
         {"id": "calculateField", "options": {"alias": "excess", "binary": {"left": "max_d", "operator": "-", "right": "avg_d"}, "mode": "binary"}},
         {"id": "calculateField", "options": {"alias": "pct_regression", "binary": {"left": "excess", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
-        {"id": "organize", "options": {"excludeByName": {"excess": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "organize", "options": {"excludeByName": {"excess": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
         {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_regression"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
@@ -255,7 +258,7 @@
       "transformations": [
         {"id": "calculateField", "options": {"alias": "saving", "binary": {"left": "avg_d", "operator": "-", "right": "min_d"}, "mode": "binary"}},
         {"id": "calculateField", "options": {"alias": "pct_speedup", "binary": {"left": "saving", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
-        {"id": "organize", "options": {"excludeByName": {"saving": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "organize", "options": {"excludeByName": {"saving": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
         {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_speedup"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
@@ -337,6 +340,9 @@
         }
       ],
       "title": "Slowest unit tests (top 25)",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
       "type": "table"
     },
 
@@ -389,7 +395,7 @@
       "transformations": [
         {"id": "calculateField", "options": {"alias": "excess", "binary": {"left": "max_d", "operator": "-", "right": "avg_d"}, "mode": "binary"}},
         {"id": "calculateField", "options": {"alias": "pct_regression", "binary": {"left": "excess", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
-        {"id": "organize", "options": {"excludeByName": {"excess": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "organize", "options": {"excludeByName": {"excess": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
         {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_regression"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
@@ -445,7 +451,7 @@
       "transformations": [
         {"id": "calculateField", "options": {"alias": "saving", "binary": {"left": "avg_d", "operator": "-", "right": "min_d"}, "mode": "binary"}},
         {"id": "calculateField", "options": {"alias": "pct_speedup", "binary": {"left": "saving", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
-        {"id": "organize", "options": {"excludeByName": {"saving": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "organize", "options": {"excludeByName": {"saving": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
         {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_speedup"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
