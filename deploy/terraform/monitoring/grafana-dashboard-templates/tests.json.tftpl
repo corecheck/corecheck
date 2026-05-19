@@ -537,24 +537,50 @@
   "templating": {
     "list": [
       {
-        "current": {"selected": false, "text": "", "value": ""},
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+        "definition": "filter test_type = \"functional\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
+        "description": "Select a specific functional test to see its duration trend in the drill-down section below. Leave as All to show no drill-down.",
         "hide": 0,
-        "label": "Functional Test",
+        "includeAll": true,
+        "allValue": "",
+        "label": "Functional Test (drill-down filter)",
+        "multi": false,
         "name": "functional_test",
         "options": [],
-        "query": "",
+        "query": {
+          "expression": "filter test_type = \"functional\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "region": "${compute_region}"
+        },
+        "refresh": 2,
         "skipUrlSync": false,
-        "type": "textbox"
+        "sort": 1,
+        "type": "query"
       },
       {
-        "current": {"selected": false, "text": "", "value": ""},
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+        "definition": "filter test_type = \"unit\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
+        "description": "Select a specific unit test suite to see its duration trend in the drill-down section below. Leave as All to show no drill-down.",
         "hide": 0,
-        "label": "Unit Test",
+        "includeAll": true,
+        "allValue": "",
+        "label": "Unit Test (drill-down filter)",
+        "multi": false,
         "name": "unit_test",
         "options": [],
-        "query": "",
+        "query": {
+          "expression": "filter test_type = \"unit\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "region": "${compute_region}"
+        },
+        "refresh": 2,
         "skipUrlSync": false,
-        "type": "textbox"
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
