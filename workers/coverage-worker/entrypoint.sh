@@ -106,7 +106,7 @@ queue_test_log() {
     local duration_s=$3
 
     local timestamp_ms
-    timestamp_ms=$(date +%s%3N)
+    timestamp_ms=$(( $(date +%s) * 1000 ))
 
     local message
     message=$(jq -nc \
