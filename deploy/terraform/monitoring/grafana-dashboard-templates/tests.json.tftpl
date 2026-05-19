@@ -152,7 +152,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Tests whose average duration has increased the most. Compares recent 30-day average against the full dashboard time range average. A positive change means the test has gotten slower.",
+      "description": "Tests with the largest percentage difference between their max and average duration within the selected time range — a high value indicates a regression occurred.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -161,18 +161,22 @@
             "properties": [{"id": "displayName", "value": "Test"}]
           },
           {
-            "matcher": {"id": "byName", "options": "hist_avg"},
-            "properties": [{"id": "displayName", "value": "Historical avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 140}]
+            "matcher": {"id": "byName", "options": "avg_d"},
+            "properties": [{"id": "displayName", "value": "Avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "recent_avg"},
-            "properties": [{"id": "displayName", "value": "Recent avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+            "matcher": {"id": "byName", "options": "max_d"},
+            "properties": [{"id": "displayName", "value": "Max (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "change_s"},
-            "properties": [{"id": "displayName", "value": "Change (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100},
+            "matcher": {"id": "byName", "options": "pct_regression"},
+            "properties": [
+              {"id": "displayName", "value": "% above avg"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 120},
               {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}]
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.1}]}}
+            ]
           }
         ]
       },
@@ -182,32 +186,21 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as hist_avg by test_name",
+          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as avg_d, max(duration_s) as max_d by test_name",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${test_results_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as recent_avg by test_name",
-          "hide": false,
-          "id": "B",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "B",
-          "region": "${compute_region}",
-          "timeRange": {"from": "now-30d", "to": "now"}
         }
       ],
       "title": "Biggest regressions (functional)",
       "transformations": [
-        {"id": "joinByField", "options": {"byField": "test_name", "mode": "outer"}},
-        {"id": "calculateField", "options": {"alias": "change_s", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
-        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "greater", "options": {"value": 0}}, "fieldName": "change_s"}], "match": "all", "type": "include"}},
-        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "change_s"}]}},
+        {"id": "calculateField", "options": {"alias": "excess", "binary": {"left": "max_d", "operator": "-", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_regression", "binary": {"left": "excess", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "organize", "options": {"excludeByName": {"excess": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_regression"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
       "type": "table"
@@ -215,7 +208,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Tests whose average duration has decreased the most. Compares recent 30-day average against the full dashboard time range average.",
+      "description": "Tests with the largest percentage difference between their average and minimum duration within the selected time range — a high value indicates a speedup occurred.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -224,18 +217,22 @@
             "properties": [{"id": "displayName", "value": "Test"}]
           },
           {
-            "matcher": {"id": "byName", "options": "hist_avg"},
-            "properties": [{"id": "displayName", "value": "Historical avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 140}]
+            "matcher": {"id": "byName", "options": "avg_d"},
+            "properties": [{"id": "displayName", "value": "Avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "recent_avg"},
-            "properties": [{"id": "displayName", "value": "Recent avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+            "matcher": {"id": "byName", "options": "min_d"},
+            "properties": [{"id": "displayName", "value": "Min (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "change_s"},
-            "properties": [{"id": "displayName", "value": "Change (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100},
+            "matcher": {"id": "byName", "options": "pct_speedup"},
+            "properties": [
+              {"id": "displayName", "value": "% below avg"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 120},
               {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "green", "value": 0.1}]}}
+            ]
           }
         ]
       },
@@ -245,32 +242,21 @@
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as hist_avg by test_name",
+          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as avg_d, min(duration_s) as min_d by test_name",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${test_results_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as recent_avg by test_name",
-          "hide": false,
-          "id": "B",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "B",
-          "region": "${compute_region}",
-          "timeRange": {"from": "now-30d", "to": "now"}
         }
       ],
       "title": "Biggest speedups (functional)",
       "transformations": [
-        {"id": "joinByField", "options": {"byField": "test_name", "mode": "outer"}},
-        {"id": "calculateField", "options": {"alias": "change_s", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
-        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "lower", "options": {"value": 0}}, "fieldName": "change_s"}], "match": "all", "type": "include"}},
-        {"id": "sortBy", "options": {"fields": [{"desc": false, "displayName": "change_s"}]}},
+        {"id": "calculateField", "options": {"alias": "saving", "binary": {"left": "avg_d", "operator": "-", "right": "min_d"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_speedup", "binary": {"left": "saving", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "organize", "options": {"excludeByName": {"saving": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_speedup"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
       "type": "table"
@@ -356,7 +342,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Unit test suites whose average duration has increased the most. Compares recent 30-day average against the full dashboard time range average.",
+      "description": "Unit test suites with the largest percentage difference between their max and average duration within the selected time range — a high value indicates a regression occurred.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -365,52 +351,46 @@
             "properties": [{"id": "displayName", "value": "Test suite"}]
           },
           {
-            "matcher": {"id": "byName", "options": "hist_avg"},
-            "properties": [{"id": "displayName", "value": "Historical avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 140}]
+            "matcher": {"id": "byName", "options": "avg_d"},
+            "properties": [{"id": "displayName", "value": "Avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "recent_avg"},
-            "properties": [{"id": "displayName", "value": "Recent avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+            "matcher": {"id": "byName", "options": "max_d"},
+            "properties": [{"id": "displayName", "value": "Max (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "change_s"},
-            "properties": [{"id": "displayName", "value": "Change (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100},
+            "matcher": {"id": "byName", "options": "pct_regression"},
+            "properties": [
+              {"id": "displayName", "value": "% above avg"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 120},
               {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}]
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.1}]}}
+            ]
           }
         ]
       },
       "gridPos": {"h": 14, "w": 8, "x": 8, "y": 31},
+      "id": 302,
       "options": {"showHeader": true},
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as hist_avg by test_name",
+          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as avg_d, max(duration_s) as max_d by test_name",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${test_results_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as recent_avg by test_name",
-          "hide": false,
-          "id": "B",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "B",
-          "region": "${compute_region}",
-          "timeRange": {"from": "now-30d", "to": "now"}
         }
       ],
       "title": "Biggest regressions (unit)",
       "transformations": [
-        {"id": "joinByField", "options": {"byField": "test_name", "mode": "outer"}},
-        {"id": "calculateField", "options": {"alias": "change_s", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
-        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "greater", "options": {"value": 0}}, "fieldName": "change_s"}], "match": "all", "type": "include"}},
-        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "change_s"}]}},
+        {"id": "calculateField", "options": {"alias": "excess", "binary": {"left": "max_d", "operator": "-", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_regression", "binary": {"left": "excess", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "organize", "options": {"excludeByName": {"excess": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_regression"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
       "type": "table"
@@ -418,7 +398,7 @@
 
     {
       "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-      "description": "Unit test suites whose average duration has decreased the most. Compares recent 30-day average against the full dashboard time range average.",
+      "description": "Unit test suites with the largest percentage difference between their average and minimum duration within the selected time range — a high value indicates a speedup occurred.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -427,52 +407,46 @@
             "properties": [{"id": "displayName", "value": "Test suite"}]
           },
           {
-            "matcher": {"id": "byName", "options": "hist_avg"},
-            "properties": [{"id": "displayName", "value": "Historical avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 140}]
+            "matcher": {"id": "byName", "options": "avg_d"},
+            "properties": [{"id": "displayName", "value": "Avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "recent_avg"},
-            "properties": [{"id": "displayName", "value": "Recent avg (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+            "matcher": {"id": "byName", "options": "min_d"},
+            "properties": [{"id": "displayName", "value": "Min (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
           },
           {
-            "matcher": {"id": "byName", "options": "change_s"},
-            "properties": [{"id": "displayName", "value": "Change (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100},
+            "matcher": {"id": "byName", "options": "pct_speedup"},
+            "properties": [
+              {"id": "displayName", "value": "% below avg"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 120},
               {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "green", "value": 0.1}]}}
+            ]
           }
         ]
       },
       "gridPos": {"h": 14, "w": 8, "x": 16, "y": 31},
+      "id": 303,
       "options": {"showHeader": true},
       "targets": [
         {
           "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as hist_avg by test_name",
+          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as avg_d, min(duration_s) as min_d by test_name",
           "hide": false,
           "id": "A",
           "logGroups": [{"name": "${test_results_log_group}"}],
           "queryMode": "Logs",
           "refId": "A",
           "region": "${compute_region}"
-        },
-        {
-          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as recent_avg by test_name",
-          "hide": false,
-          "id": "B",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "refId": "B",
-          "region": "${compute_region}",
-          "timeRange": {"from": "now-30d", "to": "now"}
         }
       ],
       "title": "Biggest speedups (unit)",
       "transformations": [
-        {"id": "joinByField", "options": {"byField": "test_name", "mode": "outer"}},
-        {"id": "calculateField", "options": {"alias": "change_s", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
-        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "lower", "options": {"value": 0}}, "fieldName": "change_s"}], "match": "all", "type": "include"}},
-        {"id": "sortBy", "options": {"fields": [{"desc": false, "displayName": "change_s"}]}},
+        {"id": "calculateField", "options": {"alias": "saving", "binary": {"left": "avg_d", "operator": "-", "right": "min_d"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_speedup", "binary": {"left": "saving", "operator": "/", "right": "avg_d"}, "mode": "binary"}},
+        {"id": "organize", "options": {"excludeByName": {"saving": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "pct_speedup"}]}},
         {"id": "limit", "options": {"limitField": 20}}
       ],
       "type": "table"
