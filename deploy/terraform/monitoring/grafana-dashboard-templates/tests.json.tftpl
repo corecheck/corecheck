@@ -277,8 +277,40 @@
     },
 
     {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Duration over time for the 10 functional tests with the highest standard deviation. Tests trending upward have regressed; tests trending downward have sped up.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 20},
+      "id": 204,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "right"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" | filter test_name in (filter test_type = \"functional\" | stats stddev(duration_s) as s by test_name | sort s desc | limit 10 | fields test_name) | stats avg(duration_s) as duration_s by test_name, bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most variable functional tests over time (top 10 by stddev)",
+      "type": "timeseries"
+    },
+
+    {
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 30},
       "id": 300,
       "title": "Unit Tests — Rankings",
       "type": "row"
@@ -304,8 +336,7 @@
           }
         ]
       },
-      "gridPos": {"h": 14, "w": 8, "x": 0, "y": 21},
-      "id": 301,
+      "gridPos": {"h": 14, "w": 8, "x": 0, "y": 31},
       "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg duration (s)"}]},
       "targets": [
         {
@@ -349,8 +380,7 @@
           }
         ]
       },
-      "gridPos": {"h": 14, "w": 8, "x": 8, "y": 21},
-      "id": 302,
+      "gridPos": {"h": 14, "w": 8, "x": 8, "y": 31},
       "options": {"showHeader": true},
       "targets": [
         {
@@ -412,8 +442,7 @@
           }
         ]
       },
-      "gridPos": {"h": 14, "w": 8, "x": 16, "y": 21},
-      "id": 303,
+      "gridPos": {"h": 14, "w": 8, "x": 16, "y": 31},
       "options": {"showHeader": true},
       "targets": [
         {
@@ -450,8 +479,40 @@
     },
 
     {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Duration over time for the 10 unit test suites with the highest standard deviation. Tests trending upward have regressed; tests trending downward have sped up.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 45},
+      "id": 304,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "right"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" | filter test_name in (filter test_type = \"unit\" | stats stddev(duration_s) as s by test_name | sort s desc | limit 10 | fields test_name) | stats avg(duration_s) as duration_s by test_name, bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most variable unit tests over time (top 10 by stddev)",
+      "type": "timeseries"
+    },
+
+    {
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 35},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 55},
       "id": 400,
       "title": "Functional Test Drill-Down — $functional_test",
       "type": "row"
@@ -467,7 +528,7 @@
         },
         "overrides": []
       },
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 36},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 56},
       "id": 401,
       "options": {
         "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
@@ -491,7 +552,7 @@
 
     {
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 46},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 66},
       "id": 500,
       "title": "Unit Test Drill-Down — $unit_test",
       "type": "row"
@@ -507,7 +568,7 @@
         },
         "overrides": []
       },
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 47},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 67},
       "id": 501,
       "options": {
         "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
@@ -537,50 +598,26 @@
   "templating": {
     "list": [
       {
-        "current": {"selected": true, "text": "All", "value": "$__all"},
-        "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-        "definition": "filter test_type = \"functional\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
-        "description": "Select a specific functional test to see its duration trend in the drill-down section below. Leave as All to show no drill-down.",
+        "current": {"selected": false, "text": "", "value": ""},
+        "description": "Select a specific functional test to see its duration trend in the drill-down section below.",
         "hide": 0,
-        "includeAll": true,
-        "allValue": "",
         "label": "Functional Test (drill-down filter)",
-        "multi": false,
         "name": "functional_test",
         "options": [],
-        "query": {
-          "expression": "filter test_type = \"functional\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "region": "${compute_region}"
-        },
-        "refresh": 2,
+        "query": "",
         "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
+        "type": "textbox"
       },
       {
-        "current": {"selected": true, "text": "All", "value": "$__all"},
-        "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
-        "definition": "filter test_type = \"unit\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
-        "description": "Select a specific unit test suite to see its duration trend in the drill-down section below. Leave as All to show no drill-down.",
+        "current": {"selected": false, "text": "", "value": ""},
+        "description": "Select a specific unit test suite to see its duration trend in the drill-down section below.",
         "hide": 0,
-        "includeAll": true,
-        "allValue": "",
         "label": "Unit Test (drill-down filter)",
-        "multi": false,
         "name": "unit_test",
         "options": [],
-        "query": {
-          "expression": "filter test_type = \"unit\" | stats count(*) as c by test_name | sort test_name asc | limit 1000",
-          "logGroups": [{"name": "${test_results_log_group}"}],
-          "queryMode": "Logs",
-          "region": "${compute_region}"
-        },
-        "refresh": 2,
+        "query": "",
         "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
+        "type": "textbox"
       }
     ]
   },
