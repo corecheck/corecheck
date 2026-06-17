@@ -135,5 +135,8 @@
     <div class="app-body">
         <slot />
         <Toasts />
+        <footer class="netlify-footer">
+            <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">This site is powered by Netlify</a>
+        </footer>
     </div>
 </div>

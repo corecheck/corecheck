@@ -454,3 +454,18 @@
         }
     }
 }
+
+
+.netlify-footer {
+    text-align: center;
+    padding: 12px;
+    font-size: 0.75rem;
+    opacity: 0.5;
+    a {
+        color: inherit;
+        text-decoration: none;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
