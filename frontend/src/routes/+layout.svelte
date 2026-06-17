@@ -133,10 +133,12 @@
     </aside>
 
     <div class="app-body">
-        <slot />
-        <Toasts />
+        <div class="app-body-content">
+            <slot />
+        </div>
         <footer class="netlify-footer">
             <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">This site is powered by Netlify</a>
         </footer>
+        <Toasts />
     </div>
 </div>
