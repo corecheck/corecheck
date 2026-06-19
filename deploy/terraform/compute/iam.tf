@@ -68,6 +68,35 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_cloudwatch" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccessV2"
 }
 
+data "aws_iam_policy_document" "allow_job_cloudwatch_write" {
+  count = var.telemetry_backend == "cloudwatch" ? 1 : 0
+
+  statement {
+    effect    = "Allow"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = [var.telemetry_cloudwatch_namespace]
+    }
+  }
+}
+
+resource "aws_iam_policy" "job_cloudwatch_write_policy" {
+  count       = var.telemetry_backend == "cloudwatch" ? 1 : 0
+  name        = "AllowJobCloudWatchWritePolicy-${terraform.workspace}"
+  description = "Policy for batch jobs to write telemetry metrics to CloudWatch"
+  policy      = data.aws_iam_policy_document.allow_job_cloudwatch_write[0].json
+}
+
+resource "aws_iam_role_policy_attachment" "job_cloudwatch_write_policy_attachment" {
+  count      = var.telemetry_backend == "cloudwatch" ? 1 : 0
+  role       = aws_iam_role.job_role.name
+  policy_arn = aws_iam_policy.job_cloudwatch_write_policy[0].arn
+}
+
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]

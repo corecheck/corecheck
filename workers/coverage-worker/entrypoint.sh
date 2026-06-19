@@ -7,11 +7,149 @@ BASE_COMMIT=$4
 
 set -e
 
-sh -c "sed \"s/api_key:.*/api_key: $DD_API_KEY/\" /etc/datadog-agent/datadog.yaml.example > /etc/datadog-agent/datadog.yaml"
-sh -c "sed -i 's/# site:.*/site: datadoghq.eu/' /etc/datadog-agent/datadog.yaml"
-sh -c "sed -i 's/# hostname:.*/hostname: $HOSTNAME/' /etc/datadog-agent/datadog.yaml"
+TELEMETRY_CLOUDWATCH_NAMESPACE=${TELEMETRY_CLOUDWATCH_NAMESPACE:-Corecheck}
+TELEMETRY_CLOUDWATCH_REGION=${TELEMETRY_CLOUDWATCH_REGION:-${AWS_REGION:-${AWS_DEFAULT_REGION:-}}}
+telemetry_records=()
 
-/etc/init.d/datadog-agent start
+telemetry_ready() {
+    [ "${TELEMETRY_BACKEND}" = "cloudwatch" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_NAMESPACE}" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
+}
+
+test_logs_ready() {
+    [ -n "${TEST_RESULTS_LOG_GROUP}" ] &&
+        [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
+}
+
+sanitize_dimension_name() {
+    local sanitized
+    sanitized=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^[:alnum:]]+/_/g; s/^_+//; s/_+$//')
+    if [ -z "$sanitized" ]; then
+        sanitized="tag"
+    fi
+    printf '%s' "$sanitized"
+}
+
+queue_metric() {
+    if ! telemetry_ready; then
+        return 0
+    fi
+
+    local metric_name=$1
+    local metric_value=$2
+    shift 2
+
+    local dimensions='[]'
+
+    while [ "$#" -gt 0 ]; do
+        local tag_name=${1%%=*}
+        local tag_value=${1#*=}
+        local sanitized_tag_name
+        sanitized_tag_name=$(sanitize_dimension_name "$tag_name")
+        dimensions=$(printf '%s' "$dimensions" | jq -c --arg name "$sanitized_tag_name" --arg value "$tag_value" 'map(select(.Name != $name)) + [{"Name":$name,"Value":$value}]')
+        shift
+    done
+
+    telemetry_records+=("$(jq -nc \
+        --argjson dimensions "$dimensions" \
+        --arg metric_name "$metric_name" \
+        --arg value "$metric_value" \
+        '{MetricName:$metric_name, Dimensions:$dimensions, Value:($value | tonumber)}')")
+
+    if [ "${#telemetry_records[@]}" -ge 20 ]; then
+        flush_metrics
+    fi
+}
+
+flush_metrics() {
+    if ! telemetry_ready || [ "${#telemetry_records[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    local records_json
+    records_json=$(printf '%s\n' "${telemetry_records[@]}" | jq -cs '.')
+
+    if ! env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws cloudwatch put-metric-data \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --namespace "${TELEMETRY_CLOUDWATCH_NAMESPACE}" \
+        --metric-data "${records_json}" >/dev/null; then
+        echo "Failed to write coverage worker telemetry to CloudWatch" >&2
+    fi
+
+    telemetry_records=()
+}
+
+test_log_records=()
+test_log_stream_created=false
+
+create_test_log_stream() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs create-log-stream \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${MASTER_COMMIT}" 2>/dev/null || true
+    test_log_stream_created=true
+}
+
+queue_test_log() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+
+    local test_type=$1
+    local test_name=$2
+    local duration_s=$3
+
+    local timestamp_ms
+    timestamp_ms=$(( $(date +%s) * 1000 ))
+
+    local message
+    message=$(jq -nc \
+        --arg test_type "$test_type" \
+        --arg test_name "$test_name" \
+        --arg duration_s "$duration_s" \
+        --arg commit "$MASTER_COMMIT" \
+        '{test_type: $test_type, test_name: $test_name, duration_s: ($duration_s | tonumber), commit: $commit}')
+
+    test_log_records+=("$(jq -nc \
+        --argjson timestamp "$timestamp_ms" \
+        --arg message "$message" \
+        '{timestamp: $timestamp, message: $message}')")
+
+    if [ "${#test_log_records[@]}" -ge 100 ]; then
+        flush_test_logs
+    fi
+}
+
+flush_test_logs() {
+    if ! test_logs_ready || [ "${#test_log_records[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    local records_json
+    records_json=$(printf '%s\n' "${test_log_records[@]}" | jq -cs '.')
+
+    if ! env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs put-log-events \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${MASTER_COMMIT}" \
+        --log-events "${records_json}" >/dev/null; then
+        echo "Failed to write test results to CloudWatch Logs" >&2
+    fi
+
+    test_log_records=()
+}
+
+if [ "${TELEMETRY_BACKEND}" = "cloudwatch" ] && ! telemetry_ready; then
+    echo "Telemetry backend is cloudwatch but TELEMETRY_CLOUDWATCH_* is incomplete; skipping telemetry writes" >&2
+fi
+
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
@@ -87,16 +225,33 @@ else
         --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
+        create_test_log_stream
+
         binary_size=$(stat -c %s ./build/bin/bitcoind)
-        echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
+        queue_metric "bitcoin.bitcoin.binary_size" "$binary_size"
+
+        # Emit unit test durations from ctest output
+        while IFS= read -r line; do
+            if [[ $line =~ ^[[:space:]]*[0-9]+/[0-9]+[[:space:]]+Test[[:space:]]+#[0-9]+:[[:space:]]+([^[:space:]]+)[[:space:]]*\.+[[:space:]]+Passed[[:space:]]+([0-9]+\.?[0-9]*)[[:space:]]+sec ]]; then
+                test_name="${BASH_REMATCH[1]}"
+                test_duration="${BASH_REMATCH[2]}"
+                queue_test_log "unit" "$test_name" "$test_duration"
+                echo "unit_test_name:$test_name,duration:$test_duration"
+            fi
+        done < "unit-tests.log"
+
+        # Emit functional test durations from test runner output
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
-                test_name="${BASH_REMATCH[1]}";
-                test_duration="${BASH_REMATCH[3]}";
-                echo -n "bitcoin.bitcoin.test.functional.duration:$test_duration|g|#test_name:$test_name,#commit:$COMMIT" >/dev/udp/localhost/8125
-                echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
-            fi;
+                test_name="${BASH_REMATCH[1]}"
+                test_duration="${BASH_REMATCH[3]}"
+                queue_test_log "functional" "$test_name" "$test_duration"
+                echo "functional_test_name:$test_name,duration:$test_duration"
+            fi
         done < "functional-tests.log"
+
+        flush_metrics
+        flush_test_logs
     fi
     
     # Merge all the raw profile data into a single file

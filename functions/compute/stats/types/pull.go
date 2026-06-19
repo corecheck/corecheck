@@ -56,7 +56,10 @@ type Pull struct {
 		ClosedAt           time.Time `json:"closed_at"`
 		MergeableState     string    `json:"mergeable_state"`
 		MergedAt           time.Time `json:"merged_at"`
-		MergeCommitSha     string    `json:"merge_commit_sha"`
+		MergedBy           struct {
+			Login string `json:"login"`
+		} `json:"merged_by"`
+		MergeCommitSha string `json:"merge_commit_sha"`
 		Assignees          []any     `json:"assignees"`
 		RequestedReviewers []any     `json:"requested_reviewers"`
 		RequestedTeams     []any     `json:"requested_teams"`
@@ -346,8 +349,12 @@ type Pull struct {
 		Actor     any    `json:"actor"`
 		CommitID  any    `json:"commit_id"`
 		CommitURL any    `json:"commit_url"`
-		CreatedAt any    `json:"created_at"`
-		HTMLURL   string `json:"html_url,omitempty"`
+		CreatedAt   any    `json:"created_at"`
+		SubmittedAt any    `json:"submitted_at,omitempty"`
+		User        struct {
+			Login string `json:"login"`
+		} `json:"user,omitempty"`
+		HTMLURL string `json:"html_url,omitempty"`
 		Tree      struct {
 			Sha string `json:"sha"`
 			URL string `json:"url"`

@@ -1,18 +1,20 @@
 package main
 
 import (
-	"bitcoin-stats-datadog/types"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/corecheck/corecheck/functions/compute/stats/types"
+	"github.com/corecheck/corecheck/internal/telemetry"
 )
 
 type StatsConsumer interface {
 	Init()
 	ProcessPull(pull *types.Pull)
 	ProcessIssue(issue *types.Issue)
-	SendMetrics()
+	SendMetrics(metrics telemetry.Client)
 }
 
 type BitcoinCoreData struct {
@@ -85,8 +87,9 @@ func (bc *BitcoinCoreData) processIssues() {
 }
 
 func (bc *BitcoinCoreData) sendMetrics() {
+	metrics := telemetry.Default()
 	for _, consumer := range bc.Consumers {
-		consumer.SendMetrics()
+		consumer.SendMetrics(metrics)
 	}
 }
 

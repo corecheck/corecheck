@@ -21,9 +21,13 @@ module "api_gateway" {
 module "monitoring" {
   source = "./monitoring"
 
-  alert_email        = var.alert_email
-  telegram_bot_token = var.telegram_bot_token
-  telegram_chat_id   = var.telegram_chat_id
+  alert_email                   = var.alert_email
+  dns_name                      = var.dns_name
+  telegram_bot_token            = var.telegram_bot_token
+  telegram_chat_id              = var.telegram_chat_id
+  dashboard_compute_region      = data.aws_region.compute_region.name
+  public_grafana_admin_user     = var.public_grafana_admin_user
+  public_grafana_admin_password = var.public_grafana_admin_password
 }
 
 module "compute" {
@@ -44,8 +48,10 @@ module "compute" {
   aws_access_key_id     = var.aws_access_key_id
   aws_secret_access_key = var.aws_secret_access_key
 
-  sonar_token     = var.sonar_token
-  datadog_api_key = var.datadog_api_key
+  sonar_token                    = var.sonar_token
+  telemetry_backend              = var.telemetry_backend
+  telemetry_cloudwatch_namespace = module.monitoring.dashboard_cloudwatch_namespace
+  telemetry_cloudwatch_region    = data.aws_region.compute_region.name
 
   lambda_bucket = aws_s3_bucket.corecheck-lambdas.id
   providers = {

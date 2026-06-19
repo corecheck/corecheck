@@ -9,6 +9,8 @@ data "aws_iam_policy_document" "assume_lambda_role" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 // create lambda role, that lambda function can assume (use)
 resource "aws_iam_role" "lambda" {
   name               = "AssumeLambdaRoleForStateMachine-${terraform.workspace}"
@@ -69,4 +71,33 @@ resource "aws_iam_policy" "function_invoke_policy" {
 resource "aws_iam_role_policy_attachment" "lambda_invoke_policy_attachment" {
   role       = aws_iam_role.lambda.id
   policy_arn = aws_iam_policy.function_invoke_policy.arn
+}
+
+data "aws_iam_policy_document" "allow_lambda_cloudwatch_write" {
+  count = var.telemetry_backend == "cloudwatch" ? 1 : 0
+
+  statement {
+    effect    = "Allow"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = [var.telemetry_cloudwatch_namespace]
+    }
+  }
+}
+
+resource "aws_iam_policy" "function_cloudwatch_write_policy" {
+  count       = var.telemetry_backend == "cloudwatch" ? 1 : 0
+  name        = "AllowLambdaCloudWatchWritePolicy-${terraform.workspace}"
+  description = "Policy for lambda to write telemetry metrics to CloudWatch"
+  policy      = data.aws_iam_policy_document.allow_lambda_cloudwatch_write[0].json
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_write_policy_attachment" {
+  count      = var.telemetry_backend == "cloudwatch" ? 1 : 0
+  role       = aws_iam_role.lambda.id
+  policy_arn = aws_iam_policy.function_cloudwatch_write_policy[0].arn
 }

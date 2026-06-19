@@ -67,7 +67,32 @@ variable "lambda_bucket" {
   description = "lambda bucket"
 }
 
-variable "datadog_api_key" {
+variable "telemetry_backend" {
   type        = string
-  description = "datadog api key"
+  description = "telemetry backend used by compute workloads"
+  default     = "cloudwatch"
+
+  validation {
+    condition     = contains(["cloudwatch"], var.telemetry_backend)
+    error_message = "telemetry_backend must be cloudwatch."
+  }
 }
+
+variable "telemetry_cloudwatch_namespace" {
+  type        = string
+  description = "CloudWatch namespace for telemetry metrics"
+  default     = ""
+}
+
+variable "telemetry_cloudwatch_region" {
+  type        = string
+  description = "AWS region for the CloudWatch telemetry backend"
+  default     = ""
+}
+
+variable "github_events_log_retention_days" {
+  type        = number
+  description = "Retention in days for the GitHub events CloudWatch Logs log group"
+  default     = 731
+}
+
