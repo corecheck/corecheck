@@ -64,6 +64,88 @@ func startMasterCoverageExecution(report *db.CoverageReport, commit string) erro
 	return nil
 }
 
+func startMasterFuzzCoverageExecution(report *db.CoverageReport, commit string) error {
+	params := StateMachineInput{
+		Params: types.JobParams{
+			Commit:     commit,
+			IsMaster:   "true",
+			IsFuzz:     "true",
+			PRNumber:   "0",
+			BaseCommit: commit,
+		},
+	}
+	paramsJSON, err := json.Marshal(params)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	execution, err := stateMachine.StartExecution(&sfn.StartExecutionInput{
+		StateMachineArn: aws.String(cfg.FuzzMachineARN),
+		Input:           aws.String(string(paramsJSON)),
+	})
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	err = db.UpdateCoverageReportTrace(report.ID, aws.StringValue(execution.ExecutionArn), "")
+	if err != nil {
+		log.Errorf("Error updating fuzz coverage report trace: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func checkMasterFuzzCoverage(c *github.Client) error {
+	log.Info("Checking master fuzz coverage...")
+	master, _, err := c.Repositories.GetBranch(context.Background(), "bitcoin", "bitcoin", "master", 0)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	commit := master.GetCommit().GetSHA()
+	log.Debug("Latest commit: %s", commit)
+
+	report, err := db.GetCoverageReportByCommitMasterFuzz(commit)
+	if err == nil {
+		if report.Status == db.COVERAGE_REPORT_STATUS_PENDING {
+			log.Info("Master fuzz coverage is already pending for latest commit")
+			return nil
+		}
+		if report.GeneratedAt != nil {
+			log.Info("Master has fuzz coverage for latest commit")
+			return nil
+		}
+
+		log.Info("Master fuzz coverage exists but the HTML report is missing, re-running coverage")
+		return startMasterFuzzCoverageExecution(report, commit)
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Error(err)
+		return err
+	}
+
+	log.Info("Master does not have fuzz coverage for latest commit, adding to queue")
+
+	report = &db.CoverageReport{
+		Commit:     commit,
+		IsMaster:   true,
+		IsFuzz:     true,
+		BaseCommit: commit,
+	}
+
+	err = db.CreateCoverageReport(report)
+	if err != nil {
+		log.Errorf("Error creating fuzz coverage report: %s", err)
+		return err
+	}
+
+	return startMasterFuzzCoverageExecution(report, commit)
+}
+
 func checkMasterCoverage(c *github.Client) error {
 	log.Info("Checking master coverage...")
 	master, _, err := c.Repositories.GetBranch(context.Background(), "bitcoin", "bitcoin", "master", 0)
@@ -334,6 +416,11 @@ mainLoop:
 func syncGitHubActivity(c *github.Client) error {
 	if err := checkMasterCoverage(c); err != nil {
 		log.Errorf("Error checking master coverage: %s", err)
+		return err
+	}
+
+	if err := checkMasterFuzzCoverage(c); err != nil {
+		log.Errorf("Error checking master fuzz coverage: %s", err)
 		return err
 	}
 

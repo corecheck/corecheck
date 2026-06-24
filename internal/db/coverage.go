@@ -19,6 +19,7 @@ type CoverageReport struct {
 	FailureReason            string                                   `json:"failure_reason"`
 	BenchmarkStatus          string                                   `json:"benchmark_status" gorm:"default:pending"`
 	IsMaster                 bool                                     `json:"is_master" gorm:"index:idx_coverage_reports_commit_is_master,priority:2"`
+	IsFuzz                   bool                                     `json:"is_fuzz" gorm:"index:idx_coverage_reports_commit_is_fuzz"`
 	PRNumber                 int                                      `json:"pr_number" gorm:"index:idx_coverage_reports_pr_number_created_at,priority:1"`
 	Commit                   string                                   `json:"commit" gorm:"index:idx_coverage_reports_commit_is_master,priority:1"`
 	BaseCommit               string                                   `json:"base_commit"`
@@ -98,7 +99,7 @@ func GetOrCreateCoverageReportByCommitPr(commit string, prNum int, baseCommit st
 
 func GetCoverageReportByCommitMaster(commit string) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Hunks").Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
+	err := DB.Preload("Hunks").Preload("Benchmarks").Where("commit = ? AND is_master = ? AND is_fuzz = ?", commit, true, false).First(&report).Error
 	return &report, err
 }
 
@@ -110,6 +111,35 @@ func GetOrCreateCoverageReportByCommitMaster(commit string) (*CoverageReport, er
 				Commit:     commit,
 				BaseCommit: commit,
 				IsMaster:   true,
+			}
+
+			err = CreateCoverageReport(report)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return report, nil
+}
+
+func GetCoverageReportByCommitMasterFuzz(commit string) (*CoverageReport, error) {
+	var report CoverageReport
+	err := DB.Preload("Hunks").Preload("Benchmarks").Where("commit = ? AND is_master = ? AND is_fuzz = ?", commit, true, true).First(&report).Error
+	return &report, err
+}
+
+func GetOrCreateCoverageReportByCommitMasterFuzz(commit string) (*CoverageReport, error) {
+	report, err := GetCoverageReportByCommitMasterFuzz(commit)
+	if err != nil {
+		if err.Error() == "record not found" {
+			report = &CoverageReport{
+				Commit:     commit,
+				BaseCommit: commit,
+				IsMaster:   true,
+				IsFuzz:     true,
 			}
 
 			err = CreateCoverageReport(report)
@@ -161,7 +191,13 @@ func UpdateCoverageReportGeneratedAt(reportID int, generatedAt time.Time) error 
 
 func HasCoverageReportForCommitMaster(commit string) (bool, error) {
 	var count int64
-	err := DB.Model(&CoverageReport{}).Where("commit = ? AND is_master = ?", commit, true).Count(&count).Error
+	err := DB.Model(&CoverageReport{}).Where("commit = ? AND is_master = ? AND is_fuzz = ?", commit, true, false).Count(&count).Error
+	return count > 0, err
+}
+
+func HasCoverageReportForCommitMasterFuzz(commit string) (bool, error) {
+	var count int64
+	err := DB.Model(&CoverageReport{}).Where("commit = ? AND is_master = ? AND is_fuzz = ?", commit, true, true).Count(&count).Error
 	return count > 0, err
 }
 
@@ -187,10 +223,16 @@ func CreateCoverageHunks(reportID int, hunks []*CoverageFileHunk) error {
 
 func GetLatestMasterCoverageReport() (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Benchmarks").Where("is_master = ? AND status = ? AND benchmark_status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS, BENCHMARK_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+	err := DB.Preload("Benchmarks").Where("is_master = ? AND is_fuzz = ? AND status = ? AND benchmark_status = ?", true, false, COVERAGE_REPORT_STATUS_SUCCESS, BENCHMARK_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		err = DB.Preload("Benchmarks").Where("is_master = ? AND status = ?", true, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
+		err = DB.Preload("Benchmarks").Where("is_master = ? AND is_fuzz = ? AND status = ?", true, false, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
 	}
+	return &report, err
+}
+
+func GetLatestMasterFuzzCoverageReport() (*CoverageReport, error) {
+	var report CoverageReport
+	err := DB.Where("is_master = ? AND is_fuzz = ? AND status = ?", true, true, COVERAGE_REPORT_STATUS_SUCCESS).Order("created_at desc").First(&report).Error
 	return &report, err
 }
 
@@ -206,7 +248,7 @@ func GetLatestPullCoverageReport(prNum int) (*CoverageReport, error) {
 
 func GetMasterCoverageReport(commit string) (*CoverageReport, error) {
 	var report CoverageReport
-	err := DB.Preload("Benchmarks").Where("commit = ? AND is_master = ?", commit, true).First(&report).Error
+	err := DB.Preload("Benchmarks").Where("commit = ? AND is_master = ? AND is_fuzz = ?", commit, true, false).First(&report).Error
 	return &report, err
 }
 
