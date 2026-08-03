@@ -4,10 +4,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && apt install -y git python3-zmq libevent-dev libboost-dev libsqlite3-dev libzmq3-dev libcapnp-dev capnproto lcov build-essential libtool cmake pkg-config bsdmainutils bsdextrautils curl wget python3-pip lsb-release software-properties-common gnupg unzip jq
 RUN pip install compiledb --break-system-packages 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
 
 RUN wget https://github.com/mozilla/sccache/releases/download/v0.7.4/sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz && \
     tar -xvf sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz && \
