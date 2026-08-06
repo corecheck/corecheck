@@ -28,7 +28,7 @@
                 <div class="eyebrow">Master coverage</div>
                 <h1>LLVM coverage report for bitcoin/bitcoin master</h1>
                 <p class="subtitle">
-                    RAW HTML Coverage report generated with `llvm-cov show --format=html`
+                    RAW HTML Coverage report generated with `llvm-cov show --format=html` for unit and functional tests
                 </p>
             </div>
 
