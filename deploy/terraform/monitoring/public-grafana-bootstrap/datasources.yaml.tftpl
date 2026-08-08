@@ -1,0 +1,10 @@
+apiVersion: 1
+datasources:
+  - name: ${cloudwatch_name}
+    uid: corecheck-cloudwatch
+    type: cloudwatch
+    access: proxy
+    editable: false
+    jsonData:
+      authType: default
+      defaultRegion: ${default_region}

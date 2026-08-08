@@ -5,7 +5,6 @@ locals {
     "list-pulls",
     "get-report",
     "get-mutation",
-    "datadog-proxy",
   ]
 
   api_lambda_memory_size = {

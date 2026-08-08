@@ -1,0 +1,6 @@
+[build]
+command = "npm run build"
+publish = "build"
+
+# Keep PUBLIC_DASHBOARD_* out of build.environment so deployed runtime env vars
+# can override them while blank values continue to use the DataDog fallbacks.

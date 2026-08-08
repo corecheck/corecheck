@@ -8,3 +8,25 @@ resource "aws_cloudwatch_log_group" "batch_logs" {
     prevent_destroy       = false
   }
 }
+
+resource "aws_cloudwatch_log_group" "benchmark_results" {
+  provider          = aws.compute_region
+  name              = "/corecheck/benchmark-results/${terraform.workspace}"
+  retention_in_days = 1096
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+}
+
+resource "aws_cloudwatch_log_group" "test_results" {
+  provider          = aws.compute_region
+  name              = "/corecheck/test-results/${terraform.workspace}"
+  retention_in_days = 1096
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+}

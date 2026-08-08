@@ -2,48 +2,100 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"time"
 
-	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/corecheck/corecheck/internal/telemetry"
 )
 
 const (
-	bitcoinDataURL = "https://github.com/bitcoin-data/github-metadata-backup-bitcoin-bitcoin/archive/refs/heads/master.zip"
-	dest           = "/tmp/data"
+	bitcoinDataZipURL = "https://github.com/bitcoin-data/github-metadata-backup-bitcoin-bitcoin/archive/refs/heads/master.zip"
+	dest              = "/tmp/data"
 )
 
 func handleMetrics(ctx context.Context) (string, error) {
-
-	// Download zip file
-	err := DownloadFile(bitcoinDataURL)
+	extractedPath, err := DownloadAndExtract(bitcoinDataZipURL, dest)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalf("download: %v", err)
 	}
 
-	// Unzip file
-	err = Unzip("/tmp/bitcoin-data.zip", dest)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	bc := BitcoinCoreData{Path: dest + "/github-metadata-backup-bitcoin-bitcoin-master"}
-	bc.AddConsumers(&NumberOfPullsConsumer{}, &UniqueAuthorsConsumer{}, &PullsByUserConsumer{}, &PullsByLabelConsumer{}, &TotalCommentsAndReviewsByPullConsumer{})
-	bc.AddConsumers(&NumberOfIssuesConsumer{}, &UniqueIssueUsersConsumer{}, &IssuesByUserConsumer{}, &IssuesByLabelConsumer{}, &TotalCommentsIssueConsumer{})
+	bc := BitcoinCoreData{Path: extractedPath}
+	bc.AddConsumers(&NumberOfPullsConsumer{}, &NumberOfIssuesConsumer{})
 	bc.Run()
+
+	logGroupName := os.Getenv("GITHUB_EVENTS_LOG_GROUP")
+	lastRunParam := os.Getenv("GITHUB_EVENTS_LAST_RUN_PARAM")
+	awsRegion := os.Getenv("TELEMETRY_CLOUDWATCH_REGION")
+	if awsRegion == "" {
+		awsRegion = os.Getenv("AWS_REGION")
+	}
+	if awsRegion == "" {
+		awsRegion = os.Getenv("AWS_DEFAULT_REGION")
+	}
+
+	if logGroupName == "" || lastRunParam == "" || awsRegion == "" {
+		log.Println("stats: GITHUB_EVENTS_LOG_GROUP / GITHUB_EVENTS_LAST_RUN_PARAM / region not set; skipping event stream")
+		return "OK", nil
+	}
+
+	ssmClient, err := newSSMClient(awsRegion)
+	if err != nil {
+		log.Printf("stats: could not create SSM client: %v; skipping event stream", err)
+		return "OK", nil
+	}
+
+	lastRunTime, err := GetLastRunTime(ssmClient, lastRunParam)
+	if err != nil {
+		log.Printf("stats: could not read last run time from SSM: %v; skipping event stream", err)
+		return "OK", nil
+	}
+	if lastRunTime.IsZero() {
+		log.Println("stats: first run — will use 14-day CloudWatch Logs cutoff")
+	} else {
+		log.Printf("stats: last run time: %s", lastRunTime.Format(time.RFC3339))
+	}
+
+	// Capture run time before processing so events emitted during this run are caught next time.
+	runTime := time.Now().UTC()
+
+	log.Printf("stats: creating CloudWatch Logs writer for group %s", logGroupName)
+	cwWriter, err := NewCWLogsWriter(awsRegion, logGroupName)
+	if err != nil {
+		log.Printf("stats: could not create CW Logs writer: %v; skipping event stream", err)
+		return "OK", nil
+	}
+
+	producer := NewEventStreamProducer(extractedPath, lastRunTime, cwWriter)
+	if err := producer.Run(); err != nil {
+		log.Printf("stats: event stream write error: %v", err)
+		return "OK", nil
+	}
+
+	if err := SetLastRunTime(ssmClient, lastRunParam, runTime); err != nil {
+		log.Printf("stats: could not store last run time in SSM: %v", err)
+	} else {
+		log.Printf("stats: stored last run time %s in SSM", runTime.Format(time.RFC3339))
+	}
 
 	return "OK", nil
 }
 
 func main() {
-	lambda.Start(ddlambda.WrapFunction(handleMetrics, &ddlambda.Config{
-		DebugLogging:    true,
-		Site:            "datadoghq.eu",
-		BatchInterval:   time.Millisecond * 500,
-		EnhancedMetrics: true,
-	}))
+	if err := telemetry.ConfigureDefaultFromEnv(); err != nil {
+		log.Fatalf("Error configuring telemetry: %s", err)
+	}
+
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+		// Running locally — invoke the handler directly.
+		result, err := handleMetrics(context.Background())
+		if err != nil {
+			log.Fatalf("handleMetrics: %v", err)
+		}
+		log.Printf("done: %s", result)
+		return
+	}
+
+	lambda.Start(handleMetrics)
 }
