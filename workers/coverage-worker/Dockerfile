@@ -21,12 +21,15 @@ RUN apt-get update && apt-get install -y git \
     curl \
     wget \
     python3-pip \
+    python3-dev \
     lsb-release \
     software-properties-common \
     gnupg \
     unzip \
     jq \
     parallel
+
+RUN pip3 install --break-system-packages pycapnp
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
