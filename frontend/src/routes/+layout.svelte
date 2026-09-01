@@ -61,6 +61,19 @@
             </a>
             <a
                 data-sveltekit-preload-code="eager"
+                href="/master-fuzz-coverage"
+                class="menu-item"
+                aria-label="Fuzz coverage"
+                class:active={$page.url.pathname.includes("/master-fuzz-coverage")}
+                use:tooltip={{ text: "Fuzz coverage", position: "right" }}
+            >
+                <span class="menu-item-icon">
+                    <i class="ri-bug-line" />
+                </span>
+                <span class="menu-item-label">Fuzz coverage</span>
+            </a>
+            <a
+                data-sveltekit-preload-code="eager"
                 href="/tests"
                 class="menu-item"
                 aria-label="Tests"

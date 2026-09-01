@@ -12,4 +12,5 @@ type Config struct {
 
 	StateMachineARN    string `env:"STATE_MACHINE_ARN" env-required:"true"`
 	MutationMachineARN string `env:"MUTATION_STATE_MACHINE_ARN" env-required:"true"`
+	FuzzMachineARN     string `env:"FUZZ_STATE_MACHINE_ARN" env-required:"true"`
 }

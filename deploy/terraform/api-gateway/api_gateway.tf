@@ -33,6 +33,12 @@ resource "aws_api_gateway_resource" "master_coverage" {
   path_part   = "master-coverage"
 }
 
+resource "aws_api_gateway_resource" "master_fuzz_coverage" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "master-fuzz-coverage"
+}
+
 resource "aws_api_gateway_resource" "mutations_meta" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_resource.mutations.id
@@ -71,6 +77,13 @@ resource "aws_api_gateway_method" "get_master_coverage" {
   authorization = "NONE"
   http_method   = "GET"
   resource_id   = aws_api_gateway_resource.master_coverage.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_method" "get_master_fuzz_coverage" {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.master_fuzz_coverage.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
 }
 
@@ -140,6 +153,15 @@ resource "aws_api_gateway_integration" "lambda_master_coverage" {
   uri                     = aws_lambda_function.lambda["get-master-coverage"].invoke_arn
 }
 
+resource "aws_api_gateway_integration" "lambda_master_fuzz_coverage" {
+  http_method             = aws_api_gateway_method.get_master_fuzz_coverage.http_method
+  resource_id             = aws_api_gateway_resource.master_fuzz_coverage.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.lambda["get-master-fuzz-coverage"].invoke_arn
+}
+
 resource "aws_api_gateway_integration" "lambda_mutation_meta" {
   http_method             = aws_api_gateway_method.get_mutation_meta.http_method
   resource_id             = aws_api_gateway_resource.mutations_meta.id
@@ -164,9 +186,11 @@ resource "aws_api_gateway_deployment" "api" {
     aws_api_gateway_method.get_report,
     aws_api_gateway_method.get_mutation,
     aws_api_gateway_method.get_master_coverage,
+    aws_api_gateway_method.get_master_fuzz_coverage,
     aws_api_gateway_integration.lambda,
     aws_api_gateway_integration.lambda_mutation,
     aws_api_gateway_integration.lambda_master_coverage,
+    aws_api_gateway_integration.lambda_master_fuzz_coverage,
     aws_api_gateway_integration.lambda_mutation_meta,
   ]
 }

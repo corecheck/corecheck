@@ -6,6 +6,7 @@ locals {
     "migrate",
     "handle-coverage",
     "handle-coverage-failure",
+    "handle-fuzz-coverage",
     "handle-benchmarks",
     "handle-mutation",
     "rerun-all",
@@ -29,6 +30,7 @@ locals {
           GITHUB_ACCESS_TOKEN        = var.github_token
           STATE_MACHINE_ARN          = aws_sfn_state_machine.state_machine.arn
           MUTATION_STATE_MACHINE_ARN = aws_sfn_state_machine.mutation_state_machine.arn
+          FUZZ_STATE_MACHINE_ARN     = aws_sfn_state_machine.fuzz_state_machine.arn
         }
       }
     },
@@ -68,6 +70,21 @@ locals {
     },
     "handle-coverage-failure" = {
       timeout                = 60
+      memory_size            = 128
+      ephemeral_storage_size = 512
+      environment = {
+        variables = {
+          DATABASE_HOST     = var.db_host
+          DATABASE_PORT     = var.db_port
+          DATABASE_USER     = var.db_user
+          DATABASE_PASSWORD = var.db_password
+          DATABASE_NAME     = var.db_database
+          DATABASE_SSLMODE  = var.db_sslmode
+        }
+      }
+    },
+    "handle-fuzz-coverage" = {
+      timeout                = 900
       memory_size            = 128
       ephemeral_storage_size = 512
       environment = {
@@ -482,6 +499,47 @@ resource "aws_sfn_state_machine" "mutation_state_machine" {
       },
       "End": true,
       "ResultPath": "$.mutation_result"
+    }
+  }
+}
+EOF
+}
+
+resource "aws_sfn_state_machine" "fuzz_state_machine" {
+  name     = "start-fuzz-jobs-${terraform.workspace}"
+  role_arn = aws_iam_role.state_machine_role.arn
+  provider = aws.compute_region
+
+  definition = <<EOF
+{
+  "Comment": "Starts the fuzz coverage batch job (corpus replay) and records the result",
+  "StartAt": "Start fuzz coverage",
+  "States": {
+    "Start fuzz coverage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::batch:submitJob.sync",
+      "Parameters": {
+        "Parameters.$": "$.params",
+        "JobDefinition": "${aws_batch_job_definition.fuzz_coverage_job.arn}",
+        "JobName": "fuzz-coverage",
+        "JobQueue": "${aws_batch_job_queue.coverage_queue.arn}"
+      },
+      "ResultPath": "$.coverage_job",
+      "Next": "Handle fuzz coverage"
+    },
+    "Handle fuzz coverage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "handle-fuzz-coverage-${terraform.workspace}:$LATEST",
+        "Payload": {
+          "params.$": "$.params",
+          "coverage_job.$": "$.coverage_job",
+          "step_function_execution_arn.$": "$$.Execution.Id"
+        }
+      },
+      "ResultPath": "$.coverage_result",
+      "End": true
     }
   }
 }

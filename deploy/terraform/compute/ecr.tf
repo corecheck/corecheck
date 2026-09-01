@@ -4,6 +4,12 @@ resource "aws_ecrpublic_repository" "corecheck-coverage-worker" {
   force_destroy   = true
 }
 
+resource "aws_ecrpublic_repository" "corecheck-fuzz-coverage-worker" {
+  provider        = aws.us_east_1
+  repository_name = "corecheck-fuzz-coverage-worker-${terraform.workspace}"
+  force_destroy   = true
+}
+
 resource "aws_ecrpublic_repository" "corecheck-bench-worker" {
   provider        = aws.us_east_1
   repository_name = "corecheck-bench-worker-${terraform.workspace}"
