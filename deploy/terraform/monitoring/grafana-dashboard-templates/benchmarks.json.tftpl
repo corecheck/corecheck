@@ -1,0 +1,515 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {"limit": 100, "matchAny": false, "tags": [], "type": "dashboard"}
+      }
+    ]
+  },
+  "description": "Bitcoin Core benchmark performance over time. Results are stored in CloudWatch Logs (${benchmark_results_log_group}) on each master commit.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Number of distinct benchmarks seen in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^cnt$/", "values": false},
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(benchmark_name) | stats count_distinct(benchmark_name) as cnt",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Benchmarks tracked",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Sum of total_time across all benchmarks per day — overall benchmark suite cost trend.",
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}, "unit": "ns"},
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 20, "x": 4, "y": 1},
+      "id": 2,
+      "options": {
+        "legend": {"calcs": [], "displayMode": "hidden", "placement": "bottom"},
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats sum(total_time) as total_time_ns by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Total benchmark suite time / day",
+      "type": "timeseries"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "id": 200,
+      "title": "Rankings",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average total_time per benchmark over the selected time range, sorted slowest first.",
+      "fieldConfig": {
+        "defaults": {"unit": "ns"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "benchmark_name"},
+            "properties": [{"id": "displayName", "value": "Benchmark"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "avg_total_time"},
+            "properties": [{"id": "displayName", "value": "Avg total time (ns)"}, {"id": "custom.width", "value": 160}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_total_time"},
+            "properties": [{"id": "displayName", "value": "Max total time (ns)"}, {"id": "custom.width", "value": 160}]
+          }
+        ]
+      },
+      "gridPos": {"h": 16, "w": 8, "x": 0, "y": 6},
+      "id": 201,
+      "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg total time (ns)"}]},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats avg(total_time) as avg_total_time, max(total_time) as max_total_time by benchmark_name | sort avg_total_time desc | limit 25",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Slowest benchmarks (top 25)",
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Benchmarks whose average total_time has increased the most. Compares recent 30-day average against the full dashboard time range average.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "benchmark_name"},
+            "properties": [{"id": "displayName", "value": "Benchmark"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "hist_avg"},
+            "properties": [{"id": "displayName", "value": "Historical avg (ns)"}, {"id": "unit", "value": "ns"}, {"id": "custom.width", "value": 160}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "recent_avg"},
+            "properties": [{"id": "displayName", "value": "Recent avg (ns)"}, {"id": "unit", "value": "ns"}, {"id": "custom.width", "value": 140}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "change_ns"},
+            "properties": [
+              {"id": "displayName", "value": "Change (ns)"},
+              {"id": "unit", "value": "ns"},
+              {"id": "custom.width", "value": 120},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 16, "w": 8, "x": 8, "y": 6},
+      "id": 202,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats avg(total_time) as hist_avg by benchmark_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats avg(total_time) as recent_avg by benchmark_name",
+          "hide": false,
+          "id": "B",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "B",
+          "region": "${compute_region}",
+          "timeRange": {"from": "now-30d", "to": "now"}
+        }
+      ],
+      "title": "Biggest regressions (last 30d vs historical)",
+      "transformations": [
+        {"id": "joinByField", "options": {"byField": "benchmark_name", "mode": "outer"}},
+        {"id": "calculateField", "options": {"alias": "change_ns", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "greater", "options": {"value": 0}}, "fieldName": "change_ns"}], "match": "all", "type": "include"}},
+        {"id": "sortBy", "options": {"fields": [{"desc": true, "displayName": "change_ns"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Benchmarks whose average total_time has decreased the most. Compares recent 30-day average against the full dashboard time range average.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "benchmark_name"},
+            "properties": [{"id": "displayName", "value": "Benchmark"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "hist_avg"},
+            "properties": [{"id": "displayName", "value": "Historical avg (ns)"}, {"id": "unit", "value": "ns"}, {"id": "custom.width", "value": 160}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "recent_avg"},
+            "properties": [{"id": "displayName", "value": "Recent avg (ns)"}, {"id": "unit", "value": "ns"}, {"id": "custom.width", "value": 140}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "change_ns"},
+            "properties": [
+              {"id": "displayName", "value": "Change (ns)"},
+              {"id": "unit", "value": "ns"},
+              {"id": "custom.width", "value": 120},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 16, "w": 8, "x": 16, "y": 6},
+      "id": 203,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats avg(total_time) as hist_avg by benchmark_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        },
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(total_time) | stats avg(total_time) as recent_avg by benchmark_name",
+          "hide": false,
+          "id": "B",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "B",
+          "region": "${compute_region}",
+          "timeRange": {"from": "now-30d", "to": "now"}
+        }
+      ],
+      "title": "Biggest speedups (last 30d vs historical)",
+      "transformations": [
+        {"id": "joinByField", "options": {"byField": "benchmark_name", "mode": "outer"}},
+        {"id": "calculateField", "options": {"alias": "change_ns", "binary": {"left": "recent_avg", "operator": "-", "right": "hist_avg"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "lower", "options": {"value": 0}}, "fieldName": "change_ns"}], "match": "all", "type": "include"}},
+        {"id": "sortBy", "options": {"fields": [{"desc": false, "displayName": "change_ns"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+      "id": 300,
+      "title": "CPU & Hardware Counters",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average median CPU instructions per benchmark, sorted highest first.",
+      "fieldConfig": {
+        "defaults": {"unit": "short"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "benchmark_name"},
+            "properties": [{"id": "displayName", "value": "Benchmark"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "avg_instructions"},
+            "properties": [{"id": "displayName", "value": "Avg instructions"}, {"id": "custom.width", "value": 150}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_instructions"},
+            "properties": [{"id": "displayName", "value": "Max instructions"}, {"id": "custom.width", "value": 150}]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 12, "x": 0, "y": 23},
+      "id": 301,
+      "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg instructions"}]},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(median_instructions) | stats avg(median_instructions) as avg_instructions, max(median_instructions) as max_instructions by benchmark_name | sort avg_instructions desc | limit 25",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most CPU instructions (top 25)",
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average median CPU cycles per benchmark, sorted highest first.",
+      "fieldConfig": {
+        "defaults": {"unit": "short"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "benchmark_name"},
+            "properties": [{"id": "displayName", "value": "Benchmark"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "avg_cpucycles"},
+            "properties": [{"id": "displayName", "value": "Avg CPU cycles"}, {"id": "custom.width", "value": 150}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_cpucycles"},
+            "properties": [{"id": "displayName", "value": "Max CPU cycles"}, {"id": "custom.width", "value": 150}]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 12, "x": 12, "y": 23},
+      "id": 302,
+      "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg CPU cycles"}]},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter ispresent(median_cpucycles) | stats avg(median_cpucycles) as avg_cpucycles, max(median_cpucycles) as max_cpucycles by benchmark_name | sort avg_cpucycles desc | limit 25",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most CPU cycles (top 25)",
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 37},
+      "id": 400,
+      "title": "Benchmark Drill-Down — $benchmark",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "total_time trend over time for the selected benchmark.",
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}, "unit": "ns"},
+        "overrides": []
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 38},
+      "id": 401,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter benchmark_name = \"$benchmark\" | stats avg(total_time) as total_time_ns by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "total_time over time",
+      "type": "timeseries"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "median_elapsed trend over time for the selected benchmark.",
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}, "unit": "ns"},
+        "overrides": []
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 38},
+      "id": 402,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter benchmark_name = \"$benchmark\" | stats avg(median_elapsed) as median_elapsed_ns by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "median_elapsed over time",
+      "type": "timeseries"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "median CPU instructions over time for the selected benchmark.",
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}, "unit": "short"},
+        "overrides": []
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 47},
+      "id": 403,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter benchmark_name = \"$benchmark\" | stats avg(median_instructions) as median_instructions by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "CPU instructions over time",
+      "type": "timeseries"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "median CPU cycles over time for the selected benchmark.",
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}, "unit": "short"},
+        "overrides": []
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 47},
+      "id": 404,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter benchmark_name = \"$benchmark\" | stats avg(median_cpucycles) as median_cpucycles by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${benchmark_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "CPU cycles over time",
+      "type": "timeseries"
+    }
+
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["aws", "cloudwatch", "corecheck", "public", "benchmarks"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "", "value": ""},
+        "hide": 0,
+        "label": "Benchmark",
+        "name": "benchmark",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {"from": "now-90d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-benchmarks",
+  "version": 1,
+  "weekStart": ""
+}
