@@ -94,9 +94,11 @@ locals {
           DATABASE_NAME     = var.db_database
           DATABASE_SSLMODE  = var.db_sslmode
 
-          BENCH_ARRAY_SIZE = local.bench_array_size
-          BUCKET_DATA_URL  = var.corecheck_data_bucket_url
-          DD_API_KEY       = var.datadog_api_key
+          BENCH_ARRAY_SIZE            = local.bench_array_size
+          BUCKET_DATA_URL             = var.corecheck_data_bucket_url
+          DD_API_KEY                  = var.datadog_api_key
+          BENCHMARK_RESULTS_LOG_GROUP = aws_cloudwatch_log_group.benchmark_results.name
+          TELEMETRY_CLOUDWATCH_REGION = data.aws_region.compute_region.name
         }
       }
     },
@@ -136,12 +138,16 @@ locals {
     },
     "stats" = {
       timeout                = 900
-      memory_size            = 1024
+      memory_size            = 2048
       ephemeral_storage_size = 10240
 
       environment = {
         variables = {
-          DD_API_KEY = var.datadog_api_key
+          DD_API_KEY                     = var.datadog_api_key
+          GITHUB_EVENTS_LOG_GROUP        = aws_cloudwatch_log_group.github_events.name
+          GITHUB_EVENTS_LAST_RUN_PARAM   = aws_ssm_parameter.github_events_last_run.name
+          TELEMETRY_CLOUDWATCH_REGION    = data.aws_region.compute_region.name
+          TELEMETRY_CLOUDWATCH_NAMESPACE = terraform.workspace == "default" ? "Corecheck/prod" : "Corecheck/${terraform.workspace}"
         }
       }
     }

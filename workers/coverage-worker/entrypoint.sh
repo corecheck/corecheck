@@ -12,6 +12,71 @@ sh -c "sed -i 's/# site:.*/site: datadoghq.eu/' /etc/datadog-agent/datadog.yaml"
 sh -c "sed -i 's/# hostname:.*/hostname: $HOSTNAME/' /etc/datadog-agent/datadog.yaml"
 
 /etc/init.d/datadog-agent start
+
+# CloudWatch test logs sit beside the Datadog agent writes below. A failed
+# log call must not fail the coverage job.
+test_log_records=()
+
+test_logs_ready() {
+    [ -n "${TEST_RESULTS_LOG_GROUP}" ] && [ -n "${TELEMETRY_CLOUDWATCH_REGION}" ]
+}
+
+create_test_log_stream() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs create-log-stream \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${COMMIT}" 2>/dev/null || true
+}
+
+queue_test_log() {
+    if ! test_logs_ready; then
+        return 0
+    fi
+
+    local test_type=$1
+    local test_name=$2
+    local duration_s=$3
+    local timestamp_ms
+    timestamp_ms=$(( $(date +%s) * 1000 ))
+    local message
+    message=$(jq -nc \
+        --arg test_type "$test_type" \
+        --arg test_name "$test_name" \
+        --arg duration_s "$duration_s" \
+        --arg commit "$COMMIT" \
+        '{test_type: $test_type, test_name: $test_name, duration_s: ($duration_s | tonumber), commit: $commit}')
+    test_log_records+=("$(jq -nc \
+        --argjson timestamp "$timestamp_ms" \
+        --arg message "$message" \
+        '{timestamp: $timestamp, message: $message}')")
+
+    if [ "${#test_log_records[@]}" -ge 100 ]; then
+        flush_test_logs
+    fi
+}
+
+flush_test_logs() {
+    if ! test_logs_ready || [ "${#test_log_records[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    local records_json
+    records_json=$(printf '%s\n' "${test_log_records[@]}" | jq -cs '.')
+    if ! env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY \
+        aws logs put-log-events \
+        --region "${TELEMETRY_CLOUDWATCH_REGION}" \
+        --log-group-name "${TEST_RESULTS_LOG_GROUP}" \
+        --log-stream-name "${COMMIT}" \
+        --log-events "${records_json}" >/dev/null; then
+        echo "Failed to write test results to CloudWatch Logs" >&2
+    fi
+    test_log_records=()
+}
+
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
@@ -87,16 +152,26 @@ else
         --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
+        create_test_log_stream
         binary_size=$(stat -c %s ./build/bin/bitcoind)
         echo -n "bitcoin.bitcoin.binary_size:$binary_size|g|#commit:$COMMIT" >/dev/udp/localhost/8125
+        while IFS= read -r line; do
+            if [[ $line =~ ^[[:space:]]*[0-9]+/[0-9]+[[:space:]]+Test[[:space:]]+#[0-9]+:[[:space:]]+([^[:space:]]+)[[:space:]]*\.+[[:space:]]+Passed[[:space:]]+([0-9]+\.?[0-9]*)[[:space:]]+sec ]]; then
+                test_name="${BASH_REMATCH[1]}"
+                test_duration="${BASH_REMATCH[2]}"
+                queue_test_log "unit" "$test_name" "$test_duration"
+            fi
+        done < "unit-tests.log"
         while IFS= read -r line; do
             if [[ $line =~ ^([a-zA-Z0-9_./-]+(\ --[a-zA-Z0-9_./-]+)*)[[:space:]]+\|[[:space:]]+.*[[:space:]]+Passed+[[:space:]]+\|[[:space:]]+([0-9]+)+[[:space:]]+s$ ]]; then
                 test_name="${BASH_REMATCH[1]}";
                 test_duration="${BASH_REMATCH[3]}";
                 echo -n "bitcoin.bitcoin.test.functional.duration:$test_duration|g|#test_name:$test_name,#commit:$COMMIT" >/dev/udp/localhost/8125
                 echo "test_name:$test_name,commit:$COMMIT,duration:$test_duration"
+                queue_test_log "functional" "$test_name" "$test_duration"
             fi;
         done < "functional-tests.log"
+        flush_test_logs
     fi
     
     # Merge all the raw profile data into a single file
