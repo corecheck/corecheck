@@ -71,6 +71,7 @@ jobs:
       TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
       TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TF_VAR_public_grafana_admin_password: ${{ secrets.PUBLIC_GRAFANA_ADMIN_PASSWORD }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -102,3 +103,11 @@ jobs:
 
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
+
+    - name: Export public dashboard URLs
+      run: |
+        {
+          echo '## Public dashboard overrides'
+          echo ''
+          terraform output -json public_dashboard_env_overrides
+        } >> "$GITHUB_STEP_SUMMARY"

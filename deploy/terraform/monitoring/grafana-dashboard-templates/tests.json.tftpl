@@ -1,0 +1,662 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {"limit": 100, "matchAny": false, "tags": [], "type": "dashboard"}
+      }
+    ]
+  },
+  "description": "Bitcoin Core test suite performance over time. Functional and unit test durations are stored in CloudWatch Logs (${test_results_log_group}) on each master commit.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Number of distinct functional tests seen in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^cnt$/", "values": false},
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" | stats count_distinct(test_name) as cnt",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Functional tests",
+      "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Number of distinct unit tests (ctest suites) seen in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^cnt$/", "values": false},
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" | stats count_distinct(test_name) as cnt",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Unit tests",
+      "type": "stat"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "id": 200,
+      "title": "Functional Tests — Rankings",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average duration of functional tests over the selected time range, sorted slowest first.",
+      "fieldConfig": {
+        "defaults": {"unit": "s"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [{"id": "displayName", "value": "Test"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "avg_duration_s"},
+            "properties": [{"id": "displayName", "value": "Avg duration (s)"}, {"id": "custom.width", "value": 140}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_duration_s"},
+            "properties": [{"id": "displayName", "value": "Max duration (s)"}, {"id": "custom.width", "value": 140}]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 0, "y": 6},
+      "id": 201,
+      "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg duration (s)"}]},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" | stats avg(duration_s) as avg_duration_s, max(duration_s) as max_duration_s by test_name | sort avg_duration_s desc | limit 25",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Slowest functional tests (top 25)",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Percent change from the earliest run to the latest run in the selected time range. Positive means the test got slower. Click a test to open its trend.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-functional_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "start_s"},
+            "properties": [{"id": "displayName", "value": "Earliest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "end_s"},
+            "properties": [{"id": "displayName", "value": "Latest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "pct_change"},
+            "properties": [
+              {"id": "displayName", "value": "Change"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 110},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.1}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 8, "y": 6},
+      "id": 202,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" and duration_s > 0 | stats earliest(duration_s) as start_s, latest(duration_s) as end_s by test_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Biggest regressions (functional)",
+      "transformations": [
+        {"id": "calculateField", "options": {"alias": "delta_s", "binary": {"left": "end_s", "operator": "-", "right": "start_s"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_change", "binary": {"left": "delta_s", "operator": "/", "right": "start_s"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "greater", "options": {"value": 0}}, "fieldName": "pct_change"}, {"config": {"id": "greater", "options": {"value": 10}}, "fieldName": "start_s"}], "match": "all", "type": "include"}},
+        {"id": "organize", "options": {"excludeByName": {"delta_s": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"sort": [{"desc": true, "field": "pct_change"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Percent change from the earliest run to the latest run in the selected time range. Negative means the test got faster. Click a test to open its trend.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-functional_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "start_s"},
+            "properties": [{"id": "displayName", "value": "Earliest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "end_s"},
+            "properties": [{"id": "displayName", "value": "Latest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "pct_change"},
+            "properties": [
+              {"id": "displayName", "value": "Change"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 110},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": -0.1}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 16, "y": 6},
+      "id": 203,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" and duration_s > 0 | stats earliest(duration_s) as start_s, latest(duration_s) as end_s by test_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Biggest speedups (functional)",
+      "transformations": [
+        {"id": "calculateField", "options": {"alias": "delta_s", "binary": {"left": "end_s", "operator": "-", "right": "start_s"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_change", "binary": {"left": "delta_s", "operator": "/", "right": "start_s"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "lower", "options": {"value": 0}}, "fieldName": "pct_change"}, {"config": {"id": "greater", "options": {"value": 10}}, "fieldName": "start_s"}], "match": "all", "type": "include"}},
+        {"id": "organize", "options": {"excludeByName": {"delta_s": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"sort": [{"desc": false, "field": "pct_change"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Functional tests with the widest spread of durations in the selected time range. Click a test to open its trend.",
+      "fieldConfig": {
+        "defaults": {"unit": "s"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-functional_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "stddev_s"},
+            "properties": [{"id": "displayName", "value": "Stddev (s)"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "min_s"},
+            "properties": [{"id": "displayName", "value": "Min (s)"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_s"},
+            "properties": [{"id": "displayName", "value": "Max (s)"}, {"id": "custom.width", "value": 110}]
+          }
+        ]
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 20},
+      "id": 204,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" and duration_s > 0 | stats stddev(duration_s) as stddev_s, min(duration_s) as min_s, max(duration_s) as max_s by test_name | sort stddev_s desc | limit 15",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most variable functional tests",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 30},
+      "id": 300,
+      "title": "Unit Tests — Rankings",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Average duration of unit test suites over the selected time range, sorted slowest first.",
+      "fieldConfig": {
+        "defaults": {"unit": "s"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [{"id": "displayName", "value": "Test suite"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "avg_duration_s"},
+            "properties": [{"id": "displayName", "value": "Avg duration (s)"}, {"id": "custom.width", "value": 140}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_duration_s"},
+            "properties": [{"id": "displayName", "value": "Max duration (s)"}, {"id": "custom.width", "value": 140}]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 0, "y": 31},
+      "id": 301,
+      "options": {"showHeader": true, "sortBy": [{"desc": true, "displayName": "Avg duration (s)"}]},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" | stats avg(duration_s) as avg_duration_s, max(duration_s) as max_duration_s by test_name | sort avg_duration_s desc | limit 25",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Slowest unit tests (top 25)",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Percent change from the earliest run to the latest run in the selected time range. Positive means the suite got slower. Click a suite to open its trend.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test suite"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-unit_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "start_s"},
+            "properties": [{"id": "displayName", "value": "Earliest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "end_s"},
+            "properties": [{"id": "displayName", "value": "Latest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "pct_change"},
+            "properties": [
+              {"id": "displayName", "value": "Change"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 110},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.1}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 8, "y": 31},
+      "id": 302,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" and duration_s > 0 | stats earliest(duration_s) as start_s, latest(duration_s) as end_s by test_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Biggest regressions (unit)",
+      "transformations": [
+        {"id": "calculateField", "options": {"alias": "delta_s", "binary": {"left": "end_s", "operator": "-", "right": "start_s"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_change", "binary": {"left": "delta_s", "operator": "/", "right": "start_s"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "greater", "options": {"value": 0}}, "fieldName": "pct_change"}, {"config": {"id": "greater", "options": {"value": 10}}, "fieldName": "start_s"}], "match": "all", "type": "include"}},
+        {"id": "organize", "options": {"excludeByName": {"delta_s": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"sort": [{"desc": true, "field": "pct_change"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Percent change from the earliest run to the latest run in the selected time range. Negative means the suite got faster. Click a suite to open its trend.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test suite"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-unit_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "start_s"},
+            "properties": [{"id": "displayName", "value": "Earliest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "end_s"},
+            "properties": [{"id": "displayName", "value": "Latest (s)"}, {"id": "unit", "value": "s"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "pct_change"},
+            "properties": [
+              {"id": "displayName", "value": "Change"},
+              {"id": "unit", "value": "percentunit"},
+              {"id": "custom.width", "value": 110},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": -0.1}]}}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 14, "w": 8, "x": 16, "y": 31},
+      "id": 303,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" and duration_s > 0 | stats earliest(duration_s) as start_s, latest(duration_s) as end_s by test_name",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Biggest speedups (unit)",
+      "transformations": [
+        {"id": "calculateField", "options": {"alias": "delta_s", "binary": {"left": "end_s", "operator": "-", "right": "start_s"}, "mode": "binary"}},
+        {"id": "calculateField", "options": {"alias": "pct_change", "binary": {"left": "delta_s", "operator": "/", "right": "start_s"}, "mode": "binary"}},
+        {"id": "filterByValue", "options": {"filters": [{"config": {"id": "lower", "options": {"value": 0}}, "fieldName": "pct_change"}, {"config": {"id": "greater", "options": {"value": 10}}, "fieldName": "start_s"}], "match": "all", "type": "include"}},
+        {"id": "organize", "options": {"excludeByName": {"delta_s": true, "Value": true}, "indexByName": {}, "renameByName": {}}},
+        {"id": "sortBy", "options": {"sort": [{"desc": false, "field": "pct_change"}]}},
+        {"id": "limit", "options": {"limitField": 20}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Unit test suites with the widest spread of durations in the selected time range. Click a suite to open its trend.",
+      "fieldConfig": {
+        "defaults": {"unit": "s"},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "test_name"},
+            "properties": [
+              {"id": "displayName", "value": "Test suite"},
+              {"id": "links", "value": [{"title": "Show trend", "url": "/d/corecheck-tests/corecheck-tests?orgId=1&from=$${__from}&to=$${__to}&var-unit_test=$${__data.fields.test_name}"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "stddev_s"},
+            "properties": [{"id": "displayName", "value": "Stddev (s)"}, {"id": "custom.width", "value": 120}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "min_s"},
+            "properties": [{"id": "displayName", "value": "Min (s)"}, {"id": "custom.width", "value": 110}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "max_s"},
+            "properties": [{"id": "displayName", "value": "Max (s)"}, {"id": "custom.width", "value": 110}]
+          }
+        ]
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 45},
+      "id": 304,
+      "options": {"showHeader": true},
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" and duration_s > 0 | stats stddev(duration_s) as stddev_s, min(duration_s) as min_s, max(duration_s) as max_s by test_name | sort stddev_s desc | limit 15",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Most variable unit tests",
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Value": true}, "indexByName": {}, "renameByName": {}}}
+      ],
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 55},
+      "id": 400,
+      "title": "Functional Test Drill-Down — $functional_test",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Duration trend for the selected functional test. Use the variable at the top of the dashboard to select a test.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 56},
+      "id": 401,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"functional\" and test_name = \"$functional_test\" | stats avg(duration_s) as duration_s by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Functional test duration over time",
+      "type": "timeseries"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 66},
+      "id": 500,
+      "title": "Unit Test Drill-Down — $unit_test",
+      "type": "row"
+    },
+
+    {
+      "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+      "description": "Duration trend for the selected unit test suite. Use the variable at the top of the dashboard to select a test.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 67},
+      "id": 501,
+      "options": {
+        "legend": {"calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "cloudwatch", "uid": "corecheck-cloudwatch"},
+          "expression": "filter test_type = \"unit\" and test_name = \"$unit_test\" | stats avg(duration_s) as duration_s by bin(1d)",
+          "hide": false,
+          "id": "A",
+          "logGroups": [{"name": "${test_results_log_group}"}],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "${compute_region}"
+        }
+      ],
+      "title": "Unit test duration over time",
+      "type": "timeseries"
+    }
+
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["aws", "cloudwatch", "corecheck", "public", "tests"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "", "value": ""},
+        "description": "Select a specific functional test to see its duration trend in the drill-down section below.",
+        "hide": 0,
+        "label": "Functional Test (drill-down filter)",
+        "name": "functional_test",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {"selected": false, "text": "", "value": ""},
+        "description": "Select a specific unit test suite to see its duration trend in the drill-down section below.",
+        "hide": 0,
+        "label": "Unit Test (drill-down filter)",
+        "name": "unit_test",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {"from": "now-90d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "${title}",
+  "uid": "corecheck-tests",
+  "version": 1,
+  "weekStart": ""
+}
