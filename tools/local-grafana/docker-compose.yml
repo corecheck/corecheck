@@ -1,0 +1,54 @@
+name: corecheck-local-grafana
+
+services:
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3000:3000"
+    environment:
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_SDK_LOAD_CONFIG: "1"
+      AWS_CONFIG_FILE: /etc/grafana/aws/config
+      AWS_SHARED_CREDENTIALS_FILE: /etc/grafana/aws/empty-credentials
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_USERS_DEFAULT_THEME: dark
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: corecheck-local
+    depends_on:
+      - renderer
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning/dashboards:ro
+      - ./generated/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./generated/dashboards:/var/lib/grafana/dashboards:ro
+      - ./generated:/etc/grafana/aws:ro
+      - grafana-data:/var/lib/grafana
+
+  aws-credentials:
+    image: amazon/aws-cli:latest
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        while true; do
+          aws configure export-credentials --format process > /out/aws-credentials.json.tmp
+          mv /out/aws-credentials.json.tmp /out/aws-credentials.json
+          chmod 644 /out/aws-credentials.json
+          sleep 480
+        done
+    restart: unless-stopped
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+      - ./generated:/out
+
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    environment:
+      AUTH_TOKEN: corecheck-local
+
+volumes:
+  grafana-data:
