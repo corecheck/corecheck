@@ -97,6 +97,23 @@ func handleBenchmarkSuccess(job *types.JobParams) error {
 		}
 
 		ddlambda.Metric("bitcoin.bitcoin.benchmarks.count", float64(len(resultsByBenchmark)), "commit:"+job.Commit)
+
+		benchLogs, err := newBenchLogsClientFromEnv()
+		if err != nil {
+			log.Warnf("Benchmark logs client unavailable, skipping CloudWatch log emission: %v", err)
+		} else if err := benchLogs.createLogStream(job.Commit); err != nil {
+			log.Warnf("Failed to create benchmark log stream: %v", err)
+		} else {
+			for name, results := range resultsByBenchmark {
+				avg := db.GetAverageBenchmarkResults(results)
+				if err := benchLogs.queueResult(avg, job.Commit); err != nil {
+					log.Warnf("Failed to queue benchmark log for %s: %v", name, err)
+				}
+			}
+			if err := benchLogs.flush(job.Commit); err != nil {
+				log.Warnf("Failed to flush benchmark logs: %v", err)
+			}
+		}
 	}
 
 	log.Info("Creating benchmark results")
