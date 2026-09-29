@@ -1,0 +1,35 @@
+name: corecheck-local-grafana
+
+services:
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - generated/aws.env
+    environment:
+      AWS_EC2_METADATA_DISABLED: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_USERS_DEFAULT_THEME: dark
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: corecheck-local
+    depends_on:
+      - renderer
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning/dashboards:ro
+      - ./generated/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./generated/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    environment:
+      AUTH_TOKEN: corecheck-local
+
+volumes:
+  grafana-data:

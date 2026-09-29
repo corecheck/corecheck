@@ -21,9 +21,13 @@ module "api_gateway" {
 module "monitoring" {
   source = "./monitoring"
 
-  alert_email        = var.alert_email
-  telegram_bot_token = var.telegram_bot_token
-  telegram_chat_id   = var.telegram_chat_id
+  alert_email                   = var.alert_email
+  dns_name                      = var.dns_name
+  telegram_bot_token            = var.telegram_bot_token
+  telegram_chat_id              = var.telegram_chat_id
+  dashboard_compute_region      = data.aws_region.compute_region.name
+  public_grafana_admin_user     = var.public_grafana_admin_user
+  public_grafana_admin_password = var.public_grafana_admin_password
 }
 
 module "compute" {

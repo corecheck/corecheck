@@ -35,3 +35,15 @@ variable "telegram_chat_id" {
   type        = string
   default     = ""
 }
+
+variable "public_grafana_admin_user" {
+  description = "Admin username for the self-hosted public Grafana instance"
+  type        = string
+  default     = "corecheck-admin"
+}
+
+variable "public_grafana_admin_password" {
+  description = "Admin password for the self-hosted public Grafana instance"
+  type        = string
+  sensitive   = true
+}

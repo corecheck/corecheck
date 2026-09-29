@@ -16,5 +16,6 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 deploy/terraform/monitoring/dist/
+/tools/local-grafana/generated/
 *.tfvars
 __pycache__
