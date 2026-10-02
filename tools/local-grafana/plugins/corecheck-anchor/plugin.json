@@ -1,0 +1,18 @@
+{
+  "type": "panel",
+  "name": "Anchor",
+  "id": "corecheck-anchor",
+  "skipDataQuery": true,
+  "info": {
+    "description": "Scroll target for a dashboard link, and the default value for one template variable.",
+    "author": {"name": "Corecheck"},
+    "keywords": ["anchor"],
+    "logos": {"small": "img/logo.svg", "large": "img/logo.svg"},
+    "version": "1.0.0",
+    "updated": "2026-09-29"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=10.0.0",
+    "plugins": []
+  }
+}

@@ -31,6 +31,10 @@ locals {
         default_region  = var.dashboard_compute_region
       })
       "provisioning/dashboards/corecheck.yaml" = templatefile("${path.module}/public-grafana-bootstrap/dashboards.yaml.tftpl", {})
+      "test_names.py"                          = file("${path.module}/../../../tools/local-grafana/test_names.py")
+      "plugins/corecheck-anchor/plugin.json"   = file("${path.module}/../../../tools/local-grafana/plugins/corecheck-anchor/plugin.json")
+      "plugins/corecheck-anchor/module.js"     = file("${path.module}/../../../tools/local-grafana/plugins/corecheck-anchor/module.js")
+      "plugins/corecheck-anchor/img/logo.svg"  = file("${path.module}/../../../tools/local-grafana/plugins/corecheck-anchor/img/logo.svg")
     },
     {
       for key, content in local.provisioned_public_dashboard_templates :
@@ -267,19 +271,22 @@ resource "aws_instance" "public_grafana" {
   iam_instance_profile        = aws_iam_instance_profile.public_grafana.name
   associate_public_ip_address = true
   user_data = templatefile("${path.module}/public-grafana-bootstrap/user_data.sh.tftpl", {
-    admin_password     = var.public_grafana_admin_password
-    admin_user         = var.public_grafana_admin_user
-    aws_region         = data.aws_region.current.name
-    bootstrap_bucket   = aws_s3_bucket.public_grafana_bootstrap.id
-    bootstrap_revision = local.public_grafana_bootstrap_revision
-    grafana_domain     = local.public_grafana_domain
-    grafana_image      = var.public_grafana_image
+    admin_password         = var.public_grafana_admin_password
+    admin_user             = var.public_grafana_admin_user
+    aws_region             = data.aws_region.current.name
+    bootstrap_bucket       = aws_s3_bucket.public_grafana_bootstrap.id
+    bootstrap_revision     = local.public_grafana_bootstrap_revision
+    compute_region         = var.dashboard_compute_region
+    grafana_domain         = local.public_grafana_domain
+    grafana_image          = var.public_grafana_image
+    test_results_log_group = "/corecheck/test-results/${terraform.workspace}"
   })
   user_data_replace_on_change = true
 
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
   }
 
   root_block_device {

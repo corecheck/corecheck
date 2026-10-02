@@ -83,6 +83,11 @@ def watch(workspace: str, region: str, account: str, proc: subprocess.Popen[byte
 
 
 def serve(args: argparse.Namespace) -> int:
+    os.environ["TEST_RESULTS_LOG_GROUP"] = f"/corecheck/test-results/{args.workspace}"
+    os.environ["AWS_REGION"] = args.region
+    os.environ["AWS_DEFAULT_REGION"] = args.region
+    if args.profile:
+        os.environ["AWS_PROFILE"] = args.profile
     account = args.account or lookup_account(args.profile)
     render_all(args.workspace, args.region, account)
     write_aws_config(args.region, args.profile)

@@ -19,31 +19,54 @@ services:
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_RENDERING_RENDERER_TOKEN: corecheck-local
+      GF_PLUGINS_PREINSTALL: yesoreyeram-infinity-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: corecheck-anchor
     depends_on:
       - renderer
+      - test-names
     volumes:
       - ./provisioning:/etc/grafana/provisioning/dashboards:ro
       - ./generated/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./generated/dashboards:/var/lib/grafana/dashboards:ro
       - ./generated:/etc/grafana/aws:ro
       - grafana-data:/var/lib/grafana
+      - grafana-plugins:/var/lib/grafana/plugins
+      - ./plugins/corecheck-anchor:/var/lib/grafana/plugins/corecheck-anchor:ro
 
   aws-credentials:
     image: amazon/aws-cli:latest
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        set -eu
         while true; do
-          aws configure export-credentials --format process > /out/aws-credentials.json.tmp
-          mv /out/aws-credentials.json.tmp /out/aws-credentials.json
-          chmod 644 /out/aws-credentials.json
-          sleep 480
+          if aws configure export-credentials --format process > /out/aws-credentials.json.tmp; then
+            mv /out/aws-credentials.json.tmp /out/aws-credentials.json
+            chmod 644 /out/aws-credentials.json
+            echo "refreshed aws credentials"
+            sleep 240
+          else
+            rm -f /out/aws-credentials.json.tmp
+            echo "aws login session is not usable; retrying in 30s" >&2
+            sleep 30
+          fi
         done
     restart: unless-stopped
     volumes:
-      - ${HOME}/.aws:/root/.aws:ro
+      - ${HOME}/.aws:/root/.aws
       - ./generated:/out
+
+  test-names:
+    image: amazon/aws-cli:latest
+    entrypoint: ["python3", "/test_names.py"]
+    environment:
+      TEST_RESULTS_LOG_GROUP: ${TEST_RESULTS_LOG_GROUP:-/corecheck/test-results/dev}
+      AWS_REGION: ${AWS_REGION:-ap-south-1}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-south-1}
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+    restart: unless-stopped
+    volumes:
+      - ${HOME}/.aws:/root/.aws
+      - ./test_names.py:/test_names.py:ro
 
   renderer:
     image: grafana/grafana-image-renderer:latest
@@ -52,3 +75,4 @@ services:
 
 volumes:
   grafana-data:
+  grafana-plugins:

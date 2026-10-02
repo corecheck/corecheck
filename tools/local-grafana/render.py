@@ -132,6 +132,14 @@ datasources:
     jsonData:
       authType: default
       defaultRegion: {region}
+  - name: Corecheck test names
+    uid: corecheck-test-names
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    editable: false
+    jsonData:
+      allowedHosts:
+        - http://test-names:8080
 """
 
 

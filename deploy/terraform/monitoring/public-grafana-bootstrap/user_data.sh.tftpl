@@ -8,18 +8,38 @@ install -d -m 0755 \
   /opt/corecheck/grafana/provisioning/datasources \
   /opt/corecheck/grafana/provisioning/dashboards \
   /opt/corecheck/grafana/dashboards \
-  /opt/corecheck/grafana/data
+  /opt/corecheck/grafana/data \
+  /opt/corecheck/grafana/plugins
 
 aws s3 cp "s3://${bootstrap_bucket}/provisioning/datasources/corecheck.yaml" "/opt/corecheck/grafana/provisioning/datasources/corecheck.yaml" --region "${aws_region}"
 aws s3 cp "s3://${bootstrap_bucket}/provisioning/dashboards/corecheck.yaml" "/opt/corecheck/grafana/provisioning/dashboards/corecheck.yaml" --region "${aws_region}"
+aws s3 cp "s3://${bootstrap_bucket}/test_names.py" "/opt/corecheck/grafana/test_names.py" --region "${aws_region}"
 aws s3 sync "s3://${bootstrap_bucket}/dashboards/" "/opt/corecheck/grafana/dashboards/" --delete --region "${aws_region}"
+aws s3 sync "s3://${bootstrap_bucket}/plugins/" "/opt/corecheck/grafana/plugins/" --delete --region "${aws_region}"
 
 chown -R 472:472 /opt/corecheck/grafana
 
-docker rm -f corecheck-grafana || true
+docker network create corecheck-grafana || true
+docker rm -f corecheck-grafana test-names || true
 docker pull "${grafana_image}"
+docker pull amazon/aws-cli:latest
+
+docker run -d \
+  --name test-names \
+  --network corecheck-grafana \
+  --restart unless-stopped \
+  -e TEST_RESULTS_LOG_GROUP="${test_results_log_group}" \
+  -e AWS_REGION="${compute_region}" \
+  -e AWS_DEFAULT_REGION="${compute_region}" \
+  -v /opt/corecheck/grafana/test_names.py:/test_names.py:ro \
+  --entrypoint python3 \
+  amazon/aws-cli:latest \
+  /test_names.py
+
+docker volume create corecheck-grafana-plugins || true
 docker run -d \
   --name corecheck-grafana \
+  --network corecheck-grafana \
   --restart unless-stopped \
   -p 3000:3000 \
   -e GF_SERVER_ROOT_URL="https://${grafana_domain}" \
@@ -33,13 +53,17 @@ docker run -d \
   -e GF_AUTH_ANONYMOUS_HIDE_VERSION="true" \
   -e GF_SECURITY_ADMIN_USER="${admin_user}" \
   -e GF_SECURITY_ADMIN_PASSWORD="${admin_password}" \
+  -e GF_PLUGINS_PREINSTALL="yesoreyeram-infinity-datasource" \
+  -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS="corecheck-anchor" \
   -e CORECHECK_GRAFANA_BOOTSTRAP_REVISION="${bootstrap_revision}" \
   -v /opt/corecheck/grafana/data:/var/lib/grafana \
+  -v corecheck-grafana-plugins:/var/lib/grafana/plugins \
+  -v /opt/corecheck/grafana/plugins/corecheck-anchor:/var/lib/grafana/plugins/corecheck-anchor:ro \
   -v /opt/corecheck/grafana/provisioning:/etc/grafana/provisioning \
   -v /opt/corecheck/grafana/dashboards:/var/lib/grafana/dashboards \
   "${grafana_image}"
 
-for attempt in $(seq 1 30); do
+for attempt in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
     exit 0
   fi
