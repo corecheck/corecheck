@@ -77,6 +77,68 @@ flush_test_logs() {
     test_log_records=()
 }
 
+# Diff between the patched base tree and the patched pull-request tree.
+# Empty when this run did not apply the coverage pin patch.
+COVERAGE_DIFF_FILE=""
+
+# The pin patch adds tests (and a few helpers those tests call) on top of
+# whatever commit is checked out. It is applied after checkout and left
+# uncommitted. Both the master run and the pull-request run use it, so a
+# line the tests always execute is non-zero on both sides.
+apply_coverage_pins() {
+    local patch=/coverage-pins.patch
+    if [ ! -f "$patch" ]; then
+        echo "Coverage pin patch is not in the image"
+        return 0
+    fi
+    if ! git apply --check "$patch"; then
+        echo "WARNING: coverage pin patch does not apply; continuing without it" >&2
+        return 0
+    fi
+
+    git apply "$patch"
+    echo "Applied coverage pin patch and left it uncommitted"
+
+    if [ "$IS_MASTER" = "true" ]; then
+        return 0
+    fi
+
+    # Stage only the patch. write-tree then sees the patched pull request
+    # without build output or other untracked files. Reset the index
+    # afterwards so the patch stays uncommitted.
+    if ! git apply --cached "$patch"; then
+        echo "WARNING: could not stage the coverage pin patch; the stored diff will be the unpatched pull request diff" >&2
+        git reset -q || true
+        return 0
+    fi
+    local pr_tree
+    pr_tree=$(git write-tree)
+    git reset -q
+
+    local base_dir
+    base_dir=$(mktemp -d)
+    if ! git worktree add --detach "$base_dir" "$BASE_COMMIT"; then
+        echo "WARNING: could not check out $BASE_COMMIT to build the coverage diff" >&2
+        rm -rf "$base_dir"
+        return 0
+    fi
+
+    if git -C "$base_dir" apply --check "$patch"; then
+        git -C "$base_dir" apply --cached "$patch"
+        local base_tree
+        base_tree=$(git -C "$base_dir" write-tree)
+        COVERAGE_DIFF_FILE=$(mktemp)
+        # Coverage line numbers come from the patched sources. This diff uses
+        # those same trees, so the pin patch itself is not listed as a
+        # pull-request change.
+        git diff "$base_tree" "$pr_tree" > "$COVERAGE_DIFF_FILE"
+        echo "Recorded coverage diff between the patched base and the patched pull request"
+    else
+        echo "WARNING: coverage pin patch does not apply to $BASE_COMMIT; the stored diff will be the unpatched pull request diff" >&2
+    fi
+    git worktree remove --force "$base_dir" || rm -rf "$base_dir"
+}
+
 ccache --show-stats
 
 cd /tmp/bitcoin && git pull origin master
@@ -123,6 +185,8 @@ else
     if [ "$coverage_exists" != "" ] && [ "$IS_MASTER" == "true" ]; then
         echo "Coverage JSON exists but HTML report is missing; regenerating master coverage artifacts"
     fi
+
+    apply_coverage_pins
 
     ./test/get_previous_releases.py
 
@@ -226,7 +290,11 @@ if [ "$IS_MASTER" != "true" ]; then
     set -e
     
     if [ "$diff_exists" == "" ]; then
-        git diff "$BASE_COMMIT" HEAD > diff.patch
+        if [ -n "$COVERAGE_DIFF_FILE" ] && [ -f "$COVERAGE_DIFF_FILE" ]; then
+            cp "$COVERAGE_DIFF_FILE" diff.patch
+        else
+            git diff "$BASE_COMMIT" HEAD > diff.patch
+        fi
         aws s3 cp diff.patch s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/diff.patch
     fi
 fi
