@@ -1,0 +1,1291 @@
+diff --git a/src/net.cpp b/src/net.cpp
+index d69e66c..69f81ba 100644
+--- a/src/net.cpp
++++ b/src/net.cpp
+@@ -54,9 +54,6 @@ TRACEPOINT_SEMAPHORE(net, inbound_connection);
+ TRACEPOINT_SEMAPHORE(net, outbound_connection);
+ TRACEPOINT_SEMAPHORE(net, outbound_message);
+ 
+-/** Maximum number of block-relay-only anchor connections */
+-static constexpr size_t MAX_BLOCK_RELAY_ONLY_ANCHORS = 2;
+-static_assert (MAX_BLOCK_RELAY_ONLY_ANCHORS <= static_cast<size_t>(MAX_BLOCK_RELAY_ONLY_CONNECTIONS), "MAX_BLOCK_RELAY_ONLY_ANCHORS must not exceed MAX_BLOCK_RELAY_ONLY_CONNECTIONS.");
+ /** Anchor IP address database file name */
+ const char* const ANCHORS_DATABASE_FILENAME = "anchors.dat";
+ 
+@@ -2789,62 +2786,15 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect, std
+         // block-relay-only peer (to confirm our tip is current, see below) or the next_feeler
+         // timer to decide if we should open a FEELER.
+ 
+-        // Only consume anchors while the network is active; otherwise they would be
+-        // popped and then dropped by OpenNetworkConnection(), losing them for the
+-        // next activation and for the dump at shutdown.
+-        const bool have_anchors{fNetworkActive && WITH_LOCK(m_anchors_mutex, return !m_anchors.empty())};
+-        if (have_anchors && (nOutboundBlockRelay < m_max_outbound_block_relay)) {
+-            conn_type = ConnectionType::BLOCK_RELAY;
+-            anchor = true;
+-        } else if (nOutboundFullRelay < m_max_outbound_full_relay) {
+-            // OUTBOUND_FULL_RELAY
+-        } else if (nOutboundBlockRelay < m_max_outbound_block_relay) {
+-            conn_type = ConnectionType::BLOCK_RELAY;
+-        } else if (GetTryNewOutboundPeer()) {
+-            // OUTBOUND_FULL_RELAY
+-        } else if (now > next_extra_block_relay && m_start_extra_block_relay_peers) {
+-            // Periodically connect to a peer (using regular outbound selection
+-            // methodology from addrman) and stay connected long enough to sync
+-            // headers, but not much else.
+-            //
+-            // Then disconnect the peer, if we haven't learned anything new.
+-            //
+-            // The idea is to make eclipse attacks very difficult to pull off,
+-            // because every few minutes we're finding a new peer to learn headers
+-            // from.
+-            //
+-            // This is similar to the logic for trying extra outbound (full-relay)
+-            // peers, except:
+-            // - we do this all the time on an exponential timer, rather than just when
+-            //   our tip is stale
+-            // - we potentially disconnect our next-youngest block-relay-only peer, if our
+-            //   newest block-relay-only peer delivers a block more recently.
+-            //   See the eviction logic in net_processing.cpp.
+-            //
+-            // Because we can promote these connections to block-relay-only
+-            // connections, they do not get their own ConnectionType enum
+-            // (similar to how we deal with extra outbound peers).
+-            next_extra_block_relay = now + rng.rand_exp_duration(EXTRA_BLOCK_RELAY_ONLY_PEER_INTERVAL);
+-            conn_type = ConnectionType::BLOCK_RELAY;
+-        } else if (now > next_feeler) {
+-            next_feeler = now + rng.rand_exp_duration(FEELER_INTERVAL);
+-            conn_type = ConnectionType::FEELER;
+-            fFeeler = true;
+-        } else if (nOutboundFullRelay == m_max_outbound_full_relay &&
+-                   m_max_outbound_full_relay == MAX_OUTBOUND_FULL_RELAY_CONNECTIONS &&
+-                   now > next_extra_network_peer &&
+-                   MaybePickPreferredNetwork(preferred_net)) {
+-            // Full outbound connection management: Attempt to get at least one
+-            // outbound peer from each reachable network by making extra connections
+-            // and then protecting "only" peers from a network during outbound eviction.
+-            // This is not attempted if the user changed -maxconnections to a value
+-            // so low that less than MAX_OUTBOUND_FULL_RELAY_CONNECTIONS are made,
+-            // to prevent interactions with otherwise protected outbound peers.
+-            next_extra_network_peer = now + rng.rand_exp_duration(EXTRA_NETWORK_PEER_INTERVAL);
+-        } else {
++        const auto selection{SelectOutboundConnection(now, nOutboundFullRelay, nOutboundBlockRelay, m_start_extra_block_relay_peers, rng, next_extra_block_relay, next_feeler, next_extra_network_peer)};
++        if (selection.skip) {
+             // skip to next iteration of while loop
+             continue;
+         }
++        conn_type = selection.conn_type;
++        anchor = selection.anchor;
++        fFeeler = selection.feeler;
++        preferred_net = selection.preferred_net;
+ 
+         addrman.get().ResolveCollisions();
+ 
+@@ -2962,10 +2912,9 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect, std
+         if (addrConnect.IsValid()) {
+             if (fFeeler) {
+                 // Add small amount of random noise before connection to avoid synchronization.
+-                if (!m_interrupt_net->sleep_for(rng.rand_uniform_duration<CThreadInterrupt::Clock>(FEELER_SLEEP_WINDOW))) {
++                if (!FeelerSleep(rng, addrConnect)) {
+                     return;
+                 }
+-                LogDebug(BCLog::NET, "Making feeler connection to %s\n", addrConnect.ToStringAddrPort());
+             }
+ 
+             if (preferred_net != std::nullopt) LogDebug(BCLog::NET, "Making network specific connection to %s on %s.\n", addrConnect.ToStringAddrPort(), GetNetworkName(preferred_net.value()));
+@@ -3464,6 +3413,93 @@ void Discover()
+     }
+ }
+ 
++void LimitBlockRelayAnchors(std::vector<CAddress>& anchors)
++{
++    if (anchors.size() > MAX_BLOCK_RELAY_ONLY_ANCHORS) {
++        anchors.resize(MAX_BLOCK_RELAY_ONLY_ANCHORS);
++    }
++}
++
++CConnman::OutboundSelection CConnman::SelectOutboundConnection(std::chrono::microseconds now,
++                                                               int n_outbound_full_relay,
++                                                               int n_outbound_block_relay,
++                                                               bool start_extra_block_relay_peers,
++                                                               FastRandomContext& rng,
++                                                               std::chrono::microseconds& next_extra_block_relay,
++                                                               std::chrono::microseconds& next_feeler,
++                                                               std::chrono::microseconds& next_extra_network_peer)
++{
++    AssertLockNotHeld(m_nodes_mutex);
++    AssertLockNotHeld(m_anchors_mutex);
++    OutboundSelection sel;
++
++    // Only consume anchors while the network is active; otherwise they would be
++    // popped and then dropped by OpenNetworkConnection(), losing them for the
++    // next activation and for the dump at shutdown.
++    const bool have_anchors{fNetworkActive && WITH_LOCK(m_anchors_mutex, return !m_anchors.empty())};
++    if (have_anchors && (n_outbound_block_relay < m_max_outbound_block_relay)) {
++        sel.conn_type = ConnectionType::BLOCK_RELAY;
++        sel.anchor = true;
++    } else if (n_outbound_full_relay < m_max_outbound_full_relay) {
++        // OUTBOUND_FULL_RELAY
++    } else if (n_outbound_block_relay < m_max_outbound_block_relay) {
++        sel.conn_type = ConnectionType::BLOCK_RELAY;
++    } else if (GetTryNewOutboundPeer()) {
++        // OUTBOUND_FULL_RELAY
++    } else if (now > next_extra_block_relay && start_extra_block_relay_peers) {
++        // Periodically connect to a peer (using regular outbound selection
++        // methodology from addrman) and stay connected long enough to sync
++        // headers, but not much else.
++        //
++        // Then disconnect the peer, if we haven't learned anything new.
++        //
++        // The idea is to make eclipse attacks very difficult to pull off,
++        // because every few minutes we're finding a new peer to learn headers
++        // from.
++        //
++        // This is similar to the logic for trying extra outbound (full-relay)
++        // peers, except:
++        // - we do this all the time on an exponential timer, rather than just when
++        //   our tip is stale
++        // - we potentially disconnect our next-youngest block-relay-only peer, if our
++        //   newest block-relay-only peer delivers a block more recently.
++        //   See the eviction logic in net_processing.cpp.
++        //
++        // Because we can promote these connections to block-relay-only
++        // connections, they do not get their own ConnectionType enum
++        // (similar to how we deal with extra outbound peers).
++        next_extra_block_relay = now + rng.rand_exp_duration(EXTRA_BLOCK_RELAY_ONLY_PEER_INTERVAL);
++        sel.conn_type = ConnectionType::BLOCK_RELAY;
++    } else if (now > next_feeler) {
++        next_feeler = now + rng.rand_exp_duration(FEELER_INTERVAL);
++        sel.conn_type = ConnectionType::FEELER;
++        sel.feeler = true;
++    } else if (n_outbound_full_relay == m_max_outbound_full_relay &&
++               m_max_outbound_full_relay == MAX_OUTBOUND_FULL_RELAY_CONNECTIONS &&
++               now > next_extra_network_peer &&
++               MaybePickPreferredNetwork(sel.preferred_net)) {
++        // Full outbound connection management: Attempt to get at least one
++        // outbound peer from each reachable network by making extra connections
++        // and then protecting "only" peers from a network during outbound eviction.
++        // This is not attempted if the user changed -maxconnections to a value
++        // so low that less than MAX_OUTBOUND_FULL_RELAY_CONNECTIONS are made,
++        // to prevent interactions with otherwise protected outbound peers.
++        next_extra_network_peer = now + rng.rand_exp_duration(EXTRA_NETWORK_PEER_INTERVAL);
++    } else {
++        sel.skip = true;
++    }
++    return sel;
++}
++
++bool CConnman::FeelerSleep(FastRandomContext& rng, const CAddress& addr_connect)
++{
++    if (!m_interrupt_net->sleep_for(rng.rand_uniform_duration<CThreadInterrupt::Clock>(FEELER_SLEEP_WINDOW))) {
++        return false;
++    }
++    LogDebug(BCLog::NET, "Making feeler connection to %s\n", addr_connect.ToStringAddrPort());
++    return true;
++}
++
+ void CConnman::SetNetworkActive(bool active)
+ {
+     LogInfo("%s: %s\n", __func__, active);
+@@ -3477,10 +3513,8 @@ void CConnman::SetNetworkActive(bool active)
+         // once the network is re-enabled, or dumped at shutdown. Keep any
+         // not-yet-tried anchors if there are no such peers.
+         auto anchors = GetCurrentBlockRelayOnlyConns();
+-        if (anchors.size() > MAX_BLOCK_RELAY_ONLY_ANCHORS) {
+-            // Keep the oldest peers, as when saving anchors at shutdown.
+-            anchors.resize(MAX_BLOCK_RELAY_ONLY_ANCHORS);
+-        }
++        // Keep the oldest peers, as when saving anchors at shutdown.
++        LimitBlockRelayAnchors(anchors);
+         if (!anchors.empty()) {
+             LOCK(m_anchors_mutex);
+             m_anchors = std::move(anchors);
+@@ -3615,9 +3649,7 @@ bool CConnman::Start(CScheduler& scheduler, const Options& connOptions)
+         // Load addresses from anchors.dat
+         LOCK(m_anchors_mutex);
+         m_anchors = ReadAnchors(gArgs.GetDataDirNet() / ANCHORS_DATABASE_FILENAME);
+-        if (m_anchors.size() > MAX_BLOCK_RELAY_ONLY_ANCHORS) {
+-            m_anchors.resize(MAX_BLOCK_RELAY_ONLY_ANCHORS);
+-        }
++        LimitBlockRelayAnchors(m_anchors);
+         if (fNetworkActive) {
+             LogInfo("%i block-relay-only anchors will be tried for connections.\n", m_anchors.size());
+         }
+@@ -3781,9 +3813,7 @@ void CConnman::StopNodes()
+                     anchors_to_dump = m_anchors;
+                 }
+             }
+-            if (anchors_to_dump.size() > MAX_BLOCK_RELAY_ONLY_ANCHORS) {
+-                anchors_to_dump.resize(MAX_BLOCK_RELAY_ONLY_ANCHORS);
+-            }
++            LimitBlockRelayAnchors(anchors_to_dump);
+             DumpAnchors(gArgs.GetDataDirNet() / ANCHORS_DATABASE_FILENAME, anchors_to_dump);
+         }
+     }
+diff --git a/src/net.h b/src/net.h
+index 88db6ed..d5ee3c3 100644
+--- a/src/net.h
++++ b/src/net.h
+@@ -71,6 +71,13 @@ inline constexpr int MAX_OUTBOUND_FULL_RELAY_CONNECTIONS = 8;
+ inline constexpr int MAX_ADDNODE_CONNECTIONS = 8;
+ /** Maximum number of block-relay-only outgoing connections */
+ inline constexpr int MAX_BLOCK_RELAY_ONLY_CONNECTIONS = 2;
++/** Maximum number of block-relay-only anchors kept for restart. */
++inline constexpr size_t MAX_BLOCK_RELAY_ONLY_ANCHORS = 2;
++static_assert(MAX_BLOCK_RELAY_ONLY_ANCHORS <= static_cast<size_t>(MAX_BLOCK_RELAY_ONLY_CONNECTIONS),
++              "MAX_BLOCK_RELAY_ONLY_ANCHORS must not exceed MAX_BLOCK_RELAY_ONLY_CONNECTIONS.");
++
++/** Keep at most MAX_BLOCK_RELAY_ONLY_ANCHORS entries, preserving the oldest. */
++void LimitBlockRelayAnchors(std::vector<CAddress>& anchors);
+ /** Maximum number of feeler connections */
+ inline constexpr int MAX_FEELER_CONNECTIONS = 1;
+ /** Maximum number of private broadcast connections */
+@@ -1205,6 +1212,36 @@ public:
+                                const std::optional<Proxy>& proxy_override)
+         EXCLUSIVE_LOCKS_REQUIRED(!m_nodes_mutex, !m_unused_i2p_sessions_mutex);
+ 
++    /** Result of choosing the next automatic outbound connection. */
++    struct OutboundSelection {
++        ConnectionType conn_type{ConnectionType::OUTBOUND_FULL_RELAY};
++        bool anchor{false};
++        bool feeler{false};
++        std::optional<Network> preferred_net;
++        //! Caller should sleep and try again instead of opening a connection.
++        bool skip{false};
++    };
++
++    /**
++     * Choose the next outbound connection once the caller has counted open slots.
++     * Updates the feeler and extra-peer timers when those branches are taken.
++     */
++    OutboundSelection SelectOutboundConnection(std::chrono::microseconds now,
++                                               int n_outbound_full_relay,
++                                               int n_outbound_block_relay,
++                                               bool start_extra_block_relay_peers,
++                                               FastRandomContext& rng,
++                                               std::chrono::microseconds& next_extra_block_relay,
++                                               std::chrono::microseconds& next_feeler,
++                                               std::chrono::microseconds& next_extra_network_peer)
++        EXCLUSIVE_LOCKS_REQUIRED(!m_nodes_mutex, !m_anchors_mutex);
++
++    /**
++     * Short random delay before a feeler connection.
++     * @retval false interrupted
++     */
++    bool FeelerSleep(FastRandomContext& rng, const CAddress& addr_connect);
++
+     /// Group of private broadcast related members.
+     class PrivateBroadcast
+     {
+diff --git a/src/test/CMakeLists.txt b/src/test/CMakeLists.txt
+index 62f6f71..2df34fb 100644
+--- a/src/test/CMakeLists.txt
++++ b/src/test/CMakeLists.txt
+@@ -40,6 +40,7 @@ add_executable(test_bitcoin
+   coinsviewoverlay_tests.cpp
+   common_url_tests.cpp
+   compress_tests.cpp
++  coverage_pin_tests.cpp
+   crypto_tests.cpp
+   cuckoocache_tests.cpp
+   dbwrapper_tests.cpp
+diff --git a/src/test/addrman_tests.cpp b/src/test/addrman_tests.cpp
+index 1cbc417..990f958 100644
+--- a/src/test/addrman_tests.cpp
++++ b/src/test/addrman_tests.cpp
+@@ -1238,4 +1238,18 @@ BOOST_AUTO_TEST_CASE(addrman_size)
+     BOOST_CHECK_EQUAL(addrman->Size(/*net=*/std::nullopt, /*in_new=*/false), 1U);
+ }
+ 
++BOOST_AUTO_TEST_CASE(addrman_tried_entry_not_updated)
++{
++    auto addrman{std::make_unique<AddrMan>(EMPTY_NETGROUPMAN, DETERMINISTIC, GetCheckRatio(m_node))};
++    const CNetAddr source{ResolveIP("252.2.2.2")};
++    CAddress addr{ResolveService("250.7.7.7", 8333), NODE_NONE};
++    addr.nTime = Now<NodeSeconds>() - 2h;
++    BOOST_REQUIRE(addrman->Add({addr}, source));
++    BOOST_REQUIRE(addrman->Good(addr, addr.nTime));
++
++    // Newer than the stored time, but not by a full update interval, and already in tried.
++    addr.nTime += 1s;
++    BOOST_CHECK(!addrman->Add({addr}, source));
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/baseindex_tests.cpp b/src/test/baseindex_tests.cpp
+index 1d8ae17..0200d3c 100644
+--- a/src/test/baseindex_tests.cpp
++++ b/src/test/baseindex_tests.cpp
+@@ -241,4 +241,15 @@ BOOST_FIXTURE_TEST_CASE(index_reorg_crash, TestChain100Setup)
+     index.Stop();
+ }
+ 
++BOOST_FIXTURE_TEST_CASE(index_commit_before_any_block, TestChain100Setup)
++{
++    auto index{std::make_unique<TxIndex>(interfaces::MakeChain(m_node), /*n_cache_size=*/1_MiB)};
++    BOOST_REQUIRE(index->Init());
++    // Interrupt before the background sync indexes anything. Sync() then commits
++    // with a null best block, which is the "Failed to commit" log.
++    index->Interrupt();
++    BOOST_REQUIRE(index->StartBackgroundSync());
++    index->Stop();
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/blockpolicyestimator_tests.cpp b/src/test/blockpolicyestimator_tests.cpp
+index 0c2cec6..75b8d61 100644
+--- a/src/test/blockpolicyestimator_tests.cpp
++++ b/src/test/blockpolicyestimator_tests.cpp
+@@ -211,4 +211,76 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
+     }
+ }
+ 
++BOOST_AUTO_TEST_CASE(BlockPolicyDoubleEstimateReason)
++{
++    CBlockPolicyEstimator feeEst{BlockPolicyFeeEstPath(*m_node.args), DEFAULT_ACCEPT_STALE_FEE_ESTIMATES};
++    TestMemPoolEntryHelper entry;
++    CScript garbage;
++    for (unsigned int i = 0; i < 128; i++) garbage.push_back('X');
++    CMutableTransaction tx;
++    tx.vin.resize(1);
++    tx.vin[0].scriptSig = garbage;
++    tx.vout.resize(1);
++    tx.vout[0].nValue = 0;
++
++    const CAmount low_fee{2000};
++    const CAmount high_fee{20000};
++
++    struct HeldLow {
++        CTxMemPoolEntry entry;
++        int tx_height;
++        bool drop;
++        HeldLow(CTxMemPoolEntry e, int height, bool drop_in) : entry(std::move(e)), tx_height(height), drop(drop_in) {}
++    };
++    std::list<HeldLow> pending;
++
++    // processTransaction only tracks a transaction whose height equals the last
++    // block the estimator has seen. Confirmations are counted from that height.
++    unsigned int seen{0};
++    for (int i = 0; i < 80; ++i) {
++        std::vector<RemovedMempoolTransactionInfo> block;
++
++        tx.vin[0].prevout.n = 100000 + i;
++        const auto high_ref{MakeTransactionRef(tx)};
++        auto high_entry{entry.Fee(high_fee).Time(Now<NodeSeconds>()).Height(seen).FromTx(tx)};
++        feeEst.processTransaction(NewMempoolTransactionInfo(high_ref, high_fee, GetVirtualTransactionSize(*high_ref), high_entry.GetHeight(),
++                                                             /*mempool_limit_bypassed=*/false, /*submitted_in_package=*/false,
++                                                             /*chainstate_is_current=*/true, /*has_no_mempool_parents=*/true));
++        block.emplace_back(high_entry);
++
++        for (auto it = pending.begin(); it != pending.end();) {
++            const int age{static_cast<int>(seen) - it->tx_height};
++            // Included in the block at seen+1, so age 1 confirms in 2 blocks.
++            if (!it->drop && age == 1) {
++                block.emplace_back(it->entry);
++                it = pending.erase(it);
++            } else if (it->drop && age >= 8) {
++                feeEst.removeTx(it->entry.GetTx().GetHash());
++                it = pending.erase(it);
++            } else {
++                ++it;
++            }
++        }
++
++        for (int k = 0; k < 10; ++k) {
++            tx.vin[0].prevout.n = 10000 * i + k;
++            const auto low_ref{MakeTransactionRef(tx)};
++            auto low_entry{entry.Fee(low_fee).Time(Now<NodeSeconds>()).Height(seen).FromTx(tx)};
++            feeEst.processTransaction(NewMempoolTransactionInfo(low_ref, low_fee, GetVirtualTransactionSize(*low_ref), low_entry.GetHeight(),
++                                                                 /*mempool_limit_bypassed=*/false, /*submitted_in_package=*/false,
++                                                                 /*chainstate_is_current=*/true, /*has_no_mempool_parents=*/true));
++            pending.emplace_back(std::move(low_entry), static_cast<int>(seen), /*drop_in=*/k == 9);
++        }
++
++        feeEst.processBlock(block, seen + 1);
++        ++seen;
++    }
++
++    FeeCalculation calc;
++    const CFeeRate rate{feeEst.estimateSmartFee(/*confTarget=*/4, &calc, /*conservative=*/false)};
++    BOOST_CHECK(rate > CFeeRate{0});
++    BOOST_CHECK_MESSAGE(calc.reason == BlockPolicyEstimateReason::DOUBLE_ESTIMATE, StringForBlockPolicyEstimateReason(calc.reason));
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(BlockPolicyEstimateReason::DOUBLE_ESTIMATE), "Double Target 95% Threshold");
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/cluster_linearize_tests.cpp b/src/test/cluster_linearize_tests.cpp
+index 4f851c1..5dd7f6d 100644
+--- a/src/test/cluster_linearize_tests.cpp
++++ b/src/test/cluster_linearize_tests.cpp
+@@ -482,4 +482,16 @@ BOOST_AUTO_TEST_CASE(depgraph_optimal_tests)
+     TestOptimalLinearization("866faa23008646b71501851f96130282588f1103804d851c0000000003822097600100000003850a8f310200000003856e9201000000038656935f01000003855b8f5f020000018743923a0000000a812b810b010000098403a328020000068712970203000005833e98400400000200"_hex_u8, {11, 14, 1, 10, 4, 3, 5, 13, 9, 7, 6, 12, 8, 0, 2});
+ }
+ 
++BOOST_AUTO_TEST_CASE(postlinearize_swaps_independent_higher_feerate)
++{
++    DepGraph<BitSet<64>> depgraph;
++    depgraph.AddTransaction(FeeFrac{100, 100});
++    depgraph.AddTransaction(FeeFrac{500, 100});
++    std::vector<DepGraphIndex> lin{0, 1};
++    PostLinearize(depgraph, std::span{lin});
++    BOOST_CHECK_EQUAL(lin.at(0), 1U);
++    BOOST_CHECK_EQUAL(lin.at(1), 0U);
++    SanityCheck(depgraph);
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/coverage_pin_tests.cpp b/src/test/coverage_pin_tests.cpp
+new file mode 100644
+index 0000000..3501611
+--- /dev/null
++++ b/src/test/coverage_pin_tests.cpp
+@@ -0,0 +1,543 @@
++// Copyright (c) 2026-present The Bitcoin Core developers
++// Distributed under the MIT software license, see the accompanying
++// file COPYING or http://www.opensource.org/licenses/mit-license.php.
++
++#include <compat/compat.h>
++#include <chain.h>
++#include <consensus/validation.h>
++#include <dbwrapper.h>
++#include <httpserver.h>
++#include <kernel/cs_main.h>
++#include <net.h>
++#include <net_processing.h>
++#include <netbase.h>
++#include <netmessagemaker.h>
++#include <node/miner.h>
++#include <node/peerman_args.h>
++#include <pow.h>
++#include <primitives/block.h>
++#include <primitives/transaction.h>
++#include <protocol.h>
++#include <script/script.h>
++#include <script/solver.h>
++#include <streams.h>
++#include <test/util/net.h>
++#include <test/util/setup_common.h>
++#include <test/util/txmempool.h>
++#include <test/util/validation.h>
++#include <torcontrol.h>
++#include <txdb.h>
++#include <txgraph.h>
++#include <tinyformat.h>
++#include <util/feefrac.h>
++#include <util/fs.h>
++#include <util/time.h>
++
++#include <netinet/in.h>
++#include <sys/socket.h>
++#include <validation.h>
++
++#include <boost/test/unit_test.hpp>
++
++#include <atomic>
++#include <chrono>
++#include <cstring>
++#include <memory>
++#include <string>
++#include <thread>
++#include <utility>
++#include <vector>
++
++using namespace std::chrono_literals;
++
++extern std::chrono::milliseconds g_socks5_recv_timeout;
++
++namespace {
++
++void CloseSocket(SOCKET fd)
++{
++#ifdef WIN32
++    closesocket(fd);
++#else
++    close(fd);
++#endif
++}
++
++struct MockTimeGuard {
++    ~MockTimeGuard() { SetMockTime(0s); }
++};
++
++std::unique_ptr<CNode> MakeOutbound(NodeId id, const CAddress& addr)
++{
++    return std::make_unique<CNode>(id,
++                                   /*sock=*/nullptr,
++                                   addr,
++                                   /*nKeyedNetGroupIn=*/0,
++                                   /*nLocalHostNonceIn=*/0,
++                                   /*addrBindIn=*/CService{},
++                                   /*addrNameIn=*/std::string{},
++                                   ConnectionType::OUTBOUND_FULL_RELAY,
++                                   /*inbound_onion=*/false,
++                                   /*network_key=*/1);
++}
++
++CAddress RoutableAddress(const std::string& ip, uint16_t port)
++{
++    const CService service{Lookup(ip, port, /*fAllowLookup=*/false).value()};
++    return CAddress{service, NODE_NONE};
++}
++
++struct AcceptedSocket {
++    SOCKET listen_fd{INVALID_SOCKET};
++    uint16_t port{0};
++    explicit AcceptedSocket()
++    {
++        listen_fd = static_cast<SOCKET>(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
++        BOOST_REQUIRE(listen_fd != INVALID_SOCKET);
++        sockaddr_in addr{};
++        addr.sin_family = AF_INET;
++        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
++        addr.sin_port = 0;
++        BOOST_REQUIRE_EQUAL(bind(listen_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)), 0);
++        BOOST_REQUIRE_EQUAL(listen(listen_fd, 1), 0);
++        socklen_t len{sizeof(addr)};
++        BOOST_REQUIRE_EQUAL(getsockname(listen_fd, reinterpret_cast<sockaddr*>(&addr), &len), 0);
++        port = ntohs(addr.sin_port);
++    }
++    ~AcceptedSocket()
++    {
++        if (listen_fd != INVALID_SOCKET) CloseSocket(listen_fd);
++    }
++    std::pair<std::unique_ptr<Sock>, SOCKET> ConnectClient() const
++    {
++        sockaddr_in addr{};
++        addr.sin_family = AF_INET;
++        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
++        addr.sin_port = htons(port);
++        const SOCKET client{static_cast<SOCKET>(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))};
++        BOOST_REQUIRE(client != INVALID_SOCKET);
++        BOOST_REQUIRE_EQUAL(connect(client, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)), 0);
++        sockaddr_in peer{};
++        socklen_t plen{sizeof(peer)};
++        const SOCKET server{static_cast<SOCKET>(accept(listen_fd, reinterpret_cast<sockaddr*>(&peer), &plen))};
++        BOOST_REQUIRE(server != INVALID_SOCKET);
++        return {std::make_unique<Sock>(client), server};
++    }
++};
++
++} // namespace
++
++BOOST_FIXTURE_TEST_SUITE(coverage_pin_tests, TestChain100Setup)
++
++BOOST_AUTO_TEST_CASE(anchor_limit_resize)
++{
++    std::vector<CAddress> anchors{
++        RoutableAddress("1.2.3.4", 8333),
++        RoutableAddress("1.2.3.5", 8333),
++        RoutableAddress("1.2.3.6", 8333),
++    };
++    LimitBlockRelayAnchors(anchors);
++    BOOST_CHECK_EQUAL(anchors.size(), MAX_BLOCK_RELAY_ONLY_ANCHORS);
++    BOOST_CHECK_EQUAL(anchors.front().ToStringAddr(), "1.2.3.4");
++}
++
++BOOST_AUTO_TEST_CASE(outbound_selection_feeler_and_extra_block_relay)
++{
++    ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++    FastRandomContext rng{/*fDeterministic=*/true};
++    const auto now{GetTime<std::chrono::microseconds>()};
++    auto next_extra_block_relay{now + 1h};
++    auto next_feeler{now - 1s};
++    auto next_extra_network_peer{now + 1h};
++
++    const auto feeler{connman.SelectOutboundConnection(now,
++                                                       /*n_outbound_full_relay=*/MAX_OUTBOUND_FULL_RELAY_CONNECTIONS,
++                                                       /*n_outbound_block_relay=*/MAX_BLOCK_RELAY_ONLY_CONNECTIONS,
++                                                       /*start_extra_block_relay_peers=*/false,
++                                                       rng,
++                                                       next_extra_block_relay,
++                                                       next_feeler,
++                                                       next_extra_network_peer)};
++    BOOST_CHECK(feeler.feeler);
++    BOOST_CHECK(!feeler.skip);
++    BOOST_CHECK(feeler.conn_type == ConnectionType::FEELER);
++    BOOST_CHECK(next_feeler > now);
++
++    next_extra_block_relay = now - 1s;
++    next_feeler = now - 1s;
++    const auto extra{connman.SelectOutboundConnection(now,
++                                                      MAX_OUTBOUND_FULL_RELAY_CONNECTIONS,
++                                                      MAX_BLOCK_RELAY_ONLY_CONNECTIONS,
++                                                      /*start_extra_block_relay_peers=*/true,
++                                                      rng,
++                                                      next_extra_block_relay,
++                                                      next_feeler,
++                                                      next_extra_network_peer)};
++    BOOST_CHECK(!extra.feeler);
++    BOOST_CHECK(!extra.anchor);
++    BOOST_CHECK(!extra.skip);
++    BOOST_CHECK(extra.conn_type == ConnectionType::BLOCK_RELAY);
++    BOOST_CHECK(next_extra_block_relay > now);
++}
++
++BOOST_AUTO_TEST_CASE(feeler_sleep_interrupt_and_complete)
++{
++    FastRandomContext rng{/*fDeterministic=*/true};
++    const CAddress addr{RoutableAddress("1.2.3.4", 8333)};
++    {
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        connman.Interrupt();
++        BOOST_CHECK(!connman.FeelerSleep(rng, addr));
++    }
++    ConnmanTestMsg connman{0x1338, 0x1338, *m_node.addrman, *m_node.netgroupman, Params()};
++    const auto start{SteadyClock::now()};
++    BOOST_CHECK(connman.FeelerSleep(rng, addr));
++    BOOST_CHECK(SteadyClock::now() - start < 2s);
++}
++
++BOOST_AUTO_TEST_CASE(open_network_connection_early_returns_and_delete_node)
++{
++    const CAddress addr{RoutableAddress("8.8.8.8", 8333)};
++    {
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        connman.SetNetworkActive(false);
++        BOOST_CHECK(!connman.OpenNetworkConnection(addr, /*fCountFailure=*/false, CountingSemaphoreGrant<>{},
++                                                   /*pszDest=*/nullptr, ConnectionType::OUTBOUND_FULL_RELAY,
++                                                   /*use_v2transport=*/false, /*proxy_override=*/std::nullopt));
++    }
++    {
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        connman.Interrupt();
++        BOOST_CHECK(!connman.OpenNetworkConnection(addr, /*fCountFailure=*/false, CountingSemaphoreGrant<>{},
++                                                   /*pszDest=*/nullptr, ConnectionType::OUTBOUND_FULL_RELAY,
++                                                   /*use_v2transport=*/false, /*proxy_override=*/std::nullopt));
++    }
++    {
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        auto* node{new CNode{NodeId{0}, nullptr, addr, 0, 0, CService{}, std::string{}, ConnectionType::OUTBOUND_FULL_RELAY, false, 1}};
++        connman.AddTestNode(*node);
++        BOOST_CHECK(!connman.OpenNetworkConnection(addr, /*fCountFailure=*/false, CountingSemaphoreGrant<>{},
++                                                   /*pszDest=*/nullptr, ConnectionType::OUTBOUND_FULL_RELAY,
++                                                   /*use_v2transport=*/false, /*proxy_override=*/std::nullopt));
++        connman.ClearTestNodes();
++    }
++    {
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        connman.SetMsgProc(m_node.peerman.get());
++        auto* node{new CNode{NodeId{0}, nullptr, addr, 0, 0, CService{}, std::string{}, ConnectionType::OUTBOUND_FULL_RELAY, false, 1}};
++        connman.AddTestNode(*node);
++        m_node.peerman->InitializeNode(*node, NODE_NETWORK);
++        connman.StopNodes();
++        BOOST_CHECK(connman.TestNodes().empty());
++    }
++}
++
++BOOST_AUTO_TEST_CASE(http_peer_and_disconnect)
++{
++    HTTPRequest request;
++    BOOST_CHECK_EQUAL(request.GetPeer().ToStringAddrPort(), CService{}.ToStringAddrPort());
++
++    const auto client{std::make_shared<HTTPRemoteClient>(HTTPServer::Id{1}, CService{}, std::make_unique<ZeroSock>())};
++    BOOST_CHECK(!client->MaybeDisconnect(SteadyClock::now(), /*rpcservertimeout=*/0s, /*disconnect_all=*/true));
++}
++
++BOOST_AUTO_TEST_CASE(load_external_block_file_magic_mismatch)
++{
++    const fs::path path{m_node.args->GetDataDirNet() / "coverage_pin_blocks.dat"};
++    {
++        const auto magic{Params().MessageStart()};
++        FILE* raw{fsbridge::fopen(path, "wb")};
++        BOOST_REQUIRE(raw);
++        const unsigned char bytes[8]{magic[0], 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04};
++        BOOST_REQUIRE_EQUAL(fwrite(bytes, 1, sizeof(bytes), raw), sizeof(bytes));
++        BOOST_REQUIRE_EQUAL(fclose(raw), 0);
++    }
++    AutoFile file{fsbridge::fopen(path, "rb")};
++    BOOST_REQUIRE(!file.IsNull());
++    m_node.chainman->LoadExternalBlockFile(file);
++}
++
++BOOST_AUTO_TEST_CASE(coinsview_destructor_waits_for_compaction)
++{
++    DBParams params;
++    params.path = m_node.args->GetDataDirNet() / "coverage_pin_chainstate";
++    params.cache_bytes = 1 << 20;
++    params.memory_only = true;
++    params.wipe_data = true;
++    auto hold{std::make_shared<std::atomic<bool>>(true)};
++    auto view{std::make_unique<CCoinsViewDB>(params, CoinsViewOptions{})};
++    view->SetTestCompactionHold(hold);
++    {
++        LOCK(cs_main);
++        view->CompactFullAsync();
++    }
++    std::thread destroyer{[&] { view.reset(); }};
++    std::this_thread::sleep_for(50ms);
++    hold->store(false, std::memory_order_release);
++    destroyer.join();
++}
++
++BOOST_AUTO_TEST_CASE(txgraph_acceptable_quality)
++{
++    auto graph{MakeTxGraph(/*max_cluster_count=*/64,
++                           /*max_cluster_size=*/100'000,
++                           /*acceptable_cost=*/0,
++                           [](const TxGraph::Ref& a, const TxGraph::Ref& b) noexcept { return (&a) <=> (&b); })};
++    std::vector<TxGraph::Ref> refs(8);
++    for (size_t i{0}; i < refs.size(); ++i) {
++        graph->AddTransaction(refs[i], FeePerWeight{int64_t(1000 - static_cast<int>(i) * 10), 100});
++    }
++    for (size_t i{1}; i < refs.size(); ++i) {
++        graph->AddDependency(/*parent=*/refs[i - 1], /*child=*/refs[i]);
++    }
++    // Budget is enough to enter Relinearize and not enough to prove optimality.
++    graph->DoWork(/*max_cost=*/1);
++    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), static_cast<TxGraph::GraphIndex>(refs.size()));
++}
++
++BOOST_AUTO_TEST_CASE(miner_gives_up_near_full_block)
++{
++    CTxMemPool& pool{*Assert(m_node.mempool)};
++    TestMemPoolEntryHelper entry;
++    CMutableTransaction tx;
++    tx.vin.resize(1);
++    tx.vin[0].scriptSig = CScript() << std::vector<unsigned char>(250, OP_TRUE);
++    tx.vout.resize(1);
++    tx.vout[0].nValue = 1 * COIN;
++    tx.vout[0].scriptPubKey = CScript() << OP_TRUE;
++
++    constexpr int heavy_count{1001};
++    {
++        LOCK2(cs_main, pool.cs);
++        auto changeset{pool.GetChangeSet()};
++        for (int i{0}; i < heavy_count; ++i) {
++            tx.vin[0].prevout.n = i;
++            const auto heavy{entry.Fee(50'000).Time(Now<NodeSeconds>()).Height(1).FromTx(tx)};
++            changeset->StageAddition(heavy.GetSharedTx(), heavy.GetFee(), heavy.GetTime().count(), heavy.GetHeight(),
++                                     heavy.GetSequence(), heavy.GetSpendsCoinbase(), heavy.GetSigOpCost(), heavy.GetLockPoints());
++        }
++        tx.vin[0].scriptSig = CScript() << OP_TRUE;
++        tx.vin[0].prevout.n = heavy_count;
++        const auto small{entry.Fee(5'000).Time(Now<NodeSeconds>()).Height(1).FromTx(tx)};
++        changeset->StageAddition(small.GetSharedTx(), small.GetFee(), small.GetTime().count(), small.GetHeight(),
++                                 small.GetSequence(), small.GetSpendsCoinbase(), small.GetSigOpCost(), small.GetLockPoints());
++        BOOST_REQUIRE(changeset->CheckMemPoolPolicyLimits());
++        changeset->Apply();
++    }
++
++    node::BlockCreateOptions options;
++    options.block_reserved_weight = 4000;
++    options.block_max_weight = 5000;
++    Chainstate& chainstate{WITH_LOCK(cs_main, return m_node.chainman->ActiveChainstate())};
++    node::BlockAssembler assembler{chainstate, &pool, options};
++    const auto block_template{assembler.CreateNewBlock()};
++    BOOST_REQUIRE(block_template);
++    // The trailing small transaction would fit, and is absent because assembly gave up.
++    BOOST_CHECK_EQUAL(block_template->block.vtx.size(), 1U);
++}
++
++BOOST_AUTO_TEST_CASE(net_processing_activation_announcement_and_pong)
++{
++    LOCK(NetEventsInterface::g_msgproc_mutex);
++    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
++    auto& chainman{static_cast<TestChainstateManager&>(*m_node.chainman)};
++    if (chainman.IsInitialBlockDownload()) chainman.JumpOutOfIbd();
++    m_node.validation_signals->RegisterValidationInterface(m_node.peerman.get());
++
++    const auto peer{MakeOutbound(/*id=*/1, RoutableAddress("8.8.4.4", 8333))};
++    connman.Handshake(*peer,
++                      /*successfully_connected=*/true,
++                      ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      PROTOCOL_VERSION,
++                      /*relay_txs=*/true);
++
++    const uint256 tip_hash{WITH_LOCK(cs_main, return m_node.chainman->ActiveChain().Tip()->GetBlockHash())};
++    uint32_t saved_status{0};
++    {
++        LOCK(cs_main);
++        CBlockIndex* tip{m_node.chainman->m_blockman.LookupBlockIndex(tip_hash)};
++        saved_status = tip->nStatus;
++        tip->nStatus = (tip->nStatus & ~BLOCK_VALID_MASK) | BLOCK_VALID_TREE;
++    }
++    connman.FlushSendBuffer(*peer);
++    Assert(connman.ReceiveMsgFrom(*peer, NetMsg::Make(NetMsgType::GETDATA, std::vector<CInv>{CInv{MSG_BLOCK, tip_hash}})));
++    peer->fPauseSend = false;
++    connman.ProcessMessagesOnce(*peer);
++    {
++        LOCK(cs_main);
++        CBlockIndex* tip{m_node.chainman->m_blockman.LookupBlockIndex(tip_hash)};
++        tip->nStatus = saved_status;
++    }
++
++    connman.FlushSendBuffer(*peer);
++    Assert(connman.ReceiveMsgFrom(*peer, NetMsg::Make(NetMsgType::GETBLOCKS, CBlockLocator{}, uint256{})));
++    peer->fPauseSend = false;
++    connman.ProcessMessagesOnce(*peer);
++
++    CBlockIndex* prev_tip{WITH_LOCK(cs_main, return m_node.chainman->ActiveChain().Tip())};
++    CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
++    m_node.validation_signals->SyncWithValidationInterfaceQueue();
++    CBlockIndex* mined{WITH_LOCK(cs_main, return m_node.chainman->ActiveChain().Tip())};
++    BOOST_REQUIRE(mined != prev_tip);
++    {
++        LOCK(cs_main);
++        m_node.chainman->ActiveChain().SetTip(*prev_tip);
++    }
++    m_node.peerman->SendMessages(*peer);
++    {
++        LOCK(cs_main);
++        m_node.chainman->ActiveChain().SetTip(*mined);
++    }
++
++    MockTimeGuard mock_guard;
++    SetMockTime(1'700'000'000s);
++    uint64_t nonce{0};
++    const auto capture_orig{CaptureMessage};
++    CaptureMessage = [&](const CAddress&, const std::string& msg_type, std::span<const unsigned char> data, bool is_incoming) {
++        if (!is_incoming && msg_type == NetMsgType::PING && data.size() >= sizeof(uint64_t)) {
++            SpanReader reader{data};
++            reader >> nonce;
++        }
++    };
++    connman.SetCaptureMessages(true);
++    m_node.peerman->SendPings();
++    m_node.peerman->SendMessages(*peer);
++    connman.SetCaptureMessages(false);
++    CaptureMessage = capture_orig;
++    BOOST_REQUIRE_NE(nonce, 0U);
++    SetMockTime(1'700'000'000s - 30s);
++    connman.FlushSendBuffer(*peer);
++    Assert(connman.ReceiveMsgFrom(*peer, NetMsg::Make(NetMsgType::PONG, nonce)));
++    peer->fPauseSend = false;
++    connman.ProcessMessagesOnce(*peer);
++
++    m_node.validation_signals->SyncWithValidationInterfaceQueue();
++    m_node.validation_signals->UnregisterValidationInterface(m_node.peerman.get());
++    m_node.peerman->FinalizeNode(*peer);
++}
++
++BOOST_AUTO_TEST_SUITE_END()
++
++struct PresyncSetup : public TestingSetup {
++    PresyncSetup()
++        : TestingSetup{ChainType::REGTEST, TestOpts{
++                                               .extra_args = {"-minimumchainwork=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
++                                           }}
++    {
++    }
++};
++
++BOOST_FIXTURE_TEST_SUITE(coverage_pin_presync_tests, PresyncSetup)
++
++BOOST_AUTO_TEST_CASE(headers_presync_height)
++{
++    LOCK(NetEventsInterface::g_msgproc_mutex);
++    MockTimeGuard mock_guard;
++    const int64_t genesis_time{Params().GenesisBlock().nTime};
++    SetMockTime(std::chrono::seconds{genesis_time + 10'000});
++
++    std::vector<CBlock> headers;
++    headers.reserve(MAX_HEADERS_RESULTS);
++    uint256 prev{Params().GenesisBlock().GetHash()};
++    uint32_t header_time{static_cast<uint32_t>(genesis_time + 1)};
++    const uint32_t bits{Params().GenesisBlock().nBits};
++    for (unsigned i{0}; i < MAX_HEADERS_RESULTS; ++i) {
++        CBlock header;
++        header.nVersion = 1;
++        header.hashPrevBlock = prev;
++        header.hashMerkleRoot = uint256::ONE;
++        header.nTime = header_time++;
++        header.nBits = bits;
++        header.nNonce = 0;
++        while (!CheckProofOfWork(header.GetHash(), header.nBits, Params().GetConsensus())) {
++            ++header.nNonce;
++        }
++        prev = header.GetHash();
++        headers.push_back(std::move(header));
++    }
++
++    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
++    const auto peer{MakeOutbound(/*id=*/1, RoutableAddress("8.8.4.4", 8333))};
++    connman.Handshake(*peer,
++                      /*successfully_connected=*/true,
++                      ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      PROTOCOL_VERSION,
++                      /*relay_txs=*/false);
++    connman.FlushSendBuffer(*peer);
++    Assert(connman.ReceiveMsgFrom(*peer, NetMsg::Make(NetMsgType::HEADERS, TX_WITH_WITNESS(headers))));
++    peer->fPauseSend = false;
++    connman.ProcessMessagesOnce(*peer);
++
++    CNodeStateStats stats;
++    BOOST_REQUIRE(m_node.peerman->GetNodeStateStats(peer->GetId(), stats));
++    BOOST_CHECK_EQUAL(stats.presync_height, static_cast<int64_t>(MAX_HEADERS_RESULTS));
++    m_node.peerman->FinalizeNode(*peer);
++}
++
++BOOST_AUTO_TEST_SUITE_END()
++
++BOOST_FIXTURE_TEST_SUITE(coverage_pin_netbase_tests, BasicTestingSetup)
++
++BOOST_AUTO_TEST_CASE(socks5_interrupted_and_network_error)
++{
++    const auto saved_timeout{g_socks5_recv_timeout};
++    g_socks5_recv_timeout = 2s;
++    const auto restore{[&] {
++        g_socks5_interrupt.reset();
++        g_socks5_recv_timeout = saved_timeout;
++    }};
++
++    {
++        AcceptedSocket listener;
++        auto [client, server_fd] = listener.ConnectClient();
++        BOOST_REQUIRE(client->SetNonBlocking());
++        std::thread peer{[server_fd] {
++            char buf[8];
++            (void)recv(server_fd, buf, sizeof(buf), 0);
++            g_socks5_interrupt();
++            CloseSocket(server_fd);
++        }};
++        BOOST_CHECK(!Socks5("example.com", 80, /*auth=*/nullptr, *client));
++        peer.join();
++        restore();
++    }
++    {
++        AcceptedSocket listener;
++        auto [client, server_fd] = listener.ConnectClient();
++        BOOST_REQUIRE(client->SetNonBlocking());
++        linger lin{};
++        lin.l_onoff = 1;
++        lin.l_linger = 0;
++        BOOST_REQUIRE_EQUAL(setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin)), 0);
++        std::thread peer{[server_fd] {
++            char buf[8];
++            (void)recv(server_fd, buf, sizeof(buf), 0);
++            CloseSocket(server_fd);
++        }};
++        BOOST_CHECK(!Socks5("example.com", 80, /*auth=*/nullptr, *client));
++        peer.join();
++        restore();
++    }
++}
++
++BOOST_AUTO_TEST_CASE(tor_control_lost_connection)
++{
++    AcceptedSocket listener;
++    std::thread accepter{[&listener] {
++        sockaddr_in peer{};
++        socklen_t plen{sizeof(peer)};
++        const SOCKET server{static_cast<SOCKET>(accept(listener.listen_fd, reinterpret_cast<sockaddr*>(&peer), &plen))};
++        if (server == INVALID_SOCKET) return;
++        std::this_thread::sleep_for(200ms);
++        CloseSocket(server);
++    }};
++    {
++        TorController controller{strprintf("127.0.0.1:%u", listener.port), CService{}};
++        std::this_thread::sleep_for(800ms);
++    }
++    accepter.join();
++}
++
++BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/crypto_tests.cpp b/src/test/crypto_tests.cpp
+index 2fdb835..434c737 100644
+--- a/src/test/crypto_tests.cpp
++++ b/src/test/crypto_tests.cpp
+@@ -1129,6 +1129,26 @@ BOOST_AUTO_TEST_CASE(keccak_tests)
+     BOOST_CHECK_EQUAL(out.ToString(), "5f4a7f2eca7d57740ef9f1a077b4fc67328092ec62620447fe27ad8ed5f7e34f");
+ }
+ 
++BOOST_AUTO_TEST_CASE(sha3_256_partial_buffer_rate_boundary)
++{
++    // 129 bytes fills the 8-byte buffer on a rate boundary (RATE_BUFFERS == 17),
++    // then 7 more bytes take the fill path that permutes before the direct loop.
++    std::vector<unsigned char> data(136);
++    for (size_t i = 0; i < data.size(); ++i) data[i] = static_cast<unsigned char>(i);
++
++    SHA3_256 split;
++    split.Write(std::span{data}.first(129));
++    split.Write(std::span{data}.subspan(129));
++    unsigned char out_split[SHA3_256::OUTPUT_SIZE];
++    split.Finalize(out_split);
++
++    SHA3_256 once;
++    once.Write(data);
++    unsigned char out_once[SHA3_256::OUTPUT_SIZE];
++    once.Finalize(out_once);
++    BOOST_CHECK(std::equal(std::begin(out_split), std::end(out_split), std::begin(out_once)));
++}
++
+ BOOST_AUTO_TEST_CASE(sha3_256_tests)
+ {
+     // Test vectors from https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/sha-3bytetestvectors.zip
+diff --git a/src/test/rpc_tests.cpp b/src/test/rpc_tests.cpp
+index d574e1e..2bde777 100644
+--- a/src/test/rpc_tests.cpp
++++ b/src/test/rpc_tests.cpp
+@@ -3,6 +3,10 @@
+ // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ 
+ #include <core_io.h>
++#include <httprpc.h>
++#include <key.h>
++#include <rpc/protocol.h>
++#include <rpc/request.h>
+ #include <interfaces/chain.h>
+ #include <node/context.h>
+ #include <rpc/blockchain.h>
+@@ -13,6 +17,7 @@
+ #include <test/util/setup_common.h>
+ #include <test/util/time.h>
+ #include <univalue.h>
++#include <util/strencodings.h>
+ #include <util/time.h>
+ 
+ #include <any>
+@@ -676,4 +681,51 @@ BOOST_AUTO_TEST_CASE(rpc_arg_helper)
+     CheckRpc(params, UniValue{JSON(R"([5, "hello", 4, "test", true, 1.23, "world"])")}, check_positional);
+ }
+ 
++BOOST_AUTO_TEST_CASE(rpc_invalid_params_type)
++{
++    JSONRPCRequest request;
++    BOOST_CHECK_EXCEPTION(request.parse(JSON(R"({"method":"getblockcount","params":"nope"})")), UniValue,
++                          HasJSON(R"({"code":-32600,"message":"Params must be an array or object"})"));
++    BOOST_CHECK_EXCEPTION(request.parse(JSON(R"({"method":"getblockcount","params":1})")), UniValue,
++                          HasJSON(R"({"code":-32600,"message":"Params must be an array or object"})"));
++}
++
++BOOST_AUTO_TEST_CASE(rpc_http_toplevel_parse_error)
++{
++    const std::string expected{R"({"result":null,"error":{"code":-32700,"message":"Top-level object parse error"},"id":null})"};
++    for (const char* body : {R"("hello")", "1"}) {
++        JSONRPCRequest request;
++        HTTPStatusCode status{HTTP_OK};
++        const UniValue reply{ExecuteHTTPRPC(JSON(body), request, status)};
++        BOOST_CHECK_EQUAL(status, HTTP_INTERNAL_SERVER_ERROR);
++        BOOST_CHECK_EQUAL(reply.write(), expected);
++    }
++}
++
++BOOST_AUTO_TEST_CASE(rpc_getblocktemplate_invalid_mode)
++{
++    JSONRPCRequest request;
++    request.context = &m_node;
++    request.strMethod = "getblocktemplate";
++    request.params = JSON(R"([{"mode":1}])");
++    if (RPCIsInWarmup(nullptr)) SetRPCWarmupFinished();
++    BOOST_CHECK_EXCEPTION(tableRPC.execute(request), UniValue,
++                          HasJSON(R"({"code":-8,"message":"Invalid mode"})"));
++}
++
++BOOST_AUTO_TEST_CASE(rpc_generatetodescriptor_combo_and_give_up)
++{
++    // maxtries 0 makes GenerateBlock return before any nonce attempt.
++    // A compressed combo expands to 4 scripts; an uncompressed combo expands to 2.
++    CKey compressed;
++    compressed.MakeNewKey(/*fCompressed=*/true);
++    const UniValue none_compressed{CallRPC("generatetodescriptor 1 combo(" + HexStr(compressed.GetPubKey()) + ") 0")};
++    BOOST_CHECK_EQUAL(none_compressed.size(), 0);
++
++    CKey uncompressed;
++    uncompressed.MakeNewKey(/*fCompressed=*/false);
++    const UniValue none_uncompressed{CallRPC("generatetodescriptor 1 combo(" + HexStr(uncompressed.GetPubKey()) + ") 0")};
++    BOOST_CHECK_EQUAL(none_uncompressed.size(), 0);
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/serialize_tests.cpp b/src/test/serialize_tests.cpp
+index b671260..4d6db4a 100644
+--- a/src/test/serialize_tests.cpp
++++ b/src/test/serialize_tests.cpp
+@@ -242,6 +242,24 @@ BOOST_AUTO_TEST_CASE(noncanonical)
+     BOOST_CHECK_EXCEPTION(ReadCompactSize(ss), std::ios_base::failure, isCanonicalException);
+ }
+ 
++static bool isTooLargeException(const std::ios_base::failure& ex)
++{
++    std::ios_base::failure expected{"ReadCompactSize(): size too large"};
++    return strcmp(expected.what(), ex.what()) == 0;
++}
++
++BOOST_AUTO_TEST_CASE(compactsize_too_large)
++{
++    // Canonical 5-byte encoding of a size above MAX_SIZE (0x02000000).
++    DataStream ss{};
++    ss << std::span{"\xfe\x01\x00\x00\x02"}.first(5);
++    BOOST_CHECK_EXCEPTION(ReadCompactSize(ss), std::ios_base::failure, isTooLargeException);
++
++    DataStream unchecked{};
++    unchecked << std::span{"\xfe\x01\x00\x00\x02"}.first(5);
++    BOOST_CHECK_EQUAL(ReadCompactSize(unchecked, /*range_check=*/false), 0x02000001ULL);
++}
++
+ BOOST_AUTO_TEST_CASE(string_view)
+ {
+     const std::string_view sv{"hello, world"};
+diff --git a/src/test/sock_tests.cpp b/src/test/sock_tests.cpp
+index d9ebc4a..8e5d009 100644
+--- a/src/test/sock_tests.cpp
++++ b/src/test/sock_tests.cpp
+@@ -12,8 +12,13 @@
+ #include <boost/test/unit_test.hpp>
+ 
+ #include <cassert>
++#include <memory>
+ #include <thread>
+ 
++#ifndef WIN32
++#include <sys/socket.h>
++#endif
++
+ using namespace std::chrono_literals;
+ 
+ BOOST_FIXTURE_TEST_SUITE(sock_tests, BasicTestingSetup)
+@@ -181,4 +186,30 @@ BOOST_AUTO_TEST_CASE(recv_until_terminator_limit)
+     receiver.join();
+ }
+ 
++BOOST_AUTO_TEST_CASE(equal_shared_ptr_sock)
++{
++    Sock::EqualSharedPtrSock eq;
++    const auto left{std::make_shared<Sock>(CreateSocket())};
++    const auto right{std::make_shared<Sock>(CreateSocket())};
++    BOOST_CHECK(eq(left, left));
++    BOOST_CHECK(!eq(left, right));
++    BOOST_CHECK(eq(std::shared_ptr<const Sock>{}, std::shared_ptr<const Sock>{}));
++    BOOST_CHECK(!eq(left, std::shared_ptr<const Sock>{}));
++}
++
++#ifndef WIN32
++BOOST_AUTO_TEST_CASE(is_connected_closed)
++{
++    int fds[2]{-1, -1};
++    BOOST_REQUIRE_EQUAL(socketpair(AF_UNIX, SOCK_STREAM, 0, fds), 0);
++    Sock local{static_cast<SOCKET>(fds[0])};
++    // Close the peer end directly. Sock::Close is private, and wrapping this
++    // descriptor would close it twice.
++    BOOST_REQUIRE_EQUAL(close(fds[1]), 0);
++    std::string errmsg;
++    BOOST_CHECK(!local.IsConnected(errmsg));
++    BOOST_CHECK_EQUAL(errmsg, "closed");
++}
++#endif
++
+ BOOST_AUTO_TEST_SUITE_END()
+diff --git a/src/test/util/setup_common.cpp b/src/test/util/setup_common.cpp
+index 573196d..9a21267 100644
+--- a/src/test/util/setup_common.cpp
++++ b/src/test/util/setup_common.cpp
+@@ -5,6 +5,7 @@
+ #include <test/util/setup_common.h>
+ 
+ #include <addrman.h>
++#include <arith_uint256.h>
+ #include <banman.h>
+ #include <chain.h>
+ #include <chainparams.h>
+@@ -316,6 +317,16 @@ ChainTestingSetup::ChainTestingSetup(const ChainType chainType, TestOpts opts)
+             chainman_opts.script_execution_cache_bytes = 0;
+             chainman_opts.signature_cache_bytes = 0;
+         }
++        // The node init path applies this. Unit tests build ChainstateManager
++        // directly, so honor it here too. A raised value is what makes regtest
++        // treat a full headers message as low-work and start headers presync.
++        if (auto value{m_node.args->GetArg("-minimumchainwork")}) {
++            const auto min_work{uint256::FromUserHex(*value)};
++            if (!min_work) {
++                throw std::runtime_error{strprintf("Invalid minimum work specified (%s), must be up to %d hex digits", *value, uint256::size() * 2)};
++            }
++            chainman_opts.minimum_chain_work = UintToArith256(*min_work);
++        }
+         const BlockManager::Options blockman_opts{
+             .chainparams = chainman_opts.chainparams,
+             .blocks_dir = m_args.GetBlocksDirPath(),
+diff --git a/src/txdb.cpp b/src/txdb.cpp
+index 978b529..5feb244 100644
+--- a/src/txdb.cpp
++++ b/src/txdb.cpp
+@@ -23,6 +23,7 @@
+ #include <exception>
+ #include <future>
+ #include <iterator>
++#include <thread>
+ #include <utility>
+ 
+ static constexpr uint8_t DB_COIN{'C'};
+@@ -212,7 +213,13 @@ std::shared_future<void> CCoinsViewDB::CompactFullAsync()
+ {
+     AssertLockHeld(::cs_main);
+     if (m_compaction.valid() && m_compaction.wait_for(std::chrono::seconds{0}) != std::future_status::ready) return m_compaction;
+-    m_compaction = std::async(std::launch::async, [this] {
++    const auto hold{m_test_compaction_hold};
++    m_compaction = std::async(std::launch::async, [this, hold] {
++        if (hold) {
++            while (hold->load(std::memory_order_acquire)) {
++                std::this_thread::sleep_for(std::chrono::milliseconds{1});
++            }
++        }
+         try {
+             util::ThreadRename("utxocompact");
+             LOCK(m_db_mutex);
+diff --git a/src/txdb.h b/src/txdb.h
+index 04dd230..89370f3 100644
+--- a/src/txdb.h
++++ b/src/txdb.h
+@@ -13,6 +13,7 @@
+ #include <sync.h>
+ #include <util/fs.h>
+ 
++#include <atomic>
+ #include <cstddef>
+ #include <cstdint>
+ #include <future>
+@@ -42,6 +43,9 @@ protected:
+     Mutex m_db_mutex;
+     std::unique_ptr<CDBWrapper> m_db;
+     std::shared_future<void> m_compaction;
++    //! When set, CompactFullAsync blocks until the flag becomes false.
++    //! Lets a test observe the destructor waiting on a live compaction.
++    std::shared_ptr<std::atomic<bool>> m_test_compaction_hold;
+ public:
+     explicit CCoinsViewDB(DBParams db_params, CoinsViewOptions options);
+     ~CCoinsViewDB() override;
+@@ -65,6 +69,9 @@ public:
+     //! Perform a full compaction of the underlying LevelDB on a one-shot background thread.
+     std::shared_future<void> CompactFullAsync() EXCLUSIVE_LOCKS_REQUIRED(cs_main, !m_db_mutex);
+ 
++    //! Test hook. The background compaction waits while @p hold is true.
++    void SetTestCompactionHold(std::shared_ptr<std::atomic<bool>> hold) { m_test_compaction_hold = std::move(hold); }
++
+     //! Return an underlying LevelDB property value, if available.
+     std::optional<std::string> GetDBProperty(const std::string& property);
+ };
+diff --git a/src/util/subprocess.h b/src/util/subprocess.h
+index 60c4782..8278a32 100644
+--- a/src/util/subprocess.h
++++ b/src/util/subprocess.h
+@@ -438,7 +438,6 @@ namespace util
+ 
+       rbytes += read_bytes;
+     }
+-    return rbytes;
+ #endif
+   }
+ 
+diff --git a/src/wallet/test/spend_tests.cpp b/src/wallet/test/spend_tests.cpp
+index 7e0a5bd..ce8d4d0 100644
+--- a/src/wallet/test/spend_tests.cpp
++++ b/src/wallet/test/spend_tests.cpp
+@@ -120,5 +120,17 @@ BOOST_FIXTURE_TEST_CASE(wallet_duplicated_preset_inputs_test, TestChain100Setup)
+     BOOST_CHECK(!CreateTransaction(*wallet, recipients, /*change_pos=*/std::nullopt, coin_control));
+ }
+ 
++BOOST_FIXTURE_TEST_CASE(insufficient_funds_returns_empty_error, TestChain100Setup)
++{
++    CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
++    auto wallet = CreateSyncedWallet(*m_node.chain, WITH_LOCK(Assert(m_node.chainman)->GetMutex(), return m_node.chainman->ActiveChain()), coinbaseKey);
++
++    LOCK(wallet->cs_wallet);
++    std::vector<CRecipient> recipients{{*Assert(wallet->GetNewDestination(OutputType::BECH32, "dummy")),
++                                        /*nAmount=*/21000000 * COIN, /*fSubtractFeeFromAmount=*/false}};
++    const CCoinControl coin_control;
++    BOOST_CHECK(!CreateTransaction(*wallet, recipients, /*change_pos=*/std::nullopt, coin_control));
++}
++
+ BOOST_AUTO_TEST_SUITE_END()
+ } // namespace wallet

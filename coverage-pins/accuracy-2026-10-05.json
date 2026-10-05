@@ -1,0 +1,908 @@
+{
+  "scored_at": "2026-10-05T13:46:59.078275+00:00",
+  "cohort": "latest successful report for each of the 100 most recently updated pulls that has one",
+  "pulls_considered": 100,
+  "pulls_without_successful_report": 35,
+  "reports_older_than_since": 0,
+  "definition": "Accuracy is the share of highlighted lines that are not lost_baseline_coverage or gained_baseline_coverage. Median accuracy is the typical report. Macro accuracy is the mean of per-report accuracies (a report with no highlighted lines scores 100). Micro accuracy pools every highlighted line. Clean reports have zero lost or gained baseline highlights.",
+  "summary": {
+    "reports": 65,
+    "median_accuracy_pct": 6.7,
+    "macro_accuracy_pct": 24.1,
+    "micro_accuracy_pct": 67.0,
+    "clean_reports_pct": 0.0,
+    "median_false_lines": 39,
+    "mean_false_lines": 40.9,
+    "true_highlighted_lines": 5395,
+    "false_highlighted_lines": 2661,
+    "highlighted_lines_by_type": {
+      "deleted_covered_baseline_code": 1562,
+      "deleted_uncovered_baseline_code": 436,
+      "gained_baseline_coverage": 1364,
+      "gained_coverage_new_code": 2887,
+      "lost_baseline_coverage": 1297,
+      "uncovered_new_code": 509,
+      "gained_coverage_included_code": 1
+    },
+    "oldest_generated_at": "2026-10-01T11:57:04.324519Z",
+    "newest_generated_at": "2026-10-05T13:35:00.993139Z"
+  },
+  "reports": [
+    {
+      "pr": 30342,
+      "report_id": 5678,
+      "generated_at": "2026-10-02T01:21:46.966693Z",
+      "true_lines": 726,
+      "false_lines": 62,
+      "accuracy": 92.13197969543147,
+      "by_type": {
+        "deleted_covered_baseline_code": 231,
+        "deleted_uncovered_baseline_code": 104,
+        "gained_baseline_coverage": 41,
+        "gained_coverage_new_code": 288,
+        "lost_baseline_coverage": 21,
+        "uncovered_new_code": 103
+      }
+    },
+    {
+      "pr": 30343,
+      "report_id": 5676,
+      "generated_at": "2026-10-01T22:41:01.790996Z",
+      "true_lines": 253,
+      "false_lines": 52,
+      "accuracy": 82.95081967213115,
+      "by_type": {
+        "deleted_covered_baseline_code": 85,
+        "deleted_uncovered_baseline_code": 27,
+        "gained_baseline_coverage": 26,
+        "gained_coverage_new_code": 116,
+        "lost_baseline_coverage": 26,
+        "uncovered_new_code": 25
+      }
+    },
+    {
+      "pr": 34374,
+      "report_id": 5712,
+      "generated_at": "2026-10-02T16:23:41.96812Z",
+      "true_lines": 4,
+      "false_lines": 44,
+      "accuracy": 8.333333333333334,
+      "by_type": {
+        "deleted_uncovered_baseline_code": 4,
+        "gained_baseline_coverage": 24,
+        "lost_baseline_coverage": 20
+      }
+    },
+    {
+      "pr": 34405,
+      "report_id": 5733,
+      "generated_at": "2026-10-03T17:07:09.170517Z",
+      "true_lines": 29,
+      "false_lines": 43,
+      "accuracy": 40.27777777777778,
+      "by_type": {
+        "deleted_covered_baseline_code": 3,
+        "gained_baseline_coverage": 23,
+        "gained_coverage_new_code": 26,
+        "lost_baseline_coverage": 20
+      }
+    },
+    {
+      "pr": 35281,
+      "report_id": 5716,
+      "generated_at": "2026-10-02T17:59:27.677011Z",
+      "true_lines": 0,
+      "false_lines": 60,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 39,
+        "lost_baseline_coverage": 21
+      }
+    },
+    {
+      "pr": 35292,
+      "report_id": 5742,
+      "generated_at": "2026-10-04T12:45:41.312635Z",
+      "true_lines": 0,
+      "false_lines": 45,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 25,
+        "lost_baseline_coverage": 20
+      }
+    },
+    {
+      "pr": 35302,
+      "report_id": 5747,
+      "generated_at": "2026-10-04T19:35:08.27541Z",
+      "true_lines": 940,
+      "false_lines": 41,
+      "accuracy": 95.82059123343527,
+      "by_type": {
+        "deleted_covered_baseline_code": 128,
+        "deleted_uncovered_baseline_code": 10,
+        "gained_baseline_coverage": 16,
+        "gained_coverage_new_code": 736,
+        "lost_baseline_coverage": 25,
+        "uncovered_new_code": 66
+      }
+    },
+    {
+      "pr": 35600,
+      "report_id": 5751,
+      "generated_at": "2026-10-05T08:48:58.738747Z",
+      "true_lines": 34,
+      "false_lines": 34,
+      "accuracy": 50.0,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 22,
+        "gained_coverage_new_code": 31,
+        "lost_baseline_coverage": 12,
+        "uncovered_new_code": 2
+      }
+    },
+    {
+      "pr": 35662,
+      "report_id": 5661,
+      "generated_at": "2026-10-01T17:00:20.436025Z",
+      "true_lines": 44,
+      "false_lines": 14,
+      "accuracy": 75.86206896551724,
+      "by_type": {
+        "deleted_covered_baseline_code": 29,
+        "gained_baseline_coverage": 2,
+        "gained_coverage_new_code": 15,
+        "lost_baseline_coverage": 12
+      }
+    },
+    {
+      "pr": 35744,
+      "report_id": 5666,
+      "generated_at": "2026-10-01T19:20:23.625912Z",
+      "true_lines": 51,
+      "false_lines": 30,
+      "accuracy": 62.96296296296296,
+      "by_type": {
+        "deleted_covered_baseline_code": 16,
+        "deleted_uncovered_baseline_code": 1,
+        "gained_baseline_coverage": 16,
+        "gained_coverage_new_code": 34,
+        "lost_baseline_coverage": 14
+      }
+    },
+    {
+      "pr": 35765,
+      "report_id": 5649,
+      "generated_at": "2026-10-01T13:36:21.447957Z",
+      "true_lines": 0,
+      "false_lines": 46,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 14,
+        "lost_baseline_coverage": 32
+      }
+    },
+    {
+      "pr": 35919,
+      "report_id": 5667,
+      "generated_at": "2026-10-01T19:35:22.291761Z",
+      "true_lines": 10,
+      "false_lines": 34,
+      "accuracy": 22.727272727272727,
+      "by_type": {
+        "deleted_covered_baseline_code": 5,
+        "gained_baseline_coverage": 20,
+        "gained_coverage_new_code": 5,
+        "lost_baseline_coverage": 14
+      }
+    },
+    {
+      "pr": 35957,
+      "report_id": 5693,
+      "generated_at": "2026-10-02T11:25:17.098944Z",
+      "true_lines": 0,
+      "false_lines": 71,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 63,
+        "lost_baseline_coverage": 8
+      }
+    },
+    {
+      "pr": 35964,
+      "report_id": 5724,
+      "generated_at": "2026-10-03T06:26:25.776074Z",
+      "true_lines": 0,
+      "false_lines": 42,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 13,
+        "lost_baseline_coverage": 29
+      }
+    },
+    {
+      "pr": 36033,
+      "report_id": 5709,
+      "generated_at": "2026-10-02T16:09:54.570464Z",
+      "true_lines": 91,
+      "false_lines": 54,
+      "accuracy": 62.758620689655174,
+      "by_type": {
+        "deleted_covered_baseline_code": 73,
+        "deleted_uncovered_baseline_code": 3,
+        "gained_baseline_coverage": 43,
+        "gained_coverage_new_code": 15,
+        "lost_baseline_coverage": 11
+      }
+    },
+    {
+      "pr": 36038,
+      "report_id": 5690,
+      "generated_at": "2026-10-02T10:47:47.109411Z",
+      "true_lines": 11,
+      "false_lines": 26,
+      "accuracy": 29.72972972972973,
+      "by_type": {
+        "deleted_covered_baseline_code": 8,
+        "deleted_uncovered_baseline_code": 2,
+        "gained_baseline_coverage": 21,
+        "gained_coverage_new_code": 1,
+        "lost_baseline_coverage": 5
+      }
+    },
+    {
+      "pr": 36040,
+      "report_id": 5687,
+      "generated_at": "2026-10-02T09:55:03.03676Z",
+      "true_lines": 17,
+      "false_lines": 37,
+      "accuracy": 31.48148148148148,
+      "by_type": {
+        "deleted_covered_baseline_code": 3,
+        "gained_baseline_coverage": 22,
+        "gained_coverage_new_code": 14,
+        "lost_baseline_coverage": 15
+      }
+    },
+    {
+      "pr": 36042,
+      "report_id": 5705,
+      "generated_at": "2026-10-02T15:55:05.941383Z",
+      "true_lines": 0,
+      "false_lines": 36,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 25,
+        "lost_baseline_coverage": 11
+      }
+    },
+    {
+      "pr": 36080,
+      "report_id": 5700,
+      "generated_at": "2026-10-02T14:56:05.08703Z",
+      "true_lines": 19,
+      "false_lines": 36,
+      "accuracy": 34.54545454545455,
+      "by_type": {
+        "deleted_covered_baseline_code": 9,
+        "gained_baseline_coverage": 21,
+        "gained_coverage_new_code": 10,
+        "lost_baseline_coverage": 15
+      }
+    },
+    {
+      "pr": 36082,
+      "report_id": 5691,
+      "generated_at": "2026-10-02T11:06:36.594821Z",
+      "true_lines": 0,
+      "false_lines": 80,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 61,
+        "lost_baseline_coverage": 19
+      }
+    },
+    {
+      "pr": 36167,
+      "report_id": 5707,
+      "generated_at": "2026-10-02T16:03:37.419358Z",
+      "true_lines": 664,
+      "false_lines": 51,
+      "accuracy": 92.86713286713287,
+      "by_type": {
+        "deleted_covered_baseline_code": 300,
+        "deleted_uncovered_baseline_code": 60,
+        "gained_baseline_coverage": 28,
+        "gained_coverage_new_code": 244,
+        "lost_baseline_coverage": 23,
+        "uncovered_new_code": 60
+      }
+    },
+    {
+      "pr": 36177,
+      "report_id": 5668,
+      "generated_at": "2026-10-01T19:46:44.149759Z",
+      "true_lines": 24,
+      "false_lines": 33,
+      "accuracy": 42.10526315789474,
+      "by_type": {
+        "deleted_covered_baseline_code": 11,
+        "gained_baseline_coverage": 18,
+        "gained_coverage_new_code": 13,
+        "lost_baseline_coverage": 15
+      }
+    },
+    {
+      "pr": 36184,
+      "report_id": 5671,
+      "generated_at": "2026-10-01T20:55:16.265772Z",
+      "true_lines": 0,
+      "false_lines": 26,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 6,
+        "lost_baseline_coverage": 20
+      }
+    },
+    {
+      "pr": 36185,
+      "report_id": 5670,
+      "generated_at": "2026-10-01T20:55:27.850519Z",
+      "true_lines": 0,
+      "false_lines": 24,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 11,
+        "lost_baseline_coverage": 13
+      }
+    },
+    {
+      "pr": 36193,
+      "report_id": 5655,
+      "generated_at": "2026-10-01T15:46:03.444984Z",
+      "true_lines": 0,
+      "false_lines": 39,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 20,
+        "lost_baseline_coverage": 19
+      }
+    },
+    {
+      "pr": 36224,
+      "report_id": 5646,
+      "generated_at": "2026-10-01T11:57:04.324519Z",
+      "true_lines": 0,
+      "false_lines": 38,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 15,
+        "lost_baseline_coverage": 23
+      }
+    },
+    {
+      "pr": 36244,
+      "report_id": 5726,
+      "generated_at": "2026-10-03T08:09:49.602195Z",
+      "true_lines": 591,
+      "false_lines": 74,
+      "accuracy": 88.87218045112782,
+      "by_type": {
+        "deleted_covered_baseline_code": 131,
+        "deleted_uncovered_baseline_code": 6,
+        "gained_baseline_coverage": 44,
+        "gained_coverage_new_code": 445,
+        "lost_baseline_coverage": 30,
+        "uncovered_new_code": 9
+      }
+    },
+    {
+      "pr": 36257,
+      "report_id": 5648,
+      "generated_at": "2026-10-01T13:20:01.897517Z",
+      "true_lines": 0,
+      "false_lines": 43,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 17,
+        "lost_baseline_coverage": 26
+      }
+    },
+    {
+      "pr": 36262,
+      "report_id": 5701,
+      "generated_at": "2026-10-02T15:36:08.345565Z",
+      "true_lines": 0,
+      "false_lines": 35,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 18,
+        "lost_baseline_coverage": 17
+      }
+    },
+    {
+      "pr": 36268,
+      "report_id": 5731,
+      "generated_at": "2026-10-03T14:50:36.793227Z",
+      "true_lines": 116,
+      "false_lines": 70,
+      "accuracy": 62.365591397849464,
+      "by_type": {
+        "deleted_covered_baseline_code": 53,
+        "deleted_uncovered_baseline_code": 5,
+        "gained_baseline_coverage": 34,
+        "gained_coverage_new_code": 53,
+        "lost_baseline_coverage": 36,
+        "uncovered_new_code": 5
+      }
+    },
+    {
+      "pr": 36271,
+      "report_id": 5728,
+      "generated_at": "2026-10-03T10:45:31.25671Z",
+      "true_lines": 0,
+      "false_lines": 38,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 13,
+        "lost_baseline_coverage": 25
+      }
+    },
+    {
+      "pr": 36277,
+      "report_id": 5657,
+      "generated_at": "2026-10-01T15:56:37.249466Z",
+      "true_lines": 81,
+      "false_lines": 32,
+      "accuracy": 71.68141592920354,
+      "by_type": {
+        "deleted_covered_baseline_code": 27,
+        "deleted_uncovered_baseline_code": 2,
+        "gained_baseline_coverage": 16,
+        "gained_coverage_new_code": 52,
+        "lost_baseline_coverage": 16
+      }
+    },
+    {
+      "pr": 36313,
+      "report_id": 5739,
+      "generated_at": "2026-10-04T00:16:04.432585Z",
+      "true_lines": 5,
+      "false_lines": 33,
+      "accuracy": 13.157894736842104,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 16,
+        "gained_coverage_new_code": 4,
+        "lost_baseline_coverage": 17
+      }
+    },
+    {
+      "pr": 36343,
+      "report_id": 5706,
+      "generated_at": "2026-10-02T16:03:00.837166Z",
+      "true_lines": 2,
+      "false_lines": 28,
+      "accuracy": 6.666666666666667,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 10,
+        "gained_coverage_new_code": 1,
+        "lost_baseline_coverage": 18
+      }
+    },
+    {
+      "pr": 36349,
+      "report_id": 5741,
+      "generated_at": "2026-10-04T05:47:22.753102Z",
+      "true_lines": 6,
+      "false_lines": 57,
+      "accuracy": 9.523809523809524,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 30,
+        "gained_coverage_new_code": 5,
+        "lost_baseline_coverage": 27
+      }
+    },
+    {
+      "pr": 36352,
+      "report_id": 5708,
+      "generated_at": "2026-10-02T16:05:46.019669Z",
+      "true_lines": 4,
+      "false_lines": 40,
+      "accuracy": 9.090909090909092,
+      "by_type": {
+        "gained_baseline_coverage": 15,
+        "gained_coverage_new_code": 4,
+        "lost_baseline_coverage": 25
+      }
+    },
+    {
+      "pr": 36366,
+      "report_id": 5702,
+      "generated_at": "2026-10-02T15:36:47.366743Z",
+      "true_lines": 5,
+      "false_lines": 30,
+      "accuracy": 14.285714285714286,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 25,
+        "gained_coverage_new_code": 4,
+        "lost_baseline_coverage": 5
+      }
+    },
+    {
+      "pr": 36380,
+      "report_id": 5756,
+      "generated_at": "2026-10-05T10:25:42.030021Z",
+      "true_lines": 29,
+      "false_lines": 53,
+      "accuracy": 35.36585365853659,
+      "by_type": {
+        "deleted_covered_baseline_code": 8,
+        "gained_baseline_coverage": 10,
+        "gained_coverage_new_code": 19,
+        "lost_baseline_coverage": 43,
+        "uncovered_new_code": 2
+      }
+    },
+    {
+      "pr": 36382,
+      "report_id": 5710,
+      "generated_at": "2026-10-02T16:07:57.094833Z",
+      "true_lines": 53,
+      "false_lines": 34,
+      "accuracy": 60.91954022988506,
+      "by_type": {
+        "deleted_covered_baseline_code": 6,
+        "gained_baseline_coverage": 15,
+        "gained_coverage_new_code": 45,
+        "lost_baseline_coverage": 19,
+        "uncovered_new_code": 2
+      }
+    },
+    {
+      "pr": 36385,
+      "report_id": 5748,
+      "generated_at": "2026-10-05T00:04:10.924854Z",
+      "true_lines": 12,
+      "false_lines": 28,
+      "accuracy": 30.0,
+      "by_type": {
+        "deleted_covered_baseline_code": 6,
+        "gained_baseline_coverage": 7,
+        "gained_coverage_new_code": 6,
+        "lost_baseline_coverage": 21
+      }
+    },
+    {
+      "pr": 36397,
+      "report_id": 5764,
+      "generated_at": "2026-10-05T13:06:14.450641Z",
+      "true_lines": 1070,
+      "false_lines": 12,
+      "accuracy": 98.8909426987061,
+      "by_type": {
+        "deleted_covered_baseline_code": 336,
+        "deleted_uncovered_baseline_code": 199,
+        "gained_baseline_coverage": 3,
+        "gained_coverage_new_code": 336,
+        "lost_baseline_coverage": 9,
+        "uncovered_new_code": 199
+      }
+    },
+    {
+      "pr": 36398,
+      "report_id": 5654,
+      "generated_at": "2026-10-01T15:05:46.372013Z",
+      "true_lines": 1,
+      "false_lines": 32,
+      "accuracy": 3.0303030303030303,
+      "by_type": {
+        "gained_baseline_coverage": 10,
+        "gained_coverage_new_code": 1,
+        "lost_baseline_coverage": 22
+      }
+    },
+    {
+      "pr": 36399,
+      "report_id": 5658,
+      "generated_at": "2026-10-01T16:02:49.72427Z",
+      "true_lines": 2,
+      "false_lines": 43,
+      "accuracy": 4.444444444444445,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 25,
+        "gained_coverage_new_code": 1,
+        "lost_baseline_coverage": 18
+      }
+    },
+    {
+      "pr": 36402,
+      "report_id": 5665,
+      "generated_at": "2026-10-01T17:46:20.270416Z",
+      "true_lines": 0,
+      "false_lines": 31,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 19,
+        "lost_baseline_coverage": 12
+      }
+    },
+    {
+      "pr": 36404,
+      "report_id": 5669,
+      "generated_at": "2026-10-01T20:44:47.849015Z",
+      "true_lines": 0,
+      "false_lines": 37,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 23,
+        "lost_baseline_coverage": 14
+      }
+    },
+    {
+      "pr": 36405,
+      "report_id": 5703,
+      "generated_at": "2026-10-02T15:44:41.49737Z",
+      "true_lines": 0,
+      "false_lines": 29,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 20,
+        "lost_baseline_coverage": 9
+      }
+    },
+    {
+      "pr": 36406,
+      "report_id": 5704,
+      "generated_at": "2026-10-02T15:44:57.563326Z",
+      "true_lines": 0,
+      "false_lines": 37,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 18,
+        "lost_baseline_coverage": 19
+      }
+    },
+    {
+      "pr": 36407,
+      "report_id": 5674,
+      "generated_at": "2026-10-01T22:05:13.538655Z",
+      "true_lines": 0,
+      "false_lines": 26,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 11,
+        "lost_baseline_coverage": 15
+      }
+    },
+    {
+      "pr": 36408,
+      "report_id": 5683,
+      "generated_at": "2026-10-02T07:40:06.365862Z",
+      "true_lines": 0,
+      "false_lines": 34,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 17,
+        "lost_baseline_coverage": 17
+      }
+    },
+    {
+      "pr": 36409,
+      "report_id": 5736,
+      "generated_at": "2026-10-03T18:56:12.785817Z",
+      "true_lines": 3,
+      "false_lines": 46,
+      "accuracy": 6.122448979591836,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 16,
+        "gained_coverage_new_code": 2,
+        "lost_baseline_coverage": 30
+      }
+    },
+    {
+      "pr": 36415,
+      "report_id": 5717,
+      "generated_at": "2026-10-02T19:45:38.218619Z",
+      "true_lines": 3,
+      "false_lines": 42,
+      "accuracy": 6.666666666666667,
+      "by_type": {
+        "gained_baseline_coverage": 18,
+        "gained_coverage_new_code": 3,
+        "lost_baseline_coverage": 24
+      }
+    },
+    {
+      "pr": 36416,
+      "report_id": 5696,
+      "generated_at": "2026-10-02T14:24:07.45713Z",
+      "true_lines": 0,
+      "false_lines": 29,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 20,
+        "lost_baseline_coverage": 9
+      }
+    },
+    {
+      "pr": 36417,
+      "report_id": 5698,
+      "generated_at": "2026-10-02T14:34:33.916307Z",
+      "true_lines": 10,
+      "false_lines": 49,
+      "accuracy": 16.949152542372882,
+      "by_type": {
+        "deleted_covered_baseline_code": 3,
+        "gained_baseline_coverage": 28,
+        "gained_coverage_new_code": 7,
+        "lost_baseline_coverage": 21
+      }
+    },
+    {
+      "pr": 36418,
+      "report_id": 5699,
+      "generated_at": "2026-10-02T14:56:04.933802Z",
+      "true_lines": 0,
+      "false_lines": 26,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 15,
+        "lost_baseline_coverage": 11
+      }
+    },
+    {
+      "pr": 36420,
+      "report_id": 5730,
+      "generated_at": "2026-10-03T13:06:09.284451Z",
+      "true_lines": 7,
+      "false_lines": 46,
+      "accuracy": 13.20754716981132,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 18,
+        "gained_coverage_new_code": 6,
+        "lost_baseline_coverage": 28
+      }
+    },
+    {
+      "pr": 36422,
+      "report_id": 5715,
+      "generated_at": "2026-10-02T17:44:06.625341Z",
+      "true_lines": 0,
+      "false_lines": 21,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 10,
+        "lost_baseline_coverage": 11
+      }
+    },
+    {
+      "pr": 36425,
+      "report_id": 5718,
+      "generated_at": "2026-10-02T20:35:16.355386Z",
+      "true_lines": 0,
+      "false_lines": 45,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 21,
+        "lost_baseline_coverage": 24
+      }
+    },
+    {
+      "pr": 36426,
+      "report_id": 5723,
+      "generated_at": "2026-10-03T00:52:34.430206Z",
+      "true_lines": 0,
+      "false_lines": 45,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 17,
+        "lost_baseline_coverage": 28
+      }
+    },
+    {
+      "pr": 36429,
+      "report_id": 5735,
+      "generated_at": "2026-10-03T18:39:11.061604Z",
+      "true_lines": 121,
+      "false_lines": 61,
+      "accuracy": 66.48351648351648,
+      "by_type": {
+        "deleted_covered_baseline_code": 14,
+        "deleted_uncovered_baseline_code": 1,
+        "gained_baseline_coverage": 38,
+        "gained_coverage_new_code": 97,
+        "lost_baseline_coverage": 23,
+        "uncovered_new_code": 9
+      }
+    },
+    {
+      "pr": 36432,
+      "report_id": 5740,
+      "generated_at": "2026-10-04T04:56:30.009468Z",
+      "true_lines": 11,
+      "false_lines": 51,
+      "accuracy": 17.741935483870968,
+      "by_type": {
+        "deleted_covered_baseline_code": 2,
+        "gained_baseline_coverage": 24,
+        "gained_coverage_new_code": 9,
+        "lost_baseline_coverage": 27
+      }
+    },
+    {
+      "pr": 36433,
+      "report_id": 5745,
+      "generated_at": "2026-10-04T15:25:50.715647Z",
+      "true_lines": 0,
+      "false_lines": 48,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 25,
+        "lost_baseline_coverage": 23
+      }
+    },
+    {
+      "pr": 36434,
+      "report_id": 5746,
+      "generated_at": "2026-10-04T18:49:54.03025Z",
+      "true_lines": 333,
+      "false_lines": 64,
+      "accuracy": 83.87909319899245,
+      "by_type": {
+        "deleted_covered_baseline_code": 66,
+        "deleted_uncovered_baseline_code": 12,
+        "gained_baseline_coverage": 36,
+        "gained_coverage_included_code": 1,
+        "gained_coverage_new_code": 227,
+        "lost_baseline_coverage": 28,
+        "uncovered_new_code": 27
+      }
+    },
+    {
+      "pr": 36435,
+      "report_id": 5757,
+      "generated_at": "2026-10-05T10:46:03.642007Z",
+      "true_lines": 0,
+      "false_lines": 47,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 12,
+        "lost_baseline_coverage": 35
+      }
+    },
+    {
+      "pr": 36436,
+      "report_id": 5761,
+      "generated_at": "2026-10-05T12:16:59.02006Z",
+      "true_lines": 0,
+      "false_lines": 24,
+      "accuracy": 0.0,
+      "by_type": {
+        "gained_baseline_coverage": 11,
+        "lost_baseline_coverage": 13
+      }
+    },
+    {
+      "pr": 36437,
+      "report_id": 5767,
+      "generated_at": "2026-10-05T13:35:00.993139Z",
+      "true_lines": 13,
+      "false_lines": 43,
+      "accuracy": 23.214285714285715,
+      "by_type": {
+        "deleted_covered_baseline_code": 1,
+        "gained_baseline_coverage": 4,
+        "gained_coverage_new_code": 12,
+        "lost_baseline_coverage": 39
+      }
+    }
+  ]
+}
