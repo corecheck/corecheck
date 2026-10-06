@@ -8,7 +8,8 @@ import (
 )
 
 // ignoredBaselineLine drops a lost or gained baseline highlight whose text
-// cannot be executed on this coverage build. The key is the filename plus
+// cannot be executed on this coverage build, or whose counter does not stay
+// on that line from one build to the next. The key is the filename plus
 // the line text, so a later edit that moves the line does not keep a stale
 // line number and does not hide a different line that lands on the old number.
 type ignoredBaselineLine struct {
@@ -21,7 +22,13 @@ var ignoredBaselineLines = []ignoredBaselineLine{
 	// builds, and that count flips between the master run and the pull run.
 	{filename: "src/compat/compat.h", content: "#define WSAEINVAL           EINVAL"},
 	// Dead on 64-bit. The branch is sizeof(void*) neither 4 nor 8.
+	// The opening brace of that branch is the only "} else {" in the header.
+	// A bare "}" is left alone: that text is also the closing brace of live code.
 	{filename: "src/memusage.h", content: "assert(0);"},
+	{filename: "src/memusage.h", content: "} else {"},
+	// EqualSharedPtrSock's return when one pointer is null. Builds disagree
+	// on whether the counter sits on this statement or on the closing brace.
+	{filename: "src/util/sock.h", content: "return false;"},
 }
 
 func isIgnoredBaselineLine(filename, content string) bool {

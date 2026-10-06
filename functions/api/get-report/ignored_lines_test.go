@@ -22,11 +22,21 @@ func TestFilterIgnoredBaselineLinesDropsUnexecutableHighlights(t *testing.T) {
 					line("#define WSAEWOULDBLOCK      EWOULDBLOCK", false),
 				},
 			}},
-			"src/memusage.h": {{
-				Filename: "src/memusage.h",
+			"src/memusage.h": {
+				{
+					Filename: "src/memusage.h",
+					Lines: []db.CoverageFileHunkLine{
+						line("    } else {", true),
+						line("        assert(0);", true),
+						line("    int real = 1;", true),
+					},
+				},
+			},
+			"src/util/sock.h": {{
+				Filename: "src/util/sock.h",
 				Lines: []db.CoverageFileHunkLine{
-					line("    } else {", false),
-					line("        assert(0);", true),
+					line("            return true;", false),
+					line("            return false;", true),
 				},
 			}},
 			"src/net.cpp": {{
@@ -61,8 +71,12 @@ func TestFilterIgnoredBaselineLinesDropsUnexecutableHighlights(t *testing.T) {
 	if len(compat) != 0 {
 		t.Fatalf("expected the WSAEINVAL hunk to be dropped, got %#v", compat)
 	}
-	if _, ok := filtered[types.COVERAGE_TYPE_GAINED_BASELINE_COVERAGE]["src/memusage.h"]; ok {
-		t.Fatal("expected the memusage gained hunk to be dropped")
+	memusage := filtered[types.COVERAGE_TYPE_GAINED_BASELINE_COVERAGE]["src/memusage.h"]
+	if len(memusage) != 1 || len(memusage[0].Lines) != 1 || memusage[0].Lines[0].Content != "    int real = 1;" {
+		t.Fatalf("expected the dead memusage branch to drop and the real line to stay, got %#v", memusage)
+	}
+	if _, ok := filtered[types.COVERAGE_TYPE_GAINED_BASELINE_COVERAGE]["src/util/sock.h"]; ok {
+		t.Fatal("expected the sock.h return false hunk to be dropped")
 	}
 	net := filtered[types.COVERAGE_TYPE_GAINED_BASELINE_COVERAGE]["src/net.cpp"]
 	if len(net) != 1 || !net[0].Lines[0].Highlight {
