@@ -439,7 +439,7 @@ new file mode 100644
 index 0000000..3501611
 --- /dev/null
 +++ b/src/test/coverage_pin_tests.cpp
-@@ -0,0 +1,543 @@
+@@ -0,0 +1,567 @@
 +// Copyright (c) 2026-present The Bitcoin Core developers
 +// Distributed under the MIT software license, see the accompanying
 +// file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -980,6 +980,30 @@ index 0000000..3501611
 +        std::this_thread::sleep_for(800ms);
 +    }
 +    accepter.join();
++}
++
++BOOST_AUTO_TEST_CASE(tor_control_connection_check_failed)
++{
++    // The controller thread only sometimes reaches IsConnected with an error
++    // string. Call it after the peer has closed so the peek is zero and the
++    // "Connection check failed" log runs on every coverage build.
++    AcceptedSocket listener;
++    CThreadInterrupt interrupt;
++    TorControlConnection conn{interrupt};
++    BOOST_REQUIRE(conn.Connect(strprintf("127.0.0.1:%u", listener.port)));
++
++    sockaddr_in peer{};
++    socklen_t plen{sizeof(peer)};
++    const SOCKET server{static_cast<SOCKET>(accept(listener.listen_fd, reinterpret_cast<sockaddr*>(&peer), &plen))};
++    BOOST_REQUIRE(server != INVALID_SOCKET);
++    CloseSocket(server);
++
++    bool connected{true};
++    for (int i{0}; i < 50 && connected; ++i) {
++        connected = conn.IsConnected();
++        if (connected) std::this_thread::sleep_for(1ms);
++    }
++    BOOST_CHECK(!connected);
 +}
 +
 +BOOST_AUTO_TEST_SUITE_END()
