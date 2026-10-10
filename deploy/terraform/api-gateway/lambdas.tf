@@ -1,6 +1,7 @@
 locals {
   api_lambdas = [
     "get-master-coverage",
+    "get-master-fuzz-coverage",
     "get-pull",
     "list-pulls",
     "get-report",
