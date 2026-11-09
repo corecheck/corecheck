@@ -277,6 +277,19 @@ func handlePullRequest(pr *github.PullRequest) error {
 	return nil
 }
 
+func pullNeedsCoverageJob(pr *github.PullRequest) bool {
+	if pr.GetState() != "open" {
+		return false
+	}
+
+	hasReport, err := db.HasCoverageReportForCommitPR(pr.GetHead().GetSHA(), pr.GetNumber())
+	if err != nil {
+		log.Error(err)
+		return true
+	}
+	return !hasReport
+}
+
 func checkPullsCoverage(c *github.Client) error {
 	log.Info("Syncing PRs from GitHub...")
 	lastDBUpdate, err := db.GetLatestPRUpdate()
@@ -287,8 +300,8 @@ func checkPullsCoverage(c *github.Client) error {
 
 	log.Debugf("Last DB update: %s", lastDBUpdate.Format(time.RFC3339))
 
-	page := 0
-mainLoop:
+	var newestFirst []*github.PullRequest
+	page := 1
 	for {
 		log.Debugf("Retrieving page %d", page)
 		prs, _, err := c.PullRequests.List(context.Background(), "bitcoin", "bitcoin", &github.PullRequestListOptions{
@@ -296,7 +309,7 @@ mainLoop:
 			Sort:      "updated",
 			Direction: "desc",
 			ListOptions: github.ListOptions{
-				PerPage: 20,
+				PerPage: 100,
 				Page:    page,
 			},
 		})
@@ -310,22 +323,31 @@ mainLoop:
 			break
 		}
 
+		reachedCursor := false
 		for _, pr := range prs {
 			if pr.GetUpdatedAt().Before(lastDBUpdate) {
-				break mainLoop
+				reachedCursor = true
+				break
 			}
-
-			if pr.GetUpdatedAt().Before(time.Now().Add(-2 * time.Hour)) {
-				break mainLoop
-			}
-
-			if err := handlePullRequest(pr); err != nil {
-				log.Errorf("Error handling PR: %s", err)
-				return err
-			}
+			newestFirst = append(newestFirst, pr)
+		}
+		if reachedCursor {
+			break
 		}
 
 		page++
+	}
+
+	selected := selectPRSync(newestFirst, lastDBUpdate, maxNewCoverageJobsPerSync, pullNeedsCoverageJob)
+	if len(selected) < len(newestFirst) {
+		log.Infof("Syncing %d of %d updated pull requests; remaining coverage jobs wait for the next run", len(selected), len(newestFirst))
+	}
+
+	for _, pr := range selected {
+		if err := handlePullRequest(pr); err != nil {
+			log.Errorf("Error handling PR: %s", err)
+			return err
+		}
 	}
 
 	return nil
