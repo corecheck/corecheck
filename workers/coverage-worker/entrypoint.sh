@@ -240,6 +240,40 @@ else
     
     # Merge all the raw profile data into a single file
     find build/raw_profile_data -name "*.profraw" > build/profraw_files.txt
+
+    # One merge with the default failure mode tells us whether any profile is bad. Only when it is
+    # does the per-file loop run, so the normal path costs one extra merge of the whole set.
+    # The merge below keeps -failure-mode=all, which drops invalid profiles silently; this is the
+    # only record of which file was dropped, how big it was next to its siblings, and what was
+    # running at the time.
+    if ! llvm-profdata merge --failure-mode=any -f build/profraw_files.txt -o /dev/null 2> build/merge-check.log; then
+        echo "profile check failed, naming the rejected files:"
+        cat build/merge-check.log
+        : > build/rejected_profiles.txt
+        while IFS= read -r profraw; do
+            llvm-profdata merge --failure-mode=any -o /dev/null "$profraw" > /dev/null 2>&1 ||
+                echo "$profraw" >> build/rejected_profiles.txt
+        done < build/profraw_files.txt
+        while IFS= read -r profraw; do
+            hash=$(basename "$profraw" | cut -d_ -f1)
+            echo "rejected: $profraw $(stat -c 'size=%s mtime=%y' "$profraw")"
+            find build/raw_profile_data -name "${hash}_*.profraw" -printf '%s\n' | sort -n |
+                awk -v bad="$(stat -c %s "$profraw")" \
+                    'NR==1{min=$1} {max=$1; n++; s[$1]} END{printf "  siblings=%d min=%d max=%d distinct_sizes=%d bad_size=%d\n", n, min, max, length(s), bad}'
+        done < build/rejected_profiles.txt
+        ps -eo pid,etimes,stat,comm --sort=pid > build/merge-time-processes.txt
+        { df -h build; cat /sys/fs/cgroup/memory.events; cat /sys/fs/cgroup/memory.peak; } >> build/merge-time-processes.txt 2>/dev/null || true
+        echo "processes at merge time: $(wc -l < build/merge-time-processes.txt | tr -d ' ') lines, memory and disk below"
+        grep -E 'test_bitcoin|bitcoind|test_runner|ctest' build/merge-time-processes.txt ||
+            echo "  no test process is still running"
+        tail -4 build/merge-time-processes.txt
+        rejected_prefix="${S3_COVERAGE_FILE%/*}/profraw"
+        while IFS= read -r profraw; do
+            aws s3 cp "$profraw" "$rejected_prefix/$(basename "$profraw")" || true
+        done < build/rejected_profiles.txt
+        aws s3 cp build/merge-time-processes.txt "$rejected_prefix/merge-time-processes.txt" || true
+    fi
+
     llvm-profdata merge -failure-mode=all -f build/profraw_files.txt -o build/coverage.profdata
 
     # lcov is probably the simplest format to later convert to gcovr json format
