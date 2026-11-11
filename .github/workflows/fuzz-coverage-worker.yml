@@ -1,0 +1,37 @@
+name: Build Fuzz Coverage Worker
+on:
+  push:
+    branches: [ "master" , "dev" ]
+    paths:
+      - 'workers/fuzz-coverage-worker/**'
+  workflow_dispatch:
+
+jobs:
+  build_fuzz_coverage:
+    name: fuzz-coverage-worker
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Setup env variables
+      run: |
+        if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
+          echo "FUZZ_COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-fuzz-coverage-worker-dev:latest" >> $GITHUB_ENV
+        else
+          echo "FUZZ_COVERAGE_IMAGE=public.ecr.aws/i3s2n0b6/corecheck-fuzz-coverage-worker-default:latest" >> $GITHUB_ENV
+        fi
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Configure AWS CLI
+      run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region us-east-1
+    - name: Login to ECR
+      run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i3s2n0b6
+    - name: Build and push
+      id: docker_build
+      uses: docker/build-push-action@v6
+      with:
+        context: workers/fuzz-coverage-worker
+        push: true
+        platforms: linux/arm64
+        tags: ${{ env.FUZZ_COVERAGE_IMAGE }}
