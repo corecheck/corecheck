@@ -4,7 +4,9 @@ Sample: 64 successful corecheck reports, one latest report per pull request. A l
 
 A pin works only if both runs execute the line. The tests below are deterministic: fixed inputs, no sleeps that race the scheduler, except the feeler delay which is bounded by a one-second window and is called directly, and the Tor controller thread which still waits up to a second for the peer to close. Unit tests run, then functional tests. Each suite is parallel inside itself. Profiles are merged afterwards.
 
-The bitcoin diff is `workers/coverage-worker/coverage-pins.patch`, taken from an uncommitted checkout of bitcoin master `09e22fb`. The coverage worker applies it after checkout, on both the master run and the pull-request run, and does not commit it. Unit tests run, then functional tests. Each suite is parallel inside itself. Profiles are merged afterwards.
+The bitcoin diff was `workers/coverage-worker/coverage-pins.patch`, taken from an uncommitted checkout of bitcoin master `09e22fb`. The coverage worker applied it after checkout, on both the master run and the pull-request run, and did not commit it. Unit tests run, then functional tests. Each suite is parallel inside itself. Profiles are merged afterwards.
+
+The patch has since been removed from the image. It was written against `09e22fb`, and two of the test files it edits (`baseindex_tests.cpp`, `blockpolicyestimator_tests.cpp`) were later split, so `git apply --check` fails on current master and the worker ran without it. While it did apply it also refactored `src/net.cpp` and `src/txdb.cpp` to give the tests a callable entry point, which meant a run's coverage described patched source rather than the commit under test.
 
 Coverage line numbers come from that patched source. The diff stored for a pull request is the diff between the patched base and the patched pull request, so the pin patch is not listed as a pull-request change. A pull request that edits the same lines can make `git apply --check` fail; the worker logs that and continues with the unpatched tree.
 

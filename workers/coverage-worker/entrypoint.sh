@@ -197,11 +197,24 @@ else
 
     NPROC_2=$(expr $(nproc) \* 2)
 
+    # These settings exist to increase coverage reproducibility: two runs of the same commit and
+    # binary should agree on which lines were executed, otherwise a pull request is compared against
+    # run-to-run movement and reports changes on lines it never touched.
+    #   -fprofile-update=atomic   counters are updated atomically in multithreaded bitcoind; without it
+    #                             LLVM can lose a counter update and the subtract in lcov wraps the
+    #                             result, which shows up as covered/not-covered at random.
+    #   --randomseed=1234         the functional runner otherwise hands every test a fresh random seed.
+    #   -j4                       the runner's own default; the worker used to run at nproc.
+    # Do not raise these back to nproc without measuring the effect on repeat runs.
+    # LDFLAGS stays without the atomic flag; it belongs on the compile lines only.
+    UNIT_JOBS=$(nproc)
+    if [ "$UNIT_JOBS" -gt 16 ]; then UNIT_JOBS=16; fi
+
     time cmake -B build -DCMAKE_C_COMPILER="clang" \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_CXX_COMPILER="clang++" \
-        -DAPPEND_CFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
-        -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+        -DAPPEND_CFLAGS="-fprofile-instr-generate -fprofile-update=atomic -fcoverage-mapping" \
+        -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fprofile-update=atomic -fcoverage-mapping" \
         -DAPPEND_LDFLAGS="-fprofile-instr-generate -fcoverage-mapping"
     time cmake --build build -j$(nproc)
 
@@ -209,11 +222,15 @@ else
     mkdir -p build/raw_profile_data
     export LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw"
 
+    # A deep TMPDIR pushes the functional suites' unix socket paths past their 108-byte limit and
+    # fails listen_tests before any coverage is written.
+    export TMPDIR=/tmp
+
     # Run tests to generate profiles
-    time ctest --test-dir build -j $(nproc) | tee unit-tests.log
+    time ctest --test-dir build -j "$UNIT_JOBS" | tee unit-tests.log
 
     time python3 ./build/test/functional/test_runner.py -F --previous-releases --timeout-factor=10 \
-        --exclude=feature_reindex_readonly -j$(nproc) 2>&1 | tee functional-tests.log
+        --exclude=feature_reindex_readonly -j4 --randomseed=1234 2>&1 | tee functional-tests.log
     
     if [ "$IS_MASTER" == "true" ]; then
         create_test_log_stream
