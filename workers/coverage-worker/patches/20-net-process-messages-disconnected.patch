@@ -1,0 +1,44 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 864f2552e4..d0a710d42e 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -1763,6 +1763,39 @@ BOOST_AUTO_TEST_CASE(only_non_inbound_version_message_promotes_addr_to_tried)
+     m_node.peerman->FinalizeNode(node_inbound);
+ }
+ 
++BOOST_AUTO_TEST_CASE(process_messages_false_when_node_already_disconnected)
++{
++    LOCK(NetEventsInterface::g_msgproc_mutex);
++    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
++
++    // ProcessMessages() re-checks fDisconnect after draining messages: a handler (or a
++    // disconnecting peer) can set it mid-call, and the caller then has to stop. In a
++    // functional run that only happens when the disconnect lands exactly during the call
++    // (feature_loadblock.py, mempool_reorg.py); setting the flag up front exercises the
++    // same branch in every run.
++    CNode node{/*id=*/0,
++               /*sock=*/nullptr,
++               /*addrIn=*/CAddress{},
++               /*nKeyedNetGroupIn=*/0,
++               /*nLocalHostNonceIn=*/0,
++               /*addrBindIn=*/CService{},
++               /*addrNameIn=*/"",
++               /*conn_type_in=*/ConnectionType::OUTBOUND_FULL_RELAY,
++               /*inbound_onion=*/false,
++               /*network_key=*/0};
++    connman.Handshake(node,
++                      /*successfully_connected=*/false,
++                      /*remote_services=*/NODE_NETWORK,
++                      /*local_services=*/NODE_NONE,
++                      /*version=*/PROTOCOL_VERSION,
++                      /*relay_txs=*/true);
++
++    node.fDisconnect = true;
++    BOOST_CHECK(!connman.ProcessMessagesOnce(node));
++
++    m_node.peerman->FinalizeNode(node);
++}
++
+ BOOST_AUTO_TEST_CASE(addlocal_onlynet_externalip)
+ {
+     // Test that `-externalip` addresses bypass `-onlynet`, but score alone does

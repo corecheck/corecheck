@@ -1,0 +1,35 @@
+diff --git a/src/test/coins_tests.cpp b/src/test/coins_tests.cpp
+index 6656e9a572..2ed578bb24 100644
+--- a/src/test/coins_tests.cpp
++++ b/src/test/coins_tests.cpp
+@@ -1068,6 +1068,30 @@ BOOST_FIXTURE_TEST_CASE(coins_db_leveldb_layout, FlushTest)
+     BOOST_CHECK_EQUAL(base.GetBestBlock(), block_hash);
+ }
+ 
++BOOST_FIXTURE_TEST_CASE(coins_db_destructor_waits_for_compaction, FlushTest)
++{
++    // A CCoinsViewDB destroyed while a background compaction is still running must wait for
++    // it and log that it is waiting. At shutdown the compaction is started from
++    // validation.cpp and the view is destroyed as the node stops, so whether the future is
++    // ready at that instant is a matter of timing; here the view is destroyed right after
++    // the compaction is launched.
++    const COutPoint outpoint{Txid::FromUint256(m_rng.rand256()), 0};
++    Coin coin{MakeCoin()};
++    auto base{std::make_unique<CCoinsViewDB>(
++        DBParams{.path = m_args.GetDataDirBase() / "coins_db_compaction",
++                 .cache_bytes = 1_MiB,
++                 .wipe_data = true},
++        CoinsViewOptions{})};
++    {
++        CCoinsViewCache cache{base.get()};
++        cache.EmplaceCoinInternalDANGER(outpoint, std::move(coin));
++        cache.SetBestBlock(m_rng.rand256());
++        cache.Sync();
++    }
++    WITH_LOCK(::cs_main, (void)base->CompactFullAsync());
++    base.reset(); // destructor must wait for the compaction and log that it does
++}
++
+ BOOST_AUTO_TEST_CASE(coins_resource_is_used)
+ {
+     CCoinsMapMemoryResource resource;

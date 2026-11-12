@@ -78,66 +78,10 @@ flush_test_logs() {
 }
 
 # Diff between the patched base tree and the patched pull-request tree.
-# Empty when this run did not apply the coverage pin patch.
+# Empty on a master run, and when the base worktree could not be created.
+# A patch that applied on the pull request but not on the base is named in
+# TEST_PATCH_BASE_MISSING and can still show up in this diff.
 COVERAGE_DIFF_FILE=""
-
-# The pin patch adds tests (and a few helpers those tests call) on top of
-# whatever commit is checked out. It is applied after checkout and left
-# uncommitted. Both the master run and the pull-request run use it, so a
-# line the tests always execute is non-zero on both sides.
-apply_coverage_pins() {
-    local patch=/coverage-pins.patch
-    if [ ! -f "$patch" ]; then
-        echo "Coverage pin patch is not in the image"
-        return 0
-    fi
-    if ! git apply --check "$patch"; then
-        echo "WARNING: coverage pin patch does not apply; continuing without it" >&2
-        return 0
-    fi
-
-    git apply "$patch"
-    echo "Applied coverage pin patch and left it uncommitted"
-
-    if [ "$IS_MASTER" = "true" ]; then
-        return 0
-    fi
-
-    # Stage only the patch. write-tree then sees the patched pull request
-    # without build output or other untracked files. Reset the index
-    # afterwards so the patch stays uncommitted.
-    if ! git apply --cached "$patch"; then
-        echo "WARNING: could not stage the coverage pin patch; the stored diff will be the unpatched pull request diff" >&2
-        git reset -q || true
-        return 0
-    fi
-    local pr_tree
-    pr_tree=$(git write-tree)
-    git reset -q
-
-    local base_dir
-    base_dir=$(mktemp -d)
-    if ! git worktree add --detach "$base_dir" "$BASE_COMMIT"; then
-        echo "WARNING: could not check out $BASE_COMMIT to build the coverage diff" >&2
-        rm -rf "$base_dir"
-        return 0
-    fi
-
-    if git -C "$base_dir" apply --check "$patch"; then
-        git -C "$base_dir" apply --cached "$patch"
-        local base_tree
-        base_tree=$(git -C "$base_dir" write-tree)
-        COVERAGE_DIFF_FILE=$(mktemp)
-        # Coverage line numbers come from the patched sources. This diff uses
-        # those same trees, so the pin patch itself is not listed as a
-        # pull-request change.
-        git diff "$base_tree" "$pr_tree" > "$COVERAGE_DIFF_FILE"
-        echo "Recorded coverage diff between the patched base and the patched pull request"
-    else
-        echo "WARNING: coverage pin patch does not apply to $BASE_COMMIT; the stored diff will be the unpatched pull request diff" >&2
-    fi
-    git worktree remove --force "$base_dir" || rm -rf "$base_dir"
-}
 
 ccache --show-stats
 
@@ -155,6 +99,7 @@ if [ "$IS_MASTER" != "true" ]; then
     PR_MERGE_BASE=$(git merge-base HEAD origin/master)
     git rebase --onto "$BASE_COMMIT" "$PR_MERGE_BASE"
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/coverage.json
+    S3_TESTS_PATCHES_FILE=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/tests-patches.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/$PR_NUM/$HEAD_COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/$PR_NUM/$HEAD_COMMIT/src
     S3_COVERAGE_HTML_REPORT_PREFIX=
@@ -162,6 +107,7 @@ if [ "$IS_MASTER" != "true" ]; then
 else
     git checkout $COMMIT
     S3_COVERAGE_FILE=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage.json
+    S3_TESTS_PATCHES_FILE=s3://$S3_BUCKET_DATA/master/$COMMIT/tests-patches.json
     S3_BENCH_FILE=s3://$S3_BUCKET_ARTIFACTS/master/$COMMIT/bench_bitcoin
     S3_SRC_PATH=s3://$S3_BUCKET_DATA/master/$COMMIT/src
     S3_COVERAGE_HTML_REPORT_PREFIX=s3://$S3_BUCKET_DATA/master/$COMMIT/coverage-report
@@ -186,7 +132,22 @@ else
         echo "Coverage JSON exists but HTML report is missing; regenerating master coverage artifacts"
     fi
 
-    apply_coverage_pins
+    # Apply the per-test patch set and upload the record before cmake, so a
+    # build that dies later still says which set it was built with.
+    source "/apply-test-patches.sh"
+    apply_test_patches "/tests-patches"
+    if [ "$IS_MASTER" != "true" ]; then
+        write_coverage_pr_diff
+    fi
+    if [ "$IS_MASTER" = "true" ]; then
+        record_head="$COMMIT"
+    else
+        record_head="$HEAD_COMMIT"
+    fi
+    write_tests_patches_record "tests-patches.json" "$record_head" "$IS_MASTER"
+    if ! aws s3 cp "tests-patches.json" "$S3_TESTS_PATCHES_FILE"; then
+        echo "WARNING: could not upload the test patch record" >&2
+    fi
 
     ./test/get_previous_releases.py
 

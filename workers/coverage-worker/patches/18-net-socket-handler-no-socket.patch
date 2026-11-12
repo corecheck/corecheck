@@ -1,0 +1,39 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 864f2552e4..3e6018689a 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -140,6 +140,34 @@ BOOST_AUTO_TEST_CASE(cnode_simple_test)
+     BOOST_CHECK_EQUAL(pnode4->ConnectedThroughNetwork(), Network::NET_ONION);
+ }
+ 
++BOOST_AUTO_TEST_CASE(socket_handler_skips_node_without_socket)
++{
++    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
++
++    // A node whose socket is already gone (the state a disconnect leaves behind) must be
++    // skipped by the socket handler instead of dereferencing m_sock. Reaching this needs a
++    // disconnect to land between the readiness check and the per-node dispatch, which is a
++    // race in every functional test; here the socket is simply absent.
++    CNode* node{new CNode{/*id=*/1,
++                          /*sock=*/nullptr,
++                          CAddress{LookupNumeric("127.0.0.1", Params().GetDefaultPort()), NODE_NONE},
++                          /*nKeyedNetGroupIn=*/0,
++                          /*nLocalHostNonceIn=*/0,
++                          /*addrBindIn=*/CService{},
++                          /*addrNameIn=*/"",
++                          ConnectionType::OUTBOUND_FULL_RELAY,
++                          /*inbound_onion=*/false,
++                          /*network_key=*/0}};
++    connman.AddTestNode(*node);
++
++    // One pass of the socket handler. The only node has no socket, so the handler must
++    // take the "no socket" path and leave the node alone.
++    connman.SocketHandlerPublic();
++    BOOST_CHECK(!node->fDisconnect);
++
++    connman.ClearTestNodes();
++}
++
+ BOOST_AUTO_TEST_CASE(cnetaddr_basic)
+ {
+     CNetAddr addr;

@@ -1,0 +1,38 @@
+diff --git a/src/test/addrman_tests.cpp b/src/test/addrman_tests.cpp
+index b4f5caed47..54b4d1380c 100644
+--- a/src/test/addrman_tests.cpp
++++ b/src/test/addrman_tests.cpp
+@@ -174,6 +174,33 @@ BOOST_AUTO_TEST_CASE(addrman_penalty_self_announcement)
+     BOOST_CHECK(retrieved_addr2.nTime == base_time - time_penalty);
+ }
+ 
++BOOST_AUTO_TEST_CASE(addrman_updates_ntime_of_known_entry)
++{
++    // Re-announcing a known address with a newer nTime must move the stored nTime
++    // forward once the difference exceeds the update interval (1h while the address
++    // counts as "currently online"). This refresh branch only runs when a peer
++    // happens to re-announce with a sufficiently newer timestamp, so drive it with
++    // an explicit clock instead of waiting for that to happen.
++    FakeNodeClock clock{};
++    auto addrman = std::make_unique<AddrMan>(EMPTY_NETGROUPMAN, DETERMINISTIC, GetCheckRatio(m_node));
++
++    const auto t0{Now<NodeSeconds>() - 120s};
++    CAddress addr{CAddress(ResolveService("250.250.99.1", 8333), NODE_NONE)};
++    addr.nTime = t0;
++    BOOST_CHECK(addrman->Add({addr}, addr)); // self-announcement: no time penalty
++
++    clock += 2h;
++    CAddress addr_new{addr};
++    addr_new.nTime = t0 + 2h;
++    // Returns false ("no new information") exactly because nTime was already
++    // refreshed to addr_new.nTime by the branch under test.
++    BOOST_CHECK(!addrman->Add({addr_new}, addr_new));
++
++    const auto entries{addrman->GetAddr(/*max_addresses=*/0, /*max_pct=*/0, /*network=*/std::nullopt)};
++    BOOST_REQUIRE_EQUAL(entries.size(), 1U);
++    BOOST_CHECK(entries[0].nTime == addr_new.nTime);
++}
++
+ BOOST_AUTO_TEST_CASE(addrman_ports)
+ {
+     auto addrman = std::make_unique<AddrMan>(EMPTY_NETGROUPMAN, DETERMINISTIC, GetCheckRatio(m_node));

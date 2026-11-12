@@ -1,0 +1,38 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 864f2552e4..9cc239360d 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -14,6 +14,7 @@
+ #include <netbase.h>
+ #include <netmessagemaker.h>
+ #include <node/protocol_version.h>
++#include <scheduler.h>
+ #include <serialize.h>
+ #include <span.h>
+ #include <streams.h>
+@@ -29,6 +30,7 @@
+ #include <boost/test/unit_test.hpp>
+ 
+ #include <algorithm>
++#include <atomic>
+ #include <cstdint>
+ #include <ios>
+ #include <memory>
+@@ -1806,4 +1808,17 @@ BOOST_AUTO_TEST_CASE(addlocal_onlynet_externalip)
+     fDiscover = discover_orig;
+ }
+ 
++namespace {
++/** Minimal NetEventsInterface, so that CConnman can be started without a real peer manager. */
++class StubMsgProc : public NetEventsInterface
++{
++public:
++    void InitializeNode(const CNode&, ServiceFlags) override {}
++    void FinalizeNode(const CNode&) override {}
++    bool HasAllDesirableServiceFlags(ServiceFlags) const override { return true; }
++    bool ProcessMessages(CNode&, std::atomic<bool>&) override { return false; }
++    bool SendMessages(CNode&) override { return false; }
++};
++} // namespace
++
+ BOOST_AUTO_TEST_SUITE_END()

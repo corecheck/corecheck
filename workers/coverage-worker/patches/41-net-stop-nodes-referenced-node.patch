@@ -1,0 +1,62 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 7ede59b6ea..edc5998d4e 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -1856,6 +1856,57 @@ private:
+ };
+ } // namespace
+ 
++BOOST_AUTO_TEST_CASE(stop_nodes_deletes_nodes_still_referenced_elsewhere)
++{
++    // DisconnectNodes() moves a node it has disconnected into m_nodes_disconnected instead of
++    // deleting it when another thread still holds a reference, and StopNodes() deletes whatever is
++    // left there (net.cpp:3840-3842). A functional run only reaches it when shutdown lands while a
++    // peer is still being torn down by another thread (p2p_private_broadcast_completion.py); here
++    // the outstanding reference is simply held by the test.
++    const bool listen_orig{fListen};
++    fListen = false;
++    {
++        CScheduler scheduler;
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        StubMsgProc msgproc;
++
++        CConnman::Options options;
++        options.m_msgproc = &msgproc;
++        options.m_use_addrman_outgoing = false;
++        options.m_i2p_accept_incoming = false;
++        options.bind_on_any = false;
++
++        CNode* node{new CNode{/*id=*/1,
++                              /*sock=*/nullptr,
++                              CAddress{LookupNumeric("10.0.0.1", Params().GetDefaultPort()), NODE_NONE},
++                              /*nKeyedNetGroupIn=*/0,
++                              /*nLocalHostNonceIn=*/0,
++                              /*addrBindIn=*/CAddress{},
++                              /*addrNameIn=*/"",
++                              ConnectionType::OUTBOUND_FULL_RELAY,
++                              /*inbound_onion=*/false,
++                              /*network_key=*/0}};
++        // One reference stands in for the connection manager's (DisconnectNodes() releases it) and
++        // one for the thread that is still using the node, which is what keeps it out of the
++        // immediate-delete path.
++        node->AddRef();
++        node->AddRef();
++        connman.AddTestNode(*node);
++        node->fDisconnect = true;
++
++        BOOST_REQUIRE(connman.Start(scheduler, options));
++        // The socket handler picks the disconnect up on one of its next passes.
++        for (int i{0}; i < 100 && !connman.TestNodes().empty(); ++i) {
++            UninterruptibleSleep(100ms);
++        }
++        BOOST_REQUIRE(connman.TestNodes().empty());
++
++        connman.Interrupt();
++        connman.Stop(); // StopNodes() deletes the node left in m_nodes_disconnected
++    }
++    fListen = listen_orig;
++}
++
+ BOOST_AUTO_TEST_CASE(message_handler_returns_when_interrupted_during_send)
+ {
+     // ThreadMessageHandler re-checks flagInterruptMsgProc after SendMessages() and returns

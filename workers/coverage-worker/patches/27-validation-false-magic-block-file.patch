@@ -1,0 +1,46 @@
+diff --git a/src/test/validation_tests.cpp b/src/test/validation_tests.cpp
+index 268529fd80..28b3fca947 100644
+--- a/src/test/validation_tests.cpp
++++ b/src/test/validation_tests.cpp
+@@ -9,10 +9,13 @@
+ #include <hash.h>
+ #include <net.h>
+ #include <signet.h>
++#include <streams.h>
+ #include <uint256.h>
+ #include <util/chaintype.h>
++#include <util/fs.h>
+ #include <validation.h>
+ 
++#include <map>
+ #include <string>
+ 
+ #include <test/util/setup_common.h>
+@@ -360,4 +363,27 @@ BOOST_AUTO_TEST_CASE(block_malleation)
+     }
+ }
+ 
++BOOST_FIXTURE_TEST_CASE(load_external_block_file_skips_false_magic, TestingSetup)
++{
++    // A block file whose bytes contain the first magic byte but never the full magic must be
++    // walked byte by byte and skipped, not parsed as a block header. Functional reindex tests
++    // only reach this when the mined blocks happen to contain a lone leading magic byte, which
++    // depends on wallet keys and therefore differs every run.
++    const auto magic{Params().MessageStart()};
++    const unsigned char junk[] = {magic[0], 0x00, magic[0], 0x01, magic[0], 0x02, 0x00, 0x00};
++    const fs::path blkfile{m_path_root / "blk_false_magic.dat"};
++    {
++        FILE* file{fsbridge::fopen(blkfile, "wb")};
++        BOOST_REQUIRE(file != nullptr);
++        BOOST_REQUIRE_EQUAL(fwrite(junk, 1, sizeof(junk), file), sizeof(junk));
++        fclose(file);
++    }
++
++    std::multimap<uint256, FlatFilePos> blocks_with_unknown_parent;
++    FlatFilePos pos;
++    AutoFile file{fsbridge::fopen(blkfile, "rb")};
++    m_node.chainman->LoadExternalBlockFile(file, &pos, &blocks_with_unknown_parent);
++    BOOST_CHECK(blocks_with_unknown_parent.empty());
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

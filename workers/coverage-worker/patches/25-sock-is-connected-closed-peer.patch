@@ -1,0 +1,29 @@
+diff --git a/src/test/sock_tests.cpp b/src/test/sock_tests.cpp
+index d9ebc4af5f..24530524d2 100644
+--- a/src/test/sock_tests.cpp
++++ b/src/test/sock_tests.cpp
+@@ -155,6 +155,24 @@ BOOST_AUTO_TEST_CASE(wait)
+     waiter.join();
+ }
+ 
++BOOST_AUTO_TEST_CASE(is_connected_closed_peer)
++{
++    // Sock::IsConnected() must report a peer-closed socket and fill errmsg with
++    // "closed"; torcontrol and net_processing log that message on disconnect.
++    // Using a socketpair makes the peer-close deterministic instead of racing
++    // against a real peer going away.
++    int fds[2];
++    BOOST_REQUIRE_EQUAL(socketpair(AF_UNIX, SOCK_STREAM, 0, fds), 0);
++    Sock sock{static_cast<SOCKET>(fds[0])};
++    {
++        Sock peer{static_cast<SOCKET>(fds[1])}; // destroyed here: closes the peer end
++    }
++
++    std::string errmsg;
++    BOOST_CHECK(!sock.IsConnected(errmsg));
++    BOOST_CHECK_EQUAL(errmsg, "closed");
++}
++
+ BOOST_AUTO_TEST_CASE(recv_until_terminator_limit)
+ {
+     constexpr auto timeout = 1min; // High enough so that it is never hit.

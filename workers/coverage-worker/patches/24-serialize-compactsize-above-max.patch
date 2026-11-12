@@ -1,0 +1,20 @@
+diff --git a/src/test/serialize_tests.cpp b/src/test/serialize_tests.cpp
+index 58710c832f..babf11ee0d 100644
+--- a/src/test/serialize_tests.cpp
++++ b/src/test/serialize_tests.cpp
+@@ -571,4 +571,15 @@ BOOST_AUTO_TEST_CASE(with_params_derived)
+                                     "0f\x02XY");
+ }
+ 
++BOOST_AUTO_TEST_CASE(compact_size_above_max_size_is_rejected)
++{
++    // A canonically encoded length above MAX_SIZE must be rejected on read. Only a
++    // peer or a file that actually carries such a length reaches this, so it is not
++    // covered by the normal deserialisation tests.
++    DataStream stream;
++    WriteCompactSize(stream, MAX_SIZE + 1);
++    BOOST_CHECK_EXCEPTION(ReadCompactSize(stream), std::ios_base::failure,
++                          HasReason{"ReadCompactSize(): size too large"});
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

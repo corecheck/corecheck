@@ -1,0 +1,29 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 864f2552e4..5e19489a2c 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -1699,6 +1699,24 @@ BOOST_AUTO_TEST_CASE(private_broadcast_version_does_not_update_addrman_services)
+     m_node.peerman->FinalizeNode(node);
+ }
+ 
++BOOST_AUTO_TEST_CASE(open_network_connection_refused_after_interrupt)
++{
++    // OpenNetworkConnection() refuses to start a new connection once the connection manager has
++    // been interrupted (net.cpp:3148-3149). A functional run only reaches it when a connection
++    // attempt is still in flight while the node shuts down (p2p_private_broadcast.py,
++    // feature_proxy.py), which is a scheduling race; here the interrupt is raised first.
++    ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++    connman.Interrupt();
++
++    BOOST_CHECK(!connman.OpenNetworkConnection(/*addrConnect=*/CAddress{},
++                                               /*fCountFailure=*/false,
++                                               /*grant_outbound=*/{},
++                                               /*pszDest=*/"127.0.0.1:1",
++                                               /*conn_type=*/ConnectionType::MANUAL,
++                                               /*use_v2transport=*/false,
++                                               /*proxy_override=*/std::nullopt));
++}
++
+ BOOST_AUTO_TEST_CASE(only_non_inbound_version_message_promotes_addr_to_tried)
+ {
+     LOCK(NetEventsInterface::g_msgproc_mutex);

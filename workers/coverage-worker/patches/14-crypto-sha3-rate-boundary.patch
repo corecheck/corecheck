@@ -1,0 +1,38 @@
+diff --git a/src/test/crypto_tests.cpp b/src/test/crypto_tests.cpp
+index 2fdb83576e..d73b6f1dbf 100644
+--- a/src/test/crypto_tests.cpp
++++ b/src/test/crypto_tests.cpp
+@@ -1109,6 +1109,33 @@ void CryptoTest::TestSHA3_256(const std::string& input, const std::string& outpu
+     BOOST_CHECK(std::equal(std::begin(out_bytes), std::end(out_bytes), out));
+ }
+ 
++BOOST_AUTO_TEST_CASE(sha3_256_chunked_write_at_rate_boundary)
++{
++    // Fixed-length input whose chunked Write() lands exactly on RATE_BUFFERS:
++    // 128 bytes taken straight from the caller, 1 byte buffered, then the 7
++    // bytes that complete the 8-byte buffer. That is the m_pos == RATE_BUFFERS
++    // branch of SHA3_256::Write (absorb the buffer, run KeccakF, reset m_pos),
++    // which the random three-way split in TestSHA3_256 only reaches by luck.
++    std::vector<unsigned char> in(136);
++    for (size_t i = 0; i < in.size(); ++i) in[i] = static_cast<unsigned char>(i);
++    const std::span<const unsigned char> in_span{in};
++
++    unsigned char oneshot[SHA3_256::OUTPUT_SIZE];
++    SHA3_256 sha;
++    sha.Write(in_span).Finalize(oneshot);
++
++    unsigned char chunked[SHA3_256::OUTPUT_SIZE];
++    SHA3_256 sha_chunked;
++    sha_chunked.Write(in_span.first(128))
++               .Write(in_span.subspan(128, 1))
++               .Write(in_span.last(7))
++               .Finalize(chunked);
++
++    BOOST_CHECK(std::equal(std::begin(oneshot), std::end(oneshot), chunked));
++    // Reference digest for bytes 0x00..0x87, computed with Python's hashlib.sha3_256.
++    BOOST_CHECK_EQUAL(HexStr(std::span{chunked}), "cf3ccff92480a29160c2d38317c430e14749bfee1788106957dfe73f8c4930e5");
++}
++
+ BOOST_AUTO_TEST_CASE(keccak_tests)
+ {
+     // Start with the zero state.
