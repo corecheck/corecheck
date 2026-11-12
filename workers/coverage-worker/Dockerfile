@@ -62,7 +62,6 @@ RUN git config --global user.email "ci@corecheck.dev"
 RUN git config --global user.name "corecheck"
 
 COPY convert_lcov_to_gcovr.py /convert_lcov_to_gcovr.py
-COPY coverage-pins.patch /coverage-pins.patch
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
