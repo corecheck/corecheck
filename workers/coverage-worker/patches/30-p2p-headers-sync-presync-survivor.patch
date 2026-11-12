@@ -1,0 +1,20 @@
+diff --git a/test/functional/p2p_headers_sync_with_minchainwork.py b/test/functional/p2p_headers_sync_with_minchainwork.py
+index b1efe09cd9..2c200bc67d 100755
+--- a/test/functional/p2p_headers_sync_with_minchainwork.py
++++ b/test/functional/p2p_headers_sync_with_minchainwork.py
+@@ -146,6 +146,15 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
+         # getpeerinfo should show a sync in progress
+         assert_equal(node.getpeerinfo()[0]['presynced_headers'], 2000)
+ 
++        # The node below is killed on purpose before it can flush its coverage profile, so
++        # repeat the same check on a node that survives to a clean shutdown. Otherwise the
++        # presync branch of getpeerinfo() is only covered if a surviving node happens to query
++        # it, which is what makes net_processing.cpp:1951/1952 flip between identical runs.
++        p2p_surviving = self.nodes[2].add_p2p_connection(P2PInterface())
++        p2p_surviving.send_and_ping(headers_message)
++        assert_equal(self.nodes[2].getpeerinfo()[0]['presynced_headers'], 2000)
++        p2p_surviving.peer_disconnect()
++
+         self.log.info("Test whether a lagging clock aborts low-work headers sync")
+         node.disconnect_p2ps()
+         node.setmocktime(node.getblockheader(node.getblockhash(0))['mediantime'] - MAX_FUTURE_BLOCK_TIME - 1)

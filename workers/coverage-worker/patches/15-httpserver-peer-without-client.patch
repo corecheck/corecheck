@@ -1,0 +1,23 @@
+diff --git a/src/test/httpserver_tests.cpp b/src/test/httpserver_tests.cpp
+index 3a5947a7d7..70a9d7a360 100644
+--- a/src/test/httpserver_tests.cpp
++++ b/src/test/httpserver_tests.cpp
+@@ -751,6 +751,18 @@ BOOST_AUTO_TEST_CASE(http_request_state_tests)
+     }
+ }
+ 
++BOOST_AUTO_TEST_CASE(http_request_get_peer_without_client)
++{
++    // A request whose client has already gone away (the weak_ptr expired) must
++    // report an empty peer rather than dereferencing anything. The live-client
++    // case is covered by http_server_socket_tests, but that one only reaches the
++    // expired-client branch when the client happens to be destroyed first, which
++    // is a race; this exercises it deterministically.
++    HTTPRequest req;
++    BOOST_CHECK(req.GetPeer() == CService{});
++    BOOST_CHECK(!req.GetClient());
++}
++
+ BOOST_AUTO_TEST_CASE(http_should_disconnect_tests)
+ {
+     struct Client : HTTPRemoteClient {

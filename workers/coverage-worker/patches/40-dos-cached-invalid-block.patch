@@ -1,0 +1,103 @@
+diff --git a/src/test/denialofservice_tests.cpp b/src/test/denialofservice_tests.cpp
+index 6fc7390112..afb6e841ee 100644
+--- a/src/test/denialofservice_tests.cpp
++++ b/src/test/denialofservice_tests.cpp
+@@ -14,6 +14,7 @@
+ #include <pubkey.h>
+ #include <script/sign.h>
+ #include <script/signingprovider.h>
++#include <script/script.h>
+ #include <script/solver.h>
+ #include <serialize.h>
+ #include <test/util/net.h>
+@@ -567,4 +568,90 @@ BOOST_FIXTURE_TEST_CASE(orphan_reconsideration_interruptible, TestChain100Setup)
+     peerman.FinalizeNode(peer);
+ }
+ 
++// A block whose header is already known and marked invalid comes back BLOCK_CACHED_INVALID, and
++// an outbound peer that sent it is discouraged and disconnected from (net_processing.cpp:2047-2056).
++// A functional run only reaches that branch when a peer sends a block we previously found invalid,
++// which happens in a small fraction of runs (mempool_reorg.py, feature_bip68_sequence.py); here the
++// invalidity is staged in the block index and the block is delivered over the real message path.
++BOOST_FIXTURE_TEST_CASE(cached_invalid_block_discourages_outbound_peer, TestChain100Setup)
++{
++    LOCK(NetEventsInterface::g_msgproc_mutex);
++
++    ConnmanTestMsg& connman = static_cast<ConnmanTestMsg&>(*m_node.connman);
++    PeerManager& peerman = *m_node.peerman;
++
++    // Mine one more block and then invalidate it, which is the production way to end up with a
++    // header that is indexed and marked BLOCK_FAILED_VALID (and leaves the chain and the best
++    // header consistent, unlike setting the status by hand).
++    const CBlock block{CreateAndProcessBlock({}, CScript() << OP_TRUE)};
++    CBlockIndex* pindex{nullptr};
++    {
++        LOCK(::cs_main);
++        pindex = m_node.chainman->m_blockman.LookupBlockIndex(block.GetHash());
++        BOOST_REQUIRE(pindex != nullptr);
++    }
++    BlockValidationState invalidation;
++    BOOST_REQUIRE(m_node.chainman->ActiveChainstate().InvalidateBlock(invalidation, pindex));
++    BOOST_REQUIRE(pindex->nStatus & BLOCK_FAILED_VALID);
++
++    CNode peer{/*id=*/0,
++               /*sock=*/nullptr,
++               CAddress{ip(0xa0b0c002), NODE_NONE},
++               /*nKeyedNetGroupIn=*/0,
++               /*nLocalHostNonceIn=*/0,
++               /*addrBindIn=*/CAddress{},
++               /*addrNameIn=*/"",
++               /*conn_type_in=*/ConnectionType::OUTBOUND_FULL_RELAY,
++               /*inbound_onion=*/false,
++               /*network_key=*/0};
++    connman.Handshake(/*node=*/peer,
++                      /*successfully_connected=*/true,
++                      /*remote_services=*/ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      /*local_services=*/ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      /*version=*/PROTOCOL_VERSION,
++                      /*relay_txs=*/true);
++
++    connman.FlushSendBuffer(peer); // Drop messages we sent, the transport is shared with the fake peer.
++    BOOST_REQUIRE(connman.ReceiveMsgFrom(peer, NetMsg::Make(NetMsgType::BLOCK, TX_WITH_WITNESS(block))));
++    peer.fPauseSend = false;
++    // The block rejection is reported through the validation interface (PeerManager::BlockChecked),
++    // which unit test setups create the peer manager for but do not register.
++    m_node.validation_signals->RegisterValidationInterface(m_node.peerman.get());
++    connman.ProcessMessagesOnce(peer);
++    m_node.validation_signals->SyncWithValidationInterfaceQueue(); // drain the BlockChecked callback
++    m_node.validation_signals->UnregisterValidationInterface(m_node.peerman.get());
++
++    // MaybePunishNodeForBlock() marked the peer for discouragement; the next SendMessages() call
++    // applies it (MaybeDiscourageAndDisconnect returns true instead of sending anything).
++    BOOST_CHECK(peerman.SendMessages(peer));
++    BOOST_CHECK(m_node.banman->IsDiscouraged(peer.addr));
++
++    // The same block from an inbound peer takes the other side of that condition
++    // (net_processing.cpp:2055): an inbound peer is not punished for it.
++    CNode inbound{/*id=*/1,
++                  /*sock=*/nullptr,
++                  CAddress{ip(0xa0b1c003), NODE_NONE},
++                  /*nKeyedNetGroupIn=*/0,
++                  /*nLocalHostNonceIn=*/0,
++                  /*addrBindIn=*/CAddress{},
++                  /*addrNameIn=*/"",
++                  /*conn_type_in=*/ConnectionType::INBOUND,
++                  /*inbound_onion=*/false,
++                  /*network_key=*/0};
++    connman.Handshake(/*node=*/inbound,
++                      /*successfully_connected=*/true,
++                      /*remote_services=*/ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      /*local_services=*/ServiceFlags(NODE_NETWORK | NODE_WITNESS),
++                      /*version=*/PROTOCOL_VERSION,
++                      /*relay_txs=*/true);
++    connman.FlushSendBuffer(inbound);
++    BOOST_REQUIRE(connman.ReceiveMsgFrom(inbound, NetMsg::Make(NetMsgType::BLOCK, TX_WITH_WITNESS(block))));
++    inbound.fPauseSend = false;
++    m_node.validation_signals->RegisterValidationInterface(m_node.peerman.get());
++    connman.ProcessMessagesOnce(inbound);
++    m_node.validation_signals->SyncWithValidationInterfaceQueue();
++    m_node.validation_signals->UnregisterValidationInterface(m_node.peerman.get());
++    BOOST_CHECK(!m_node.banman->IsDiscouraged(inbound.addr));
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

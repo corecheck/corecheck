@@ -1,0 +1,21 @@
+diff --git a/test/functional/rpc_generate.py b/test/functional/rpc_generate.py
+index 97ebf936fd..9d78ebcaba 100755
+--- a/test/functional/rpc_generate.py
++++ b/test/functional/rpc_generate.py
+@@ -24,8 +24,14 @@ class RPCGenerateTest(BitcoinTestFramework):
+         self.test_generateblock()
+ 
+     def test_generatetoaddress(self):
+-        self.generatetoaddress(self.nodes[0], 1, 'mneYUmWYsuk7kySiURxCi3AGxrAqZxLgPZ')
+-        assert_raises_rpc_error(-5, "Invalid address", self.generatetoaddress, self.nodes[0], 1, '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')
++        node = self.nodes[0]
++        self.generatetoaddress(node, 1, 'mneYUmWYsuk7kySiURxCi3AGxrAqZxLgPZ')
++        assert_raises_rpc_error(-5, "Invalid address", self.generatetoaddress, node, 1, '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')
++
++        self.log.info('generatetoaddress with maxtries=0 mines nothing')
++        block_count = node.getblockcount()
++        assert_equal(self.generatetoaddress(node, 1, 'mneYUmWYsuk7kySiURxCi3AGxrAqZxLgPZ', 0), [])
++        assert_equal(node.getblockcount(), block_count)
+ 
+     def test_generateblock(self):
+         node = self.nodes[0]

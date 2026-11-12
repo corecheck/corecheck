@@ -1,0 +1,24 @@
+diff --git a/src/test/blockpolicyestimator_tests.cpp b/src/test/blockpolicyestimator_tests.cpp
+index 0c2cec6cbc..1bbd229184 100644
+--- a/src/test/blockpolicyestimator_tests.cpp
++++ b/src/test/blockpolicyestimator_tests.cpp
+@@ -16,6 +16,19 @@
+ 
+ BOOST_FIXTURE_TEST_SUITE(blockpolicyestimator_tests, ChainTestingSetup)
+ 
++BOOST_AUTO_TEST_CASE(block_policy_estimate_reason_strings)
++{
++    // Every reason an estimate can carry must have a stable human-readable
++    // string; the RPC and logging paths only hit them when the fee estimator
++    // happens to pick that branch, so exercise the whole enum directly.
++    using R = BlockPolicyEstimateReason;
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(R::NONE), "None");
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(R::HALF_ESTIMATE), "Half Target 60% Threshold");
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(R::FULL_ESTIMATE), "Target 85% Threshold");
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(R::DOUBLE_ESTIMATE), "Double Target 95% Threshold");
++    BOOST_CHECK_EQUAL(StringForBlockPolicyEstimateReason(R::CONSERVATIVE), "Conservative Double Target longer horizon");
++}
++
+ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
+ {
+     CBlockPolicyEstimator feeEst{BlockPolicyFeeEstPath(*m_node.args), DEFAULT_ACCEPT_STALE_FEE_ESTIMATES};

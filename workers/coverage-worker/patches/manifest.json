@@ -1,0 +1,705 @@
+{
+  "set_version": "determinism-2026-11-12",
+  "bitcoin_commit": "a06515e9fdf81a762804471733b1f43a13e1f10b",
+  "helper_patch": "00-test-helpers.patch",
+  "patches": [
+    {
+      "order": 0,
+      "name": "00-test-helpers.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": null,
+      "kind": "helper",
+      "requires": [],
+      "makes_deterministic": [],
+      "portable": true,
+      "portability_note": "Plain C++ stub. Uses NetEventsInterface from the tree. No arch assumptions.",
+      "evidence": null
+    },
+    {
+      "order": 10,
+      "name": "10-addrman-ntime-upgrade.patch",
+      "target_file": "src/test/addrman_tests.cpp",
+      "test_case": "addrman_updates_ntime_of_known_entry",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/addrman.cpp",
+          "line_text": "        if (pinfo->nTime < addr.nTime - update_interval - time_penalty) {"
+        },
+        {
+          "file": "src/addrman.cpp",
+          "line_text": "            pinfo->nTime = std::max(NodeSeconds{0s}, addr.nTime - time_penalty);"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses AddrMan, FakeNodeClock, and NodeSeconds. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/addrman.cpp:550 nonzero (441); src/addrman.cpp:551 nonzero (9) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 11,
+      "name": "11-baseindex-commit-before-first-block.patch",
+      "target_file": "src/test/baseindex_tests.cpp",
+      "test_case": "baseindex_commit_before_first_block_logs_error",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/index/base.cpp",
+          "line_text": "        LogError(\"Failed to commit latest %s state\", GetName());"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses TestChain100Setup and INDEX_FACTORIES. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/index/base.cpp:301 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 12,
+      "name": "12-blockpolicy-reason-strings.patch",
+      "target_file": "src/test/blockpolicyestimator_tests.cpp",
+      "test_case": "block_policy_estimate_reason_strings",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/policy/fees/block_policy_estimator.cpp",
+          "line_text": "        return \"None\";"
+        },
+        {
+          "file": "src/policy/fees/block_policy_estimator.cpp",
+          "line_text": "        return \"Half Target 60% Threshold\";"
+        },
+        {
+          "file": "src/policy/fees/block_policy_estimator.cpp",
+          "line_text": "        return \"Target 85% Threshold\";"
+        },
+        {
+          "file": "src/policy/fees/block_policy_estimator.cpp",
+          "line_text": "        return \"Double Target 95% Threshold\";"
+        },
+        {
+          "file": "src/policy/fees/block_policy_estimator.cpp",
+          "line_text": "        return \"Conservative Double Target longer horizon\";"
+        }
+      ],
+      "portable": true,
+      "portability_note": "String equality on an enum switch. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/policy/fees/block_policy_estimator.cpp:56 0; src/policy/fees/block_policy_estimator.cpp:58 nonzero (3209); src/policy/fees/block_policy_estimator.cpp:60 nonzero (67); src/policy/fees/block_policy_estimator.cpp:62 0; src/policy/fees/block_policy_estimator.cpp:64 nonzero (59) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 13,
+      "name": "13-coins-db-destructor-compaction.patch",
+      "target_file": "src/test/coins_tests.cpp",
+      "test_case": "coins_db_destructor_waits_for_compaction",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/txdb.cpp",
+          "line_text": "        if (m_compaction.wait_for(std::chrono::seconds{0}) != std::future_status::ready) {"
+        },
+        {
+          "file": "src/txdb.cpp",
+          "line_text": "            LogInfo(\"Waiting for background chainstate compaction of %s\", fs::PathToString(m_db_params.path));"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses the existing FlushTest fixture and LevelDB. No arch assumptions. The log line is timing-sensitive.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/txdb.cpp:66 nonzero (4); src/txdb.cpp:67 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 14,
+      "name": "14-crypto-sha3-rate-boundary.patch",
+      "target_file": "src/test/crypto_tests.cpp",
+      "test_case": "sha3_256_chunked_write_at_rate_boundary",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/crypto/sha3.cpp",
+          "line_text": "        if (m_pos == RATE_BUFFERS) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Compares SHA3-256 digests as hex. The keyed line text also occurs in the while-loop path. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/crypto/sha3.cpp:113 nonzero (850), ambiguous; src/crypto/sha3.cpp:122 nonzero (5942), ambiguous in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 15,
+      "name": "15-httpserver-peer-without-client.patch",
+      "target_file": "src/test/httpserver_tests.cpp",
+      "test_case": "http_request_get_peer_without_client",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/httpserver.cpp",
+          "line_text": "    if (std::shared_ptr c{m_client.lock()}) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Default-constructed HTTPRequest. No arch assumptions. The else return {} text is shared with other functions, so the manifest keys the unique condition.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/httpserver.cpp:658 nonzero (216213) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 16,
+      "name": "16-httpserver-permanent-io-errors.patch",
+      "target_file": "src/test/httpserver_tests.cpp",
+      "test_case": "http_client_permanent_io_errors_disconnect",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/httpserver.cpp",
+          "line_text": "                \"Permanent read error from %s (id=%llu): %s\","
+        },
+        {
+          "file": "src/httpserver.cpp",
+          "line_text": "                    \"Error sending HTTP response data to client %s (id=%llu): %s\","
+        }
+      ],
+      "portable": true,
+      "portability_note": "Subclasses the existing ZeroSock test double and sets errno to ECONNRESET. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/httpserver.cpp:943 nonzero (1); src/httpserver.cpp:1297 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 17,
+      "name": "17-httpserver-send-failure-skips-receive.patch",
+      "target_file": "src/test/httpserver_tests.cpp",
+      "test_case": "http_client_send_failure_in_io_loop_skips_receive",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/httpserver.cpp",
+          "line_text": "                recv_ready = false;"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses the existing DynSock and ConnectClient helpers in SocketTestingSetup. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/httpserver.cpp:911 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 18,
+      "name": "18-net-socket-handler-no-socket.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "socket_handler_skips_node_without_socket",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "            if (!pnode->m_sock) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses ConnmanTestMsg and a CNode with a null socket. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net.cpp:2206 nonzero (341217) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 19,
+      "name": "19-net-socket-handler-send-closes-socket.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "socket_handler_recv_skipped_when_send_closes_socket",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "                if (!pnode->m_sock) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Local Sock subclass returning ECONNRESET. No arch assumptions. The 16-space condition is a different line from the 12-space check in case 18.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net.cpp:2241 nonzero (139515) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 20,
+      "name": "20-net-process-messages-disconnected.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "process_messages_false_when_node_already_disconnected",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "    if (node.fDisconnect)"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses ConnmanTestMsg::Handshake and ProcessMessagesOnce. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net_processing.cpp:5440 nonzero (281206) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 21,
+      "name": "21-net-message-handler-interrupt-in-send.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "message_handler_returns_when_interrupted_during_send",
+      "kind": "test",
+      "requires": [
+        "00-test-helpers.patch"
+      ],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "                if (flagInterruptMsgProc)"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Std mutex and condition_variable on top of ConnmanTestMsg. The keyed line text also occurs on the check before SendMessages. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net.cpp:3282 nonzero (281804), ambiguous; src/net.cpp:3287 nonzero (281794), ambiguous in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 22,
+      "name": "22-net-stop-nodes-anchor-truncation.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "stop_nodes_truncates_block_relay_anchors",
+      "kind": "test",
+      "requires": [
+        "00-test-helpers.patch",
+        "21-net-message-handler-interrupt-in-send.patch"
+      ],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "            if (anchors_to_dump.size() > MAX_BLOCK_RELAY_ONLY_ANCHORS) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                anchors_to_dump.resize(MAX_BLOCK_RELAY_ONLY_ANCHORS);"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses StubMsgProc from the helper patch and ReadAnchors. No arch assumptions. Apply after patch 21.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net.cpp:3824 nonzero (39); src/net.cpp:3825 nonzero (1) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 23,
+      "name": "23-net-open-connection-after-interrupt.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "open_network_connection_refused_after_interrupt",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "    if (m_interrupt_net->interrupted()) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "ConnmanTestMsg::Interrupt then OpenNetworkConnection. The 4-space condition is unique to OpenNetworkConnection. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net.cpp:3148 nonzero (697) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 24,
+      "name": "24-serialize-compactsize-above-max.patch",
+      "target_file": "src/test/serialize_tests.cpp",
+      "test_case": "compact_size_above_max_size_is_rejected",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/serialize.h",
+          "line_text": "    if (range_check && nSizeRet > MAX_SIZE) {"
+        },
+        {
+          "file": "src/serialize.h",
+          "line_text": "        throw std::ios_base::failure(\"ReadCompactSize(): size too large\");"
+        }
+      ],
+      "portable": true,
+      "portability_note": "DataStream and the existing HasReason helper. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/serialize.h:359 nonzero (5985149); src/serialize.h:360 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 25,
+      "name": "25-sock-is-connected-closed-peer.patch",
+      "target_file": "src/test/sock_tests.cpp",
+      "test_case": "is_connected_closed_peer",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/util/sock.cpp",
+          "line_text": "        errmsg = \"closed\";"
+        }
+      ],
+      "portable": true,
+      "portability_note": "POSIX socketpair, the same pattern as the other sock tests. Not verified on aarch64.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/util/sock.cpp:402 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 26,
+      "name": "26-txgraph-relinearize-acceptable.patch",
+      "target_file": "src/test/txgraph_tests.cpp",
+      "test_case": "txgraph_relinearize_acceptable",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/txgraph.cpp",
+          "line_text": "    } else if (max_cost >= graph.m_acceptable_cost && !IsAcceptable()) {"
+        },
+        {
+          "file": "src/txgraph.cpp",
+          "line_text": "        graph.SetClusterQuality(level, m_quality, m_setindex, QualityLevel::ACCEPTABLE);"
+        },
+        {
+          "file": "src/txgraph.cpp",
+          "line_text": "    } else if (!IsTopological()) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Uses MakeTxGraph and DoWork from the existing txgraph tests. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/txgraph.cpp:2186 nonzero (5949); src/txgraph.cpp:2187 0; src/txgraph.cpp:2189 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 27,
+      "name": "27-validation-false-magic-block-file.patch",
+      "target_file": "src/test/validation_tests.cpp",
+      "test_case": "load_external_block_file_skips_false_magic",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/validation.cpp",
+          "line_text": "                if (buf != params.MessageStart()) {"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Writes a byte buffer and calls LoadExternalBlockFile. sizeof is on that local array. No arch assumptions.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/validation.cpp:5078 nonzero (2089) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 30,
+      "name": "30-p2p-headers-sync-presync-survivor.patch",
+      "target_file": "test/functional/p2p_headers_sync_with_minchainwork.py",
+      "test_case": "test_peerinfo_includes_headers_presync_height",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "        if (peer->m_headers_sync) {"
+        },
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "            stats.presync_height = peer->m_headers_sync->GetPresyncHeight();"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Existing P2PInterface and getpeerinfo. No arch assumptions. Not run in this stage.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net_processing.cpp:1951 nonzero (17496); src/net_processing.cpp:1952 nonzero (1) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 31,
+      "name": "31-p2p-ping-negative-rtt.patch",
+      "target_file": "test/functional/p2p_ping.py",
+      "test_case": "run_test",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "                    sProblem = \"Timing mishap\";"
+        }
+      ],
+      "portable": true,
+      "portability_note": "mocktime rewind inside the existing PingPongTest. No arch assumptions. Not run in this stage.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/net_processing.cpp:5909 0 in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 32,
+      "name": "32-rpc-generate-maxtries-zero.patch",
+      "target_file": "test/functional/rpc_generate.py",
+      "test_case": "test_generatetoaddress",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/rpc/mining.cpp",
+          "line_text": "    if (max_tries == 0 || chainman.m_interrupt) {"
+        },
+        {
+          "file": "src/rpc/mining.cpp",
+          "line_text": "            break;"
+        }
+      ],
+      "portable": true,
+      "portability_note": "generatetoaddress through the test framework. No arch assumptions. Not run in this stage.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "src/rpc/mining.cpp:176 nonzero (33924); src/rpc/mining.cpp:203 nonzero (1) in the single unpatched baseline run (rig/base)",
+        "source": "rig/base/line-counts.json",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 40,
+      "name": "40-dos-cached-invalid-block.patch",
+      "target_file": "src/test/denialofservice_tests.cpp",
+      "test_case": "cached_invalid_block_discourages_outbound_peer",
+      "kind": "test",
+      "requires": [],
+      "makes_deterministic": [
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "    case BlockValidationResult::BLOCK_CACHED_INVALID:"
+        },
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "            if (peer && !via_compact_block && !peer->m_is_inbound) {"
+        },
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "            break;"
+        },
+        {
+          "file": "src/net_processing.cpp",
+          "line_text": "        }"
+        }
+      ],
+      "portable": true,
+      "portability_note": "ConnmanTestMsg handshake and a real block message. Registers the peer manager as a validation interface for the case. No arch assumptions. Not verified on aarch64. The case-closing brace text is not unique in the file.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "attribution-table.tsv NEEDS-TEST rows: net_processing.cpp:2054/2057/2061/2062 nonzero in 1 of 18 runs, flipped 0->1 in run-c vs run-d. At a06515e9 the case label is net_processing.cpp:2047 nonzero (17) and the branch lines 2051, 2052, 2053, 2055, 2056 are 0 in the single unpatched baseline run (rig/base/coverage.info). One run is not a flip rate.",
+        "source": "artifacts/t_30811b9e/attribution-table.tsv; rig/base/coverage.info",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 41,
+      "name": "41-net-stop-nodes-referenced-node.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "stop_nodes_deletes_nodes_still_referenced_elsewhere",
+      "kind": "test",
+      "requires": [
+        "00-test-helpers.patch",
+        "21-net-message-handler-interrupt-in-send.patch"
+      ],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "    for (CNode* pnode : m_nodes_disconnected) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "        DeleteNode(pnode);"
+        }
+      ],
+      "portable": true,
+      "portability_note": "The test holds the extra CNode reference. Uses StubMsgProc from the helper. No arch assumptions. Not verified on aarch64. DeleteNode(pnode) at this indentation also occurs at the m_nodes sweep (net.cpp:3837). The loop's closing brace (net.cpp:3842) is the second line the old measurement pinned and its text is not unique, so the manifest keys the for-header and the DeleteNode call. Apply after patch 21; the hunk context is the start of message_handler_returns_when_interrupted_during_send.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "attribution-table.tsv NEEDS-TEST: net.cpp:3801/3802 nonzero in 7 of 18 runs, flipped 1->0 in run-i vs run-j. report-determinism.md \u00a75.1: the same lines flipped 0->3 in pair u2/v2 before this case existed. At a06515e9 those statements are net.cpp:3841/3842, both nonzero (5) in the single unpatched baseline run (rig/base/coverage.info). The for-header this case also keys, net.cpp:3840, is nonzero (2546) in that run. One run is not a flip rate.",
+        "source": "artifacts/t_30811b9e/attribution-table.tsv; artifacts/t_30811b9e/report-determinism.md \u00a75.1; rig/base/coverage.info",
+        "confidence": "weak"
+      }
+    },
+    {
+      "order": 42,
+      "name": "42-net-slot-and-address-selection.patch",
+      "target_file": "src/test/net_tests.cpp",
+      "test_case": "open_connections_drives_slot_and_address_selection",
+      "kind": "test",
+      "requires": [
+        "00-test-helpers.patch"
+      ],
+      "makes_deterministic": [
+        {
+          "file": "src/net.cpp",
+          "line_text": "            next_extra_block_relay = now + rng.rand_exp_duration(EXTRA_BLOCK_RELAY_ONLY_PEER_INTERVAL);"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            conn_type = ConnectionType::BLOCK_RELAY;"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "        } else if (now > next_feeler) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            next_feeler = now + rng.rand_exp_duration(FEELER_INTERVAL);"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            conn_type = ConnectionType::FEELER;"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            fFeeler = true;"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                std::tie(addr, addr_last_try) = addrman.get().SelectTriedCollision();"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                if (!addr.IsValid()) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                    std::tie(addr, addr_last_try) = addrman.get().Select(true, reachable_nets);"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                } else if (AlreadyConnectedToAddress(addr)) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                continue;"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            }"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                if (!m_interrupt_net->sleep_for(rng.rand_uniform_duration<CThreadInterrupt::Clock>(FEELER_SLEEP_WINDOW))) {"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "                LogDebug(BCLog::NET, \"Making feeler connection to %s\\n\", addrConnect.ToStringAddrPort());"
+        },
+        {
+          "file": "src/net.cpp",
+          "line_text": "            }"
+        }
+      ],
+      "portable": true,
+      "portability_note": "Private AddrMan, SetMockTime, and StubMsgProc. Sleeps are 1s, 2s, and 2s, the same bounds as the measured test. No arch assumptions. Not verified on aarch64. Does not try to take the feeler-sleep interrupt return. conn_type = ConnectionType::BLOCK_RELAY, Select(true, reachable_nets), continue, and the closing braces are not unique texts.",
+      "evidence": {
+        "pairs_alone": 0,
+        "pairs_with_flip": 0,
+        "unpatched_flip_rate": "t_5f23cf1e runV1/runV2, one pair on the 14-file tree: net.cpp:2930 and :2931 were 2 then 0 (report-slot-selection.md \u00a71). attribution-table.tsv NEEDS-TEST: those lines nonzero in 3 of 18 runs (flips run-a/run-b 1->0, run-e/run-f 3->0, run-o/run-p 1->0). At a06515e9 the continue and its brace are net.cpp:2958/2959, both 0 in the single unpatched baseline run (rig/base/coverage.info). Of the other lines this case keys, that run has net.cpp:2855 nonzero (1), :2856 nonzero (1), :2857 nonzero (7), and 2858, 2859, 2860, 2916, 2918, 2921, 2922, 2993, 2996, 2997 all 0. The recently-tried condition at :2957 is nonzero (16) and is not a keyed line. net.cpp:2994/2995, the interrupt return, are 0 and are not targets. One run is not a flip rate.",
+        "source": "artifacts/t_81c981f4/report-slot-selection.md \u00a71; artifacts/t_30811b9e/attribution-table.tsv; rig/base/coverage.info",
+        "confidence": "weak"
+      }
+    }
+  ]
+}

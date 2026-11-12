@@ -1,0 +1,70 @@
+diff --git a/src/test/httpserver_tests.cpp b/src/test/httpserver_tests.cpp
+index 3a5947a7d7..ce362b6425 100644
+--- a/src/test/httpserver_tests.cpp
++++ b/src/test/httpserver_tests.cpp
+@@ -13,6 +13,7 @@
+ #include <util/threadpool.h>
+ 
+ #include <boost/test/unit_test.hpp>
++#include <cerrno>
+ #include <memory>
+ 
+ using util::LineReader;
+@@ -1146,6 +1147,57 @@ BOOST_AUTO_TEST_CASE(http_socket_error_tests)
+     server.StopListening();
+ }
+ 
++BOOST_AUTO_TEST_CASE(http_client_permanent_io_errors_disconnect)
++{
++    // Both I/O error paths log the reason and mark the client for disconnection. In a
++    // full suite run they are only reached when a peer resets the connection at exactly
++    // the wrong moment (interface_http.py), which is why the LogDebug blocks at
++    // httpserver.cpp:940-947 and 1294-1302 show up in one of two otherwise identical
++    // coverage runs and not the other. A socket that always fails with ECONNRESET makes
++    // both branches reachable in every run.
++    struct ResetSock : ZeroSock {
++        ssize_t Send(const void*, size_t, int) const override
++        {
++            errno = ECONNRESET;
++            return -1;
++        }
++        ssize_t Recv(void*, size_t, int) const override
++        {
++            errno = ECONNRESET;
++            return -1;
++        }
++    private:
++        ResetSock& operator=(Sock&&) override
++        {
++            assert(false && "Move of Sock into ResetSock not allowed.");
++            return *this;
++        }
++    };
++
++    const auto now{MockableSteadyClock::now()};
++    constexpr auto timeout{30s};
++
++    // Permanent read error: Receive() logs it and sets m_disconnect.
++    {
++        auto client{std::make_shared<HTTPRemoteClient>(/*id=*/0, CService{}, std::make_unique<ResetSock>())};
++        BOOST_REQUIRE(!client->ShouldDisconnect(now, timeout, /*disconnect_all=*/false));
++        client->Receive();
++        BOOST_CHECK(client->ShouldDisconnect(now, timeout, /*disconnect_all=*/false));
++    }
++
++    // Permanent send error: the optimistic send from Send() pushes the buffer straight
++    // into the failing socket, logs, and marks the client for disconnection. The buffer
++    // keeps its contents, so the next I/O loop pass is told to skip reading.
++    {
++        auto client{std::make_shared<HTTPRemoteClient>(/*id=*/0, CService{}, std::make_unique<ResetSock>())};
++        HTTPResponse res;
++        const std::string body{"x"};
++        client->Send(res, std::as_bytes(std::span{body}), /*keep_alive=*/false);
++        BOOST_CHECK(client->ShouldDisconnect(now, timeout, /*disconnect_all=*/false));
++        BOOST_CHECK(!client->MaybeSendBytesFromBuffer());
++    }
++}
++
+ BOOST_AUTO_TEST_CASE(http_server_rejects_disallowed_client_before_read)
+ {
+     // DynSock reports accepted connections as coming from 5.5.5.5.

@@ -1,0 +1,83 @@
+diff --git a/src/test/httpserver_tests.cpp b/src/test/httpserver_tests.cpp
+index 3a5947a7d7..a1b33b7f9b 100644
+--- a/src/test/httpserver_tests.cpp
++++ b/src/test/httpserver_tests.cpp
+@@ -1191,4 +1191,78 @@ BOOST_AUTO_TEST_CASE(http_server_rejects_disallowed_client_before_read)
+     BOOST_CHECK_EQUAL(std::string_view(buf, recv_bytes), full_request);
+ }
+ 
++BOOST_AUTO_TEST_CASE(http_client_send_failure_in_io_loop_skips_receive)
++{
++    // SocketHandlerConnected() drops the receive phase for a client whose send failed
++    // permanently (httpserver.cpp:911-913), because the client is about to be disconnected.
++    // Reaching it needs a peer that resets the connection between the optimistic send in
++    // HTTPRemoteClient::Send() and the I/O loop's own send, which is what interface_http.py
++    // does only in some runs. Here the socket accepts the optimistic write partially and
++    // fails every later write, so the loop always takes that path.
++    class PartialThenFailSock : public DynSock
++    {
++    public:
++        explicit PartialThenFailSock(std::shared_ptr<Pipes> pipes) : DynSock{std::move(pipes)} {}
++        DynSock& operator=(Sock&&) override
++        {
++            assert(false && "Move of Sock into PartialThenFailSock not allowed.");
++            return *this;
++        }
++
++        ssize_t Send(const void* buf, size_t len, int flags) const override
++        {
++            if (m_sends++ == 0) return DynSock::Send(buf, len / 2, flags);
++            errno = ECONNRESET;
++            return -1;
++        }
++
++    private:
++        mutable int m_sends{0};
++    };
++
++    // The failing send is logged with the reason.
++    DebugLogHelper find_send_error{"Error sending HTTP response data to client"};
++
++    Mutex client_mutex;
++    std::shared_ptr<HTTPRemoteClient> loop_client;
++
++    HTTPServer server{[&](std::shared_ptr<HTTPRequest> req) {
++        // Reply inline, as a slow RPC would: the reply goes into the client's send buffer while
++        // the client is still in the I/O loop.
++        req->WriteReply(HTTP_OK, "874140\n");
++        LOCK(client_mutex);
++        loop_client = req->GetClient();
++    }};
++    server.InitHTTPAllowList();
++
++    CService addr_bind{Lookup("0.0.0.0", /*portDefault=*/0, /*fAllowLookup=*/false).value()};
++    BOOST_REQUIRE(server.BindAndStartListening(addr_bind));
++    server.StartSocketsThreads();
++
++    ConnectClient<PartialThenFailSock>(std::as_bytes(std::span(full_request)));
++
++    // Wait for the I/O loop to give up on the client after its own send failed, then for the
++    // loop to drop it. Both happen in the same pass; the second wait keeps the order explicit.
++    constexpr auto timeout{30s};
++    std::shared_ptr<HTTPRemoteClient> client;
++    for (int attempts{0}; attempts != 1'000; ++attempts) {
++        {
++            LOCK(client_mutex);
++            client = loop_client;
++        }
++        if (client && client->ShouldDisconnect(MockableSteadyClock::now(), timeout, /*disconnect_all=*/false)) break;
++        std::this_thread::sleep_for(10ms);
++    }
++    BOOST_REQUIRE(client);
++    BOOST_CHECK(client->ShouldDisconnect(MockableSteadyClock::now(), timeout, /*disconnect_all=*/false));
++    for (int attempts{0}; attempts != 1'000 && server.GetConnectionsCount() != 0; ++attempts) {
++        std::this_thread::sleep_for(10ms);
++    }
++    BOOST_CHECK_EQUAL(server.GetConnectionsCount(), 0);
++
++    server.InterruptNet();
++    server.JoinSocketsThreads();
++    server.StopListening();
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

@@ -1,0 +1,63 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 7ede59b6ea..d717bfb45e 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -3,6 +3,7 @@
+ // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ 
+ #include <addrman.h>
++#include <addrdb.h>
+ #include <bip324.h>
+ #include <chainparams.h>
+ #include <clientversion.h>
+@@ -1901,4 +1902,50 @@ BOOST_AUTO_TEST_CASE(message_handler_returns_when_interrupted_during_send)
+     fListen = listen_orig;
+ }
+ 
++BOOST_AUTO_TEST_CASE(stop_nodes_truncates_block_relay_anchors)
++{
++    // StopNodes() dumps at most MAX_BLOCK_RELAY_ONLY_ANCHORS (2, net.cpp:73) of the
++    // block-relay-only peers that are still connected at clean shutdown (net.cpp:3824-3826).
++    // A functional run only reaches the truncation when more than two block-relay-only peers
++    // happen to be alive at shutdown, which is a race (p2p_private_broadcast.py); here there
++    // are exactly three, added before the threads start.
++    const bool listen_orig{fListen};
++    fListen = false;
++    {
++        CScheduler scheduler;
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        StubMsgProc msgproc;
++
++        CConnman::Options options;
++        options.m_msgproc = &msgproc;
++        options.m_use_addrman_outgoing = true;
++        options.m_i2p_accept_incoming = false;
++        options.bind_on_any = false;
++
++        for (int i{0}; i < 3; ++i) {
++            CNode* node{new CNode{static_cast<NodeId>(i + 1),
++                                  /*sock=*/nullptr,
++                                  CAddress{LookupNumeric(strprintf("10.0.0.%d", i + 1), Params().GetDefaultPort()), NODE_NONE},
++                                  /*nKeyedNetGroupIn=*/0,
++                                  /*nLocalHostNonceIn=*/0,
++                                  /*addrBindIn=*/CAddress{},
++                                  /*addrNameIn=*/"",
++                                  ConnectionType::BLOCK_RELAY,
++                                  /*inbound_onion=*/false,
++                                  /*network_key=*/0}};
++            connman.AddTestNode(*node);
++        }
++
++        BOOST_REQUIRE(connman.Start(scheduler, options));
++        connman.Interrupt();
++        connman.Stop();
++
++        // StopNodes() deletes the three peers and keeps two of them as anchors
++        // (ANCHORS_DATABASE_FILENAME in net.cpp).
++        const auto anchors{ReadAnchors(gArgs.GetDataDirNet() / "anchors.dat")};
++        BOOST_CHECK_EQUAL(anchors.size(), 2U);
++    }
++    fListen = listen_orig;
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

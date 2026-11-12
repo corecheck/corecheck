@@ -1,0 +1,33 @@
+diff --git a/src/test/baseindex_tests.cpp b/src/test/baseindex_tests.cpp
+index 28ed5f8614..ec7fd05afb 100644
+--- a/src/test/baseindex_tests.cpp
++++ b/src/test/baseindex_tests.cpp
+@@ -22,6 +22,7 @@
+ #include <script/script.h>
+ #include <sync.h>
+ #include <test/util/mining.h>
++#include <test/util/logging.h>
+ #include <test/util/setup_common.h>
+ #include <test/util/time.h>
+ #include <test/util/validation.h>
+@@ -235,4 +236,20 @@ BOOST_FIXTURE_TEST_CASE(index_reorg_crash, TestChain100Setup)
+     StopIndex(index, m_node);
+ }
+ 
++// Test that committing an index that has not indexed any block yet is reported as a
++// failure. That is the interrupted-first-sync path: nothing is persisted and the error
++// is logged instead of an empty index state being written.
++BOOST_FIXTURE_TEST_CASE(baseindex_commit_before_first_block_logs_error, TestChain100Setup)
++{
++    for (const auto& [index_name, make_index] : INDEX_FACTORIES) {
++        BOOST_TEST_INFO_SCOPE(index_name);
++        auto index{make_index(m_node)};
++        BOOST_REQUIRE(index->Init());
++        index->Interrupt(); // makes Sync() take the interrupt path before indexing anything
++        index->Sync();      // sets no best block, so Commit() reports a failure
++        index->Stop();
++        StopIndex(*index, m_node);
++    }
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

@@ -1,0 +1,85 @@
+diff --git a/src/test/txgraph_tests.cpp b/src/test/txgraph_tests.cpp
+index d86fd7cce4..4bbaa9c18c 100644
+--- a/src/test/txgraph_tests.cpp
++++ b/src/test/txgraph_tests.cpp
+@@ -432,4 +432,80 @@ BOOST_AUTO_TEST_CASE(txgraph_staging)
+     graph->SanityCheck();
+ }
+ 
++BOOST_AUTO_TEST_CASE(txgraph_relinearize_acceptable)
++{
++    // A zigzag cluster has many topological orders. With a tiny acceptable_cost, Linearize
++    // spends its whole budget before it can prove OPTIMAL, and Relinearize records ACCEPTABLE.
++    //
++    //   T     T     T     T     T     T     T     T     T     T     T     T     T     T     T     T     T  (17)
++    //    \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   / \   /
++    //     \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /   \ /
++    //      B     B     B     B     B     B     B     B     B     B     B     B     B     B     B     B   (16)
++    static constexpr int MAX_CLUSTER_COUNT = 64;
++    static constexpr int32_t MAX_CLUSTER_SIZE = 100'000 * 100;
++    // Below the initialization cost of any multi-transaction cluster, so Linearize reports
++    // non-optimal. DoWork passes this same value through as max_cost for a cluster that still
++    // needs relinearization, which is what selects QualityLevel::ACCEPTABLE.
++    static constexpr uint64_t ACCEPTABLE_COST = 100;
++    static constexpr int NUM_BOTTOM_TX = 16;
++    static constexpr int NUM_TOP_TX = 17;
++    static constexpr int NUM_TOTAL_TX = NUM_BOTTOM_TX + NUM_TOP_TX;
++    static_assert(NUM_TOTAL_TX <= MAX_CLUSTER_COUNT);
++
++    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, ACCEPTABLE_COST, PointerComparator);
++
++    std::vector<TxGraph::Ref> refs;
++    refs.reserve(NUM_TOTAL_TX);
++    for (unsigned int i = 0; i < NUM_BOTTOM_TX; ++i) {
++        graph->AddTransaction(refs.emplace_back(), FeePerWeight{200 - i, 100});
++    }
++    for (unsigned int i = 0; i < NUM_TOP_TX; ++i) {
++        graph->AddTransaction(refs.emplace_back(), FeePerWeight{100 - i, 100});
++    }
++    for (unsigned int i = 0; i < NUM_BOTTOM_TX; ++i) {
++        graph->AddDependency(/*parent=*/refs[NUM_BOTTOM_TX + i], /*child=*/refs[i]);
++        graph->AddDependency(/*parent=*/refs[NUM_BOTTOM_TX + i + 1], /*child=*/refs[i]);
++    }
++
++    // Smallest max_cost that is still >= acceptable_cost. The cluster moves from NEEDS_FIX to
++    // ACCEPTABLE and the call stops there: the linearizer's reported cost already exceeds the
++    // budget, so no OPTIMAL pass runs.
++    BOOST_CHECK(!graph->DoWork(ACCEPTABLE_COST));
++    // DoWork(0) is false while any cluster is short of OPTIMAL. NEEDS_FIX and NEEDS_RELINEARIZE
++    // were drained by the call above, so the zigzag's quality is ACCEPTABLE.
++    BOOST_CHECK(!graph->DoWork(0));
++
++    auto cluster = graph->GetCluster(refs[0], TxGraph::Level::MAIN);
++    BOOST_CHECK_EQUAL(cluster.size(), NUM_TOTAL_TX);
++
++    // The acceptable linearization is what the block builder walks.
++    std::vector<TxGraph::Ref*> seen;
++    {
++        auto builder = graph->GetBlockBuilder();
++        while (auto chunk = builder->GetCurrentChunk()) {
++            seen.insert(seen.end(), chunk->first.begin(), chunk->first.end());
++            builder->Include();
++        }
++    }
++    BOOST_CHECK_EQUAL(seen.size(), NUM_TOTAL_TX);
++
++    // One more relinearization of a not-yet-acceptable cluster, with a budget below
++    // acceptable_cost. That fails the ACCEPTABLE predicate and evaluates the following
++    // branch (the cluster is still non-topological).
++    TxGraph::Ref parent;
++    TxGraph::Ref child;
++    graph->AddTransaction(parent, FeePerWeight{50, 100});
++    graph->AddTransaction(child, FeePerWeight{40, 100});
++    graph->AddDependency(/*parent=*/parent, /*child=*/child);
++    BOOST_CHECK(!graph->DoWork(/*max_cost=*/1));
++
++    // The zigzag was not touched by the 1-cost pass, so it is still ACCEPTABLE rather than OPTIMAL.
++    graph->RemoveTransaction(parent);
++    graph->RemoveTransaction(child);
++    BOOST_CHECK(!graph->DoWork(0));
++    BOOST_CHECK_EQUAL(graph->GetCluster(refs[0], TxGraph::Level::MAIN).size(), NUM_TOTAL_TX);
++
++    graph->SanityCheck();
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

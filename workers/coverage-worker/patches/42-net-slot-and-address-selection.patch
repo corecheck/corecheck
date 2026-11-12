@@ -1,0 +1,134 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -17,2 +17,3 @@
+ #include <scheduler.h>
++#include <util/time.h>
+ #include <serialize.h>
+@@ -1821,3 +1821,126 @@
+ };
+ } // namespace
++
++BOOST_AUTO_TEST_CASE(open_connections_drives_slot_and_address_selection)
++{
++    // ThreadOpenConnections picks which outbound slot to fill from the live connection counts
++    // and three exponential timers that are seeded when the thread starts (net.cpp:2667-2669),
++    // then selects an address from addrman (net.cpp:2913-2940). A functional run reaches the
++    // extra-block-relay branch only once its 5-minute-mean timer expires and the feeler branch
++    // only once the 2-minute-mean one does, so the branch a given run takes is a coin flip (and
++    // a frozen clock, which every measured run uses, never lets either expire). The "recently
++    // tried" continue needs addrman to hand back an entry tried minutes ago, which is likewise
++    // down to which addresses a run happened to touch. Here the automatic slots are filled with
++    // test nodes, the node clock (NodeClock honours SetMockTime) is jumped past both timers, and
++    // addrman holds one recently-tried and one untried entry, so every branch is taken.
++    const bool listen_orig{fListen};
++    fListen = false;
++    const auto time_orig{GetTime<std::chrono::seconds>()};
++    {
++        CScheduler scheduler;
++        // A private, deterministic addrman: the shared one carries whatever the earlier cases in
++        // this binary left in it, and an address another case added could be selected instead.
++        AddrMan addrman{*m_node.netgroupman, /*deterministic=*/true, /*consistency_check_ratio=*/100};
++        ConnmanTestMsg connman{0x1337, 0x1337, addrman, *m_node.netgroupman, Params()};
++        StubMsgProc msgproc;
++
++        CConnman::Options options;
++        options.m_msgproc = &msgproc;
++        options.m_use_addrman_outgoing = true;
++        options.m_i2p_accept_incoming = false;
++        options.bind_on_any = false;
++
++        // Fill both automatic slot kinds (8 full relay, 2 block relay) so the slot decision
++        // falls through to the timer branches instead of taking a free slot.
++        for (int i{0}; i < MAX_OUTBOUND_FULL_RELAY_CONNECTIONS + MAX_BLOCK_RELAY_ONLY_CONNECTIONS; ++i) {
++            CNode* node{new CNode{static_cast<NodeId>(i + 1),
++                                  /*sock=*/nullptr,
++                                  CAddress{LookupNumeric(strprintf("10.0.0.%d", i + 1), Params().GetDefaultPort()), NODE_NONE},
++                                  /*nKeyedNetGroupIn=*/0,
++                                  /*nLocalHostNonceIn=*/0,
++                                  /*addrBindIn=*/CAddress{},
++                                  /*addrNameIn=*/"",
++                                  i < MAX_OUTBOUND_FULL_RELAY_CONNECTIONS ? ConnectionType::OUTBOUND_FULL_RELAY
++                                                                          : ConnectionType::BLOCK_RELAY,
++                                  /*inbound_onion=*/false,
++                                  /*network_key=*/0}};
++            connman.AddTestNode(*node);
++        }
++
++        // Both addresses are already connected, and the tried one is stamped as tried "now", so a
++        // non-feeler selection of it takes the "very recently tried" continue (net.cpp:2957-2959)
++        // while the never-tried one goes through. The nodes are ADDR_FETCH because that type is
++        // not counted towards the outbound netgroup set, so the check at net.cpp:2943 cannot skip
++        // either address instead.
++        constexpr ServiceFlags services{NODE_NETWORK | NODE_NETWORK_LIMITED | NODE_WITNESS};
++        const CAddress recently_tried{CService{LookupNumeric("1.2.3.4", Params().GetDefaultPort())}, services};
++        // A second entry, in the new table: this is what the feeler selection (new-only) returns.
++        const CAddress untried{CService{LookupNumeric("5.6.7.8", Params().GetDefaultPort())}, services};
++        for (const CAddress& connected : {recently_tried, untried}) {
++            CNode* node{new CNode{static_cast<NodeId>(100),
++                                  /*sock=*/nullptr,
++                                  connected,
++                                  /*nKeyedNetGroupIn=*/0,
++                                  /*nLocalHostNonceIn=*/0,
++                                  /*addrBindIn=*/CAddress{},
++                                  /*addrNameIn=*/"",
++                                  ConnectionType::ADDR_FETCH,
++                                  /*inbound_onion=*/false,
++                                  /*network_key=*/0}};
++            connman.AddTestNode(*node);
++        }
++        // Any connect attempt this test provokes is to a blackholed address, and the connect
++        // timeout is global: shorten it so a stray selection costs 200 ms instead of 5 s (which
++        // would leave room for only one iteration of the loop below).
++        const int connect_timeout_orig{nConnectTimeout};
++        nConnectTimeout = 200;
++
++        // Fixed seeds would land in addrman's new table and could be selected instead of the one
++        // address the assertions below describe (and a connect attempt to one of them blocks this
++        // thread for the whole peer connect timeout).
++        const std::string fixed_seeds_orig{gArgs.GetArg("-fixedseeds", "")};
++        gArgs.ForceSetArg("-fixedseeds", "0");
++
++        // The addrman holds one tried entry (Good() stamps it as tried "now") and one new-table
++        // entry. Both are already connected as ADDR_FETCH peers: that type is not counted towards
++        // the outbound netgroup set, so neither address is skipped by the netgroup check at
++        // net.cpp:2943, and both OpenNetworkConnection() calls return without dialling.
++        CNetAddr source;
++        source.SetInternal("net_tests");
++        BOOST_REQUIRE(addrman.Add({recently_tried, untried}, source));
++        BOOST_REQUIRE(addrman.Good(recently_tried));
++
++        SetMockTime(time_orig);
++        BOOST_REQUIRE(connman.Start(scheduler, options));
++
++        // The thread seeds next_feeler (mean 2 min) and next_extra_block_relay (mean 5 min) from
++        // the clock at its own start, so let it get past that point, then jump past the feeler
++        // timer. Extra block-relay peers are not enabled yet, so the feeler branch is the one that
++        // fires: it takes the new-table entry (never tried, so the address loop opens it) all the
++        // way to the feeler sleep and the connection.
++        UninterruptibleSleep(1s);
++        SetMockTime(time_orig + 4h);
++        UninterruptibleSleep(2s);
++
++        // Enable the extra block-relay slot and stamp both entries as tried "now", so the second
++        // branch fires and the address loop reaches the "very recently tried" continue instead of
++        // selecting straight away.
++        connman.StartExtraBlockRelayPeers();
++        SetMockTime(time_orig + 8h);
++        addrman.Attempt(recently_tried, /*fCountFailure=*/false);
++        addrman.Attempt(untried, /*fCountFailure=*/false);
++        UninterruptibleSleep(2s);
++
++        connman.Interrupt();
++        connman.Stop();
++        nConnectTimeout = connect_timeout_orig;
++        if (fixed_seeds_orig.empty()) {
++            gArgs.ForceSetArg("-fixedseeds", "1");
++        } else {
++            gArgs.ForceSetArg("-fixedseeds", fixed_seeds_orig);
++        }
++    }
++    SetMockTime(std::chrono::seconds{0});
++    fListen = listen_orig;
++}
+ 

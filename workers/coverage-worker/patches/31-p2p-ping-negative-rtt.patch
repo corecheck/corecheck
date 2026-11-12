@@ -1,0 +1,24 @@
+diff --git a/test/functional/p2p_ping.py b/test/functional/p2p_ping.py
+index 7fb3add9a1..3d9031c9fb 100755
+--- a/test/functional/p2p_ping.py
++++ b/test/functional/p2p_ping.py
+@@ -105,6 +105,19 @@ class PingPongTest(BitcoinTestFramework):
+         no_pong_node.send_and_ping(msg_pong(no_pong_node.last_message.pop('ping').nonce))
+         self.check_peer_info(pingtime=ping_delay, minping=ping_delay, pingwait=None)
+ 
++        self.log.info('Check that a pong arriving before the ping was sent is not counted as a roundtrip')
++        # Rewinding mock time between sending the ping and receiving the pong makes
++        # the measured roundtrip negative. That is the "Timing mishap" branch of
++        # ProcessPong: the pong clears the outstanding ping, but no ping time is
++        # recorded. Without the rewind this branch is only reached by accident.
++        self.mock_forward(PING_INTERVAL + 1)
++        no_pong_node.wait_until(lambda: 'ping' in no_pong_node.last_message)
++        ping_nonce = no_pong_node.last_message.pop('ping').nonce
++        self.mock_forward(-10)
++        with self.nodes[0].assert_debug_log(['Timing mishap']):
++            no_pong_node.send_and_ping(msg_pong(ping_nonce))
++        self.check_peer_info(pingtime=ping_delay, minping=ping_delay, pingwait=None)
++
+         self.log.info('Check that peer is disconnected after ping timeout')
+         assert 'ping' not in no_pong_node.last_message
+         self.nodes[0].ping()

@@ -1,0 +1,98 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 9cc239360d..7ede59b6ea 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -28,6 +28,9 @@
+ #include <validation.h>
+ 
+ #include <boost/test/unit_test.hpp>
++#include <chrono>
++#include <condition_variable>
++#include <mutex>
+ 
+ #include <algorithm>
+ #include <atomic>
+@@ -1819,6 +1822,83 @@ public:
+     bool ProcessMessages(CNode&, std::atomic<bool>&) override { return false; }
+     bool SendMessages(CNode&) override { return false; }
+ };
++
++/** A message proc that interrupts the connection manager from inside SendMessages(), which is
++ *  where a shutdown lands when it races the message handler between ProcessMessages() and
++ *  SendMessages() for a peer. */
++class InterruptOnSendMsgProc : public StubMsgProc
++{
++public:
++    explicit InterruptOnSendMsgProc(CConnman& connman) : m_connman{connman} {}
++
++    bool SendMessages(CNode&) override
++    {
++        m_connman.Interrupt();
++        {
++            std::lock_guard<std::mutex> lock{m_mutex};
++            m_sent = true;
++        }
++        m_cv.notify_all();
++        return false;
++    }
++
++    bool WaitForSend(std::chrono::milliseconds timeout)
++    {
++        std::unique_lock<std::mutex> lock{m_mutex};
++        return m_cv.wait_for(lock, timeout, [this] { return m_sent; });
++    }
++
++private:
++    CConnman& m_connman;
++    std::mutex m_mutex;
++    std::condition_variable m_cv;
++    bool m_sent{false};
++};
+ } // namespace
+ 
++BOOST_AUTO_TEST_CASE(message_handler_returns_when_interrupted_during_send)
++{
++    // ThreadMessageHandler re-checks flagInterruptMsgProc after SendMessages() and returns
++    // (net.cpp:3287-3288) instead of moving on to the next peer. A functional run only reaches
++    // that line when Shutdown() lands inside the send phase of one peer, which is a scheduling
++    // race (p2p_private_broadcast_retry_v1.py, wallet_address_types.py); here the interrupt is
++    // raised from inside SendMessages(), so the branch is taken in every run.
++    //
++    // The whole CConnman is started (message handler thread included) because the loop being
++    // tested is private; every thread it spawns exits on Interrupt(), and Stop() joins them.
++    const bool listen_orig{fListen};
++    fListen = false;
++    {
++        CScheduler scheduler;
++        ConnmanTestMsg connman{0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman, Params()};
++        InterruptOnSendMsgProc msgproc{connman};
++
++        CConnman::Options options;
++        options.m_msgproc = &msgproc;
++        options.m_use_addrman_outgoing = false;
++        options.m_i2p_accept_incoming = false;
++        options.bind_on_any = false;
++
++        CNode* node{new CNode{/*id=*/1,
++                              /*sock=*/nullptr,
++                              CAddress{LookupNumeric("127.0.0.1", Params().GetDefaultPort()), NODE_NONE},
++                              /*nKeyedNetGroupIn=*/0,
++                              /*nLocalHostNonceIn=*/0,
++                              /*addrBindIn=*/CAddress{},
++                              /*addrNameIn=*/"",
++                              ConnectionType::OUTBOUND_FULL_RELAY,
++                              /*inbound_onion=*/false,
++                              /*network_key=*/0}};
++        connman.AddTestNode(*node);
++
++        BOOST_REQUIRE(connman.Start(scheduler, options));
++        // One handler pass is enough: SendMessages() interrupts, the next flag check returns.
++        const bool sent{msgproc.WaitForSend(20s)};
++        connman.Interrupt();
++        connman.Stop();
++        BOOST_CHECK(sent);
++    }
++    fListen = listen_orig;
++}
++
+ BOOST_AUTO_TEST_SUITE_END()

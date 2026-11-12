@@ -1,0 +1,72 @@
+diff --git a/src/test/net_tests.cpp b/src/test/net_tests.cpp
+index 864f2552e4..49f00d21c2 100644
+--- a/src/test/net_tests.cpp
++++ b/src/test/net_tests.cpp
+@@ -8,6 +8,7 @@
+ #include <clientversion.h>
+ #include <common/args.h>
+ #include <compat/compat.h>
++#include <cerrno>
+ #include <net.h>
+ #include <net_processing.h>
+ #include <netaddress.h>
+@@ -1641,6 +1642,59 @@ BOOST_AUTO_TEST_CASE(v2transport_test)
+     }
+ }
+ 
++BOOST_AUTO_TEST_CASE(socket_handler_recv_skipped_when_send_closes_socket)
++{
++    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
++
++    // A permanently failed send closes the socket (CloseSocketDisconnect) in the middle of
++    // one SocketHandlerConnected pass. The receive phase of the same node then finds m_sock
++    // already gone and must skip it instead of dereferencing it. In a functional run this
++    // needs the peer to reset the connection between the readiness check and the receive
++    // (rpc_net.py sees it every few runs); here the socket fails its first write, so the
++    // state is reached deterministically in every run.
++    //
++    // The first write has to succeed partially: PushMessage() does an optimistic write
++    // from the caller's thread, and a permanent failure there would already have closed
++    // the socket before the handler runs. Half a message leaves data queued and the
++    // socket alive, so the handler's own send is the one that fails.
++    struct SendFailSock : ZeroSock {
++        ssize_t Send(const void*, size_t len, int) const override
++        {
++            if (m_sends++ == 0) return static_cast<ssize_t>(len / 2);
++            errno = ECONNRESET;
++            return -1;
++        }
++    private:
++        mutable int m_sends{0};
++        SendFailSock& operator=(Sock&&) override
++        {
++            assert(false && "Move of Sock into SendFailSock not allowed.");
++            return *this;
++        }
++    };
++
++    CNode* node{new CNode{/*id=*/1,
++                          /*sock=*/std::make_shared<SendFailSock>(),
++                          CAddress{LookupNumeric("127.0.0.1", Params().GetDefaultPort()), NODE_NONE},
++                          /*nKeyedNetGroupIn=*/0,
++                          /*nLocalHostNonceIn=*/0,
++                          /*addrBindIn=*/CService{},
++                          /*addrNameIn=*/"",
++                          ConnectionType::OUTBOUND_FULL_RELAY,
++                          /*inbound_onion=*/false,
++                          /*network_key=*/0}};
++    connman.AddTestNode(*node);
++
++    // Something queued to send, so the handler takes the send path first.
++    connman.PushMessage(node, NetMsg::Make(NetMsgType::PING, uint64_t{0}));
++
++    // One pass: the send fails, the socket is closed, the receive phase sees no socket.
++    connman.SocketHandlerPublic();
++    BOOST_CHECK(node->fDisconnect);
++
++    connman.ClearTestNodes();
++}
++
+ BOOST_AUTO_TEST_CASE(version_message_min_peer_proto_version)
+ {
+     LOCK(NetEventsInterface::g_msgproc_mutex);
